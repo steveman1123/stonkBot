@@ -3,12 +3,16 @@ look at week to week patterns after major jumps
 i.e. we know a major jump happened, what happens over the next week? (~5 trading days)
 
 '''
-import json, requests
+import json, requests,os,time
 from pandas import read_html
 
 keyFile = open("apikeys.key","r")
 apiKeys = json.loads(keyFile.read())
 keyFile.close()
+
+settingsFile = open("algo13.json","r")
+someSettings = json.loads(settingsFile.read())
+settingsFile.close()
 
 
 #get list of common penny stocks under $price and sorted by gainers (up) or losers (down)
@@ -18,13 +22,10 @@ def getPennies(price=1,updown="up"):
   tableList = read_html(html)
   # print(tableList)
   # symList = tableList[5][0:]['Symbol']
-  
   symList = tableList[5][1:][0] #this keeps changing (possibly intentionally)
   symList = [e.replace(' predictions','') for e in symList]
-  
 #  print(tableList[5][0:]['Symbol'])
   return symList
-
 
 #function to "buy" shares of stock
 def buy(shares, price, bPow, equity):
@@ -40,12 +41,13 @@ def sell(shares, price, bPow, equity):
   return [shares, bPow, equity, price]
 
 
-#function to sim the stocks and return the best 2 options
+#function to sim the stocks and return the top 5
 def simIt(symList):
-	'''
+  '''
   the idea is to look at what happens in the following days after a big jump
   '''
   #generate data files for each stock
+  print("Getting stock data...")
   for symb in symList:
     print(symb)
     if(not os.path.isfile(symb+".txt")):
@@ -63,7 +65,33 @@ def simIt(symList):
       out = open(symb+'.txt','w') #write to file for later usage
       out.write(response)
       out.close()
+      
     
+    #gather info about single stock
+    stonkFile = open(symb+'.txt','r') #open the file containing stonk data
+    stonkData = json.loads(stonkFile.read()) #read in as json data
+    stonkFile.close()
+  
+    dateData = stonkData[list(stonkData.keys())[1]] #time series (daily) - index 0=meta data, 1=stock data
+    period = min(someSettings['periodLength'],len(dateData)-1) #how long for period
+    
+    lows = [dateData[e]['3. low'] for e in dateData]
+    highs = [dateData[e]['2. high'] for e in dateData]
+    opens = [dateData[e]['1. open'] for e in dateData]
+    closes = [dateData[e]['4. close'] for e in dateData]
+    volumes = [dateData[e]['5. volume'] for e in dateData]
+    volatility = (highs-lows)/lows #this isn't the real volatility measurement, but it's good enough for me
+    
+    
+    #start sim here
+    
+    
+    
+    
+  #start analysis and comparison here
+  
+  
   return sortedSyms
 
 
+simIt(getPennies())
