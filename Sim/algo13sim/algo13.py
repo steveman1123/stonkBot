@@ -40,5 +40,30 @@ def sell(shares, price, bPow, equity):
   return [shares, bPow, equity, price]
 
 
-getPennies()
+#function to sim the stocks and return the best 2 options
+def simIt(symList):
+	'''
+  the idea is to look at what happens in the following days after a big jump
+  '''
+  #generate data files for each stock
+  for symb in symList:
+    print(symb)
+    if(not os.path.isfile(symb+".txt")):
+      # url = 'https://www.alphavantage.co/query'
+      url = apiKeys["ALPHAVANTAGEURL"]
+      params= { # NOTE: the information is also available as CSV which would be more efficient
+        'apikey' : apiKeys["ALPHAVANTAGEKEY"],
+        'function' : 'TIME_SERIES_DAILY', #daily resolution (open, high, low, close, volume)
+        'symbol' : symb, #ticker symbol
+        'outputsize' : 'full' #upt to 20yrs of data
+      }
+      response = requests.request('GET', url, params=params).text #send request and store response
+      time.sleep(19) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
+  
+      out = open(symb+'.txt','w') #write to file for later usage
+      out.write(response)
+      out.close()
+    
+  return sortedSyms
+
 
