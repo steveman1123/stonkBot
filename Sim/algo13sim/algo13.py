@@ -5,6 +5,7 @@ i.e. we know a major jump happened, what happens over the next week? (~5 trading
 '''
 import json, requests,os,time
 from pandas import read_html
+from matplotlib import pyplot as plt
 
 keyFile = open("apikeys.key","r")
 apiKeys = json.loads(keyFile.read())
@@ -75,19 +76,40 @@ def simIt(symList):
     dateData = stonkData[list(stonkData.keys())[1]] #time series (daily) - index 0=meta data, 1=stock data
     period = min(someSettings['periodLength'],len(dateData)-1) #how long for period
     
-    lows = [dateData[e]['3. low'] for e in dateData]
-    highs = [dateData[e]['2. high'] for e in dateData]
-    opens = [dateData[e]['1. open'] for e in dateData]
-    closes = [dateData[e]['4. close'] for e in dateData]
-    volumes = [dateData[e]['5. volume'] for e in dateData]
-    volatility = (highs-lows)/lows #this isn't the real volatility measurement, but it's good enough for me
+    dates = [e for e in dateData]
+    lows = [float(dateData[e]['3. low']) for e in dateData]
+    highs = [float(dateData[e]['2. high']) for e in dateData]
+    opens = [float(dateData[e]['1. open']) for e in dateData]
+    closes = [float(dateData[e]['4. close']) for e in dateData]
+    volumes = [float(dateData[e]['5. volume']) for e in dateData]
+    volatility = [(highs[i]-lows[i])/lows[i] for i in range(len(lows))] #this isn't the real volatility measurement, but it's good enough for me - vol = 1 means price doubled, 0 = no change
     
     
     #start sim here
     
+    startDate = someSettings['periodLength'] #here we're looking for the most recent big jump - init at least 1 period length ago
+    while startDate<len(volatility)-1 and volatility[startDate]<1: #arbirary jump cutoff, and make sure we don't go out of bounds
+      startDate += 1
+      
+    # print(startDate)
+    if(startDate<365): #only show info if the jump happened in the past year
+      for i in range(startDate,startDate-someSettings['periodLength'],-1):
+        print(dates[i]+" - "+str(round(volatility[i],2))+" - "+str(opens[i])+" - "+str(round(opens[i]-opens[i-1],2)))
+        
+      # plt.plot(volatility[startDate-someSettings['periodLength']:startDate][::-1]) #see what the volatility looks like after the jump - needs to be reversed because the original list is reverse (i.e. 0 is most recent)
+      
+      plt.subplot(211)
+      plt.plot([(closes[i]-opens[i])/opens[i] for i in range(startDate+1,startDate-someSettings['periodLength'],-1)], label=symb)
+      plt.title("(close-open)/open")
+      plt.legend(loc='right')
+      plt.subplot(212)
+      plt.plot(volatility[startDate-someSettings['periodLength']:startDate+1][::-1], label=symb)
+      plt.title("volatility")
+      plt.legend(loc='right')
     
-    
-    
+  plt.show()
+
+
   #start analysis and comparison here
   
   
