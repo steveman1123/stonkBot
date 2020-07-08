@@ -752,3 +752,18 @@ def algo12():
         else:
           sellAll
     '''
+
+#gurl what the fxns do
+def algo13():
+	'''
+  doesn't bother with portfolio value
+  
+  runs a simulation
+  chooses the best stock to invest in over the next few days
+  
+  buy as much as we can
+  if it goes up a certain amount, then down a smaller amount, sell
+  if it goes down a certain amount, sell (avoid major risk)
+  sell all at end of period
+  '''
+  
