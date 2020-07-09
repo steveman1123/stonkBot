@@ -3,7 +3,7 @@ look at week to week patterns after major jumps
 i.e. we know a major jump happened, what happens over the next week? (~5 trading days)
 
 '''
-import json, requests,os,time
+import json, requests,os,time,re
 from pandas import read_html
 from matplotlib import pyplot as plt
 
@@ -18,13 +18,13 @@ settingsFile.close()
 
 #get list of common penny stocks under $price and sorted by gainers (up) or losers (down)
 def getPennies(price=1,updown="up"):
-  url = 'https://stocksunder1.org/most-volatile-stocks/'
+  url = 'https://stocksunder1.org/nasdaq-stocks-under-1/'
   html = requests.post(url, params={"price":price,"volume":0,"updown":updown}).content
   tableList = read_html(html)
   # print(tableList)
   # symList = tableList[5][0:]['Symbol']
   symList = tableList[5][1:][0] #this keeps changing (possibly intentionally)
-  symList = [e.replace(' predictions','') for e in symList]
+  symList = [re.sub(r'\W+','',e.replace(' predictions','')) for e in symList] #strip "predictions" and any non alphanumerics
 #  print(tableList[5][0:]['Symbol'])
   return symList
 
@@ -49,8 +49,9 @@ def simIt(symList):
   '''
   #generate data files for each stock
   print("Getting stock data...")
+  winners = {}
   for symb in symList:
-    print(symb)
+    # print(symb)
     if(not os.path.isfile(symb+".txt")):
       # url = 'https://www.alphavantage.co/query'
       url = apiKeys["ALPHAVANTAGEURL"]
@@ -83,36 +84,61 @@ def simIt(symList):
     closes = [float(dateData[e]['4. close']) for e in dateData]
     volumes = [float(dateData[e]['5. volume']) for e in dateData]
     volatility = [(highs[i]-lows[i])/lows[i] for i in range(len(lows))] #this isn't the real volatility measurement, but it's good enough for me - vol = 1 means price doubled, 0 = no change
-    
+    delDayRatio = [(closes[i]-opens[i])/opens[i] for i in range(len(opens))] #this is the change over the day normalized to the opening price
     
     #start sim here
     
-    startDate = someSettings['periodLength'] #here we're looking for the most recent big jump - init at least 1 period length ago
-    while startDate<len(volatility)-1 and volatility[startDate]<1: #arbirary jump cutoff, and make sure we don't go out of bounds
+    startDate = someSettings['periodLength']-1 #here we're looking for the most recent big jump - init at least 1 period length ago
+    '''
+    the following conditions should be true when asking if the date should be skipped (in order as they appear in the while statement):
+    make sure we're in range
+    arbirary volatility of the day - higher= more volatility in a given day (volImpulse is minimum volatility to have)
+    look only for positive daily changes
+    the difference between today's (startDate-1) change and yesterdays must be sufficiently large (and negative) to constitute underdamped oscilation - at least 1/2 of original
+    '''
+    while startDate<len(volatility)-1 and\
+          (volatility[startDate]<someSettings['volImpulse'] or\
+           (delDayRatio[startDate]<0 or\
+            (delDayRatio[startDate-1]-delDayRatio[startDate])>-someSettings['volImpulse']/2\
+           )\
+          ):
       startDate += 1
       
-    # print(startDate)
-    if(startDate<365): #only show info if the jump happened in the past year
-      for i in range(startDate,startDate-someSettings['periodLength'],-1):
-        print(dates[i]+" - "+str(round(volatility[i],2))+" - "+str(opens[i])+" - "+str(round(opens[i]-opens[i-1],2)))
-        
-      # plt.plot(volatility[startDate-someSettings['periodLength']:startDate][::-1]) #see what the volatility looks like after the jump - needs to be reversed because the original list is reverse (i.e. 0 is most recent)
-      
-      plt.subplot(211)
-      plt.plot([(closes[i]-opens[i])/opens[i] for i in range(startDate+1,startDate-someSettings['periodLength'],-1)], label=symb)
-      plt.title("(close-open)/open")
-      plt.legend(loc='right')
-      plt.subplot(212)
-      plt.plot(volatility[startDate-someSettings['periodLength']:startDate+1][::-1], label=symb)
-      plt.title("volatility")
-      plt.legend(loc='right')
-    
-  plt.show()
+    # this section is for experimenting and preliminary data analysis 
 
+    if(startDate<90): #only show info if the jump happened in the past year/few months
+      # for i in range(startDate,startDate-someSettings['periodLength'],-1):
+      #   print(dates[i]+" - "+str(round(volatility[i],2))+" - "+str(opens[i])+" - "+str(round(delDayRatio[i]-delDayRatio[i+1],2)))
+        
+      #symbols that show up in the graph/meet the conditions
+      winners[symb] = {"volatility":volatility[startDate],
+                       "startDelDayRatio":delDayRatio[startDate]-delDayRatio[startDate+1],
+                       "nextDelDayRatio":delDayRatio[startDate-1]-delDayRatio[startDate],
+                       "diff":(delDayRatio[startDate]-delDayRatio[startDate+1])-(delDayRatio[startDate-1]-delDayRatio[startDate])}
+      
+      plt.figure(1)    
+      plt.subplot(211)
+      plt.plot([delDayRatio[i]-delDayRatio[i+1] for i in range(startDate,startDate-someSettings['periodLength'],-1)], label=symb)
+      plt.title("today-yesterday delDayRatio ((close-open)/open)")
+      plt.legend(loc='right')
+      
+      plt.subplot(212)
+      plt.plot([volatility[i] for i in range(startDate,startDate-someSettings['periodLength'],-1)], label=symb)
+      plt.title("volatility ((high-low)/low)")
+      plt.legend(loc='right')
+            
 
   #start analysis and comparison here
   
+  print('\n\n')
+  for e in winners:
+    print(e+" - "+str(round(winners[e]['volatility'],2))+" - "+str(round(winners[e]['startDelDayRatio'],2))+" - "+str(round(winners[e]['nextDelDayRatio'],2)))
+  print('\n\n')
   
+  sortedSyms = sorted(list(winners.keys()), key=lambda k: float(winners[k]['diff']))[::-1]
+  print(sortedSyms)
+  plt.show()
+ 
   return sortedSyms
 
 

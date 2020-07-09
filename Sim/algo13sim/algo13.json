@@ -3,8 +3,5 @@
   "periodDateStart": "",
   "periodPortStart": "",
   "lastTradeDate": "",
-  "lastSellPrice": 0,
-  "sellDn": 10,
-  "triggerUp":5,
-  "sellUpDn":2
+  "volImpulse": 0.75
 }
