@@ -12,7 +12,7 @@ symb = 'XSPA'
 if(not os.path.isfile(symb+"-daily.csv")):
   url = 'https://www.alphavantage.co/query'
   params= {
-    'apikey' : '9G93AVR38ZCBIZMN', #my key to alpha vantage
+    'apikey' : '', #my key to alpha vantage
     'function' : 'TIME_SERIES_INTRADAY', #daily resolution (open, high, low, close, volume)
     'symbol' : symb, #ticker symbol
     'outputsize' : 'full', #up to 1 trade week of data
