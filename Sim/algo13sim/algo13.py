@@ -18,7 +18,8 @@ settingsFile.close()
 
 #get list of common penny stocks under $price and sorted by gainers (up) or losers (down)
 def getPennies(price=1,updown="up"):
-  url = 'https://stocksunder1.org/nasdaq-stocks-under-1/'
+  #another nasdaq only url: https://stocksunder1.org/nasdaq-stocks-under-1/
+  url = 'https://stocksunder1.org/nasdaq-penny-stocks/'
   html = requests.post(url, params={"price":price,"volume":0,"updown":updown}).content
   tableList = read_html(html)
   # print(tableList)
@@ -51,7 +52,7 @@ def simIt(symList):
   print("Getting stock data...")
   winners = {}
   for symb in symList:
-    # print(symb)
+    print(symb)
     if(not os.path.isfile(symb+".txt")):
       # url = 'https://www.alphavantage.co/query'
       url = apiKeys["ALPHAVANTAGEURL"]
@@ -106,7 +107,7 @@ def simIt(symList):
       
     # this section is for experimenting and preliminary data analysis 
 
-    if(startDate<90): #only show info if the jump happened in the past year/few months
+    if(startDate<60): #only show info if the jump happened in the past year/few months
       # for i in range(startDate,startDate-someSettings['periodLength'],-1):
       #   print(dates[i]+" - "+str(round(volatility[i],2))+" - "+str(opens[i])+" - "+str(round(delDayRatio[i]-delDayRatio[i+1],2)))
         
@@ -127,19 +128,12 @@ def simIt(symList):
       plt.title("volatility ((high-low)/low)")
       plt.legend(loc='right')
             
-
-  #start analysis and comparison here
-  
-  print('\n\n')
-  for e in winners:
-    print(e+" - "+str(round(winners[e]['volatility'],2))+" - "+str(round(winners[e]['startDelDayRatio'],2))+" - "+str(round(winners[e]['nextDelDayRatio'],2)))
-  print('\n\n')
-  
-  sortedSyms = sorted(list(winners.keys()), key=lambda k: float(winners[k]['diff']))[::-1]
-  print(sortedSyms)
   plt.show()
+  
+  #sort based on biggest drop from first to second date  
+  sortedSyms = sorted(list(winners.keys()), key=lambda k: float(winners[k]['diff']))[::-1]
  
   return sortedSyms
 
 
-simIt(getPennies())
+print(simIt(getPennies()))
