@@ -46,15 +46,14 @@ def sell(shares, price, bPow, equity):
 #function to sim the stocks and return the top 5
 def simIt(symList):
   '''
-  the idea is to look at what happens in the following days after a big jump
+  the idea is to look at what happens in the following days after a big jump and trade accordingly
   '''
   #generate data files for each stock
   print("Getting stock data...")
   winners = {}
   for symb in symList:
-    # print(symb)
+    print(symb)
     if(not os.path.isfile(symb+".txt")):
-      # url = 'https://www.alphavantage.co/query'
       url = apiKeys["ALPHAVANTAGEURL"]
       params= { # NOTE: the information is also available as CSV which would be more efficient
         'apikey' : apiKeys["ALPHAVANTAGEKEY"],
@@ -97,7 +96,7 @@ def simIt(symList):
     look only for positive daily changes
     the difference between today's (startDate-1) change and yesterdays must be sufficiently large (and negative) to constitute underdamped oscilation - at least 1/2 of original
     '''
-    while startDate<len(volatility)-1 and\
+    while startDate<len(volatility)-2 and\
           (volatility[startDate]<someSettings['volImpulse'] or\
            (delDayRatio[startDate]<0 or\
             (delDayRatio[startDate-1]-delDayRatio[startDate])>-someSettings['volImpulse']/2\
@@ -107,7 +106,7 @@ def simIt(symList):
       
     # this section is for experimenting and preliminary data analysis 
 
-    if(startDate<90): #only show info if the jump happened in the past year/few months
+    if(startDate<len(volatility)-2 and startDate<90): #only show info if the jump happened in the past year/few months (ignore if it reaches the end)
       # for i in range(startDate,startDate-someSettings['periodLength'],-1):
       #   print(dates[i]+" - "+str(round(volatility[i],2))+" - "+str(opens[i])+" - "+str(round(delDayRatio[i]-delDayRatio[i+1],2)))
         
@@ -117,17 +116,21 @@ def simIt(symList):
                        "nextDelDayRatio":delDayRatio[startDate-1]-delDayRatio[startDate],
                        "diff":(delDayRatio[startDate]-delDayRatio[startDate+1])-(delDayRatio[startDate-1]-delDayRatio[startDate])}
       
-      plt.figure(1)    
-      plt.subplot(211)
+      # plt.figure(1)
+      # plt.subplot(211)
+      # plt.plot([delDayRatio[i]-delDayRatio[i+1] for i in range(startDate,startDate-someSettings['periodLength'],-1)], label=symb)
+      # plt.title("today-yesterday delDayRatio ((close-open)/open)")
+      # plt.legend(loc='right')
+      # 
+      # plt.subplot(212)
+      # plt.plot([volatility[i] for i in range(startDate,startDate-someSettings['periodLength'],-1)], label=symb)
+      # plt.title("volatility ((high-low)/low)")
+      # plt.legend(loc='right')
+      
+      plt.figure(2)
       plt.plot([delDayRatio[i]-delDayRatio[i+1] for i in range(startDate,startDate-someSettings['periodLength'],-1)], label=symb)
       plt.title("today-yesterday delDayRatio ((close-open)/open)")
       plt.legend(loc='right')
-      
-      plt.subplot(212)
-      plt.plot([volatility[i] for i in range(startDate,startDate-someSettings['periodLength'],-1)], label=symb)
-      plt.title("volatility ((high-low)/low)")
-      plt.legend(loc='right')
-            
 
   #start analysis and comparison here
   
