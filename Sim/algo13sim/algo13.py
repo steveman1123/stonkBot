@@ -18,7 +18,8 @@ settingsFile.close()
 
 #get list of common penny stocks under $price and sorted by gainers (up) or losers (down)
 def getPennies(price=1,updown="up"):
-  url = 'https://stocksunder1.org/nasdaq-stocks-under-1/'
+  #another nasdaq only url: https://stocksunder1.org/nasdaq-stocks-under-1/
+  url = 'https://stocksunder1.org/nasdaq-penny-stocks/'
   html = requests.post(url, params={"price":price,"volume":0,"updown":updown}).content
   tableList = read_html(html)
   # print(tableList)
@@ -78,9 +79,9 @@ def simIt(symList):
     period = min(someSettings['periodLength'],len(dateData)-1) #how long for period
     
     dates = [e for e in dateData]
-    lows = [float(max(dateData[e]['3. low'], 0.0000001)) for e in dateData] #must not be 0 due to being a devisor
+    lows = [max(float(dateData[e]['3. low']),0.0000001) for e in dateData] #must not be 0 due to being a devisor
     highs = [float(dateData[e]['2. high']) for e in dateData]
-    opens = [float(max(dateData[e]['1. open'], 0.0000001) for e in dateData] #must not be 0 due to being a devisor
+    opens = [max(float(dateData[e]['1. open']),0.0000001) for e in dateData] #must not be 0 due to being a devisor
     closes = [float(dateData[e]['4. close']) for e in dateData]
     volumes = [float(dateData[e]['5. volume']) for e in dateData]
     volatility = [(highs[i]-lows[i])/(lows[i]) for i in range(len(lows))] #this isn't the real volatility measurement, but it's good enough for me - vol = 1 means price doubled, 0 = no change
