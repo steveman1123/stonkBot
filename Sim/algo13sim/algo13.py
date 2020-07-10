@@ -6,6 +6,7 @@ i.e. we know a major jump happened, what happens over the next week? (~5 trading
 import json, requests,os,time,re
 from pandas import read_html
 from matplotlib import pyplot as plt
+import datetime as dt
 
 keyFile = open("apikeys.key","r")
 apiKeys = json.loads(keyFile.read())
@@ -29,48 +30,65 @@ def getPennies(price=1,updown="up"):
 #  print(tableList[5][0:]['Symbol'])
   return symList
 
-#function to "buy" shares of stock
-def buy(shares, price, bPow, equity):
-  bPow = bPow - shares*price
-  equity = equity + shares*price
-  return [shares, bPow, equity, price]
+#gets a list of volatile stocks using criteria outlined here: https://stocksunder1.org/how-to-trade-penny-stocks/
+def getVolatile(lbound=0.8, ubound=5,minPercChange=30, minVol=8000000):
+  url = 'https://www.marketwatch.com/tools/stockresearch/screener/results.asp'
+  params = {"submit":"Screen",
+            "Symbol":"true",
+            "ChangePct":"true",
+            "CompanyName":"false",
+            "Volume":"true",
+            "Price":"true",
+            "Change":"true",
+            "SortyBy":"Symbol",
+            "SortDirection":"Ascending",
+            "ResultsPerPage":"OneHundred",
+            "TradesShareEnable":"true",
+            "TradesShareMin":str(lbound),
+            "TradesShareMax":str(ubound),
+            "PriceDirEnable":"true",
+            "PriceDir":"Up",
+            "PriceDirPct":str(minPercChange),
+            "TradeVolEnable":"true",
+            "TradeVolMin":str(minVol),
+            "TradeVolMax":"",
+            "Exchange":"NASDAQ",
+            "IndustryEnable":"false",
+            "MoreInfo":"false"}
+  html = requests.post(url, params=params).content
+  tableList = read_html(html)
+  symList = tableList[0]['Symbol'].tolist()
+  return symList
 
-#function to "sell" shares of stock
-def sell(shares, price, bPow, equity):
-  bPow = bPow + shares*price
-  equity = equity - shares*price
-  shares = 0
-  return [shares, bPow, equity, price]
 
-
-#function to sim the stocks and return the top 5
-def simIt(symList):
+#function to sim stocks that have already peaked and return the good ones
+def simPast(symList):
   '''
   the idea is to look at what happens in the following days after a big jump and trade accordingly
   '''
   #generate data files for each stock
   print("Getting stock data...")
   winners = {}
-  for symb in symList:
-    print(symb)
-    if(not os.path.isfile(symb+".txt")):
+  for i,symb in enumerate(symList):
+    print("("+str(i+1)+"/"+str(len(symList))+") "+symb)
+    if(not os.path.isfile(someSettings['pastStockPath']+symb+".txt")):
       url = apiKeys["ALPHAVANTAGEURL"]
       params= { # NOTE: the information is also available as CSV which would be more efficient
         'apikey' : apiKeys["ALPHAVANTAGEKEY"],
         'function' : 'TIME_SERIES_DAILY', #daily resolution (open, high, low, close, volume)
         'symbol' : symb, #ticker symbol
-        'outputsize' : 'full' #upt to 20yrs of data
+        'outputsize' : 'full' #up to 20yrs of data
       }
       response = requests.request('GET', url, params=params).text #send request and store response
       time.sleep(19) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
   
-      out = open(symb+'.txt','w') #write to file for later usage
+      out = open(someSettings['pastStockPath']+symb+'.txt','w') #write to file for later usage
       out.write(response)
       out.close()
       
     
     #gather info about single stock
-    stonkFile = open(symb+'.txt','r') #open the file containing stonk data
+    stonkFile = open(someSettings['pastStockPath']+symb+'.txt','r') #open the file containing stonk data
     stonkData = json.loads(stonkFile.read()) #read in as json data
     stonkFile.close()
   
@@ -84,7 +102,7 @@ def simIt(symList):
     closes = [float(dateData[e]['4. close']) for e in dateData]
     volumes = [float(dateData[e]['5. volume']) for e in dateData]
     volatility = [(highs[i]-lows[i])/(lows[i]) for i in range(len(lows))] #this isn't the real volatility measurement, but it's good enough for me - vol = 1 means price doubled, 0 = no change
-    delDayRatio = [(closes[i]-opens[i])/(opens[i]) for i in range(len(opens))] #this is the change over the day normalized to the opening price
+    delDayRatio = [(closes[i]-opens[i])/(closes[i+1]) for i in range(len(closes)-1)] #this is the change over the day normalized to the opening price
     
     #start sim here
     
@@ -98,17 +116,17 @@ def simIt(symList):
     '''
     while startDate<len(volatility)-2 and\
           (volatility[startDate]<someSettings['volImpulse'] or\
-           (delDayRatio[startDate]<0 or\
-            (delDayRatio[startDate-1]-delDayRatio[startDate])>-someSettings['volImpulse']/2\
+           (delDayRatio[startDate]<.25 or\
+            (delDayRatio[startDate-1]-delDayRatio[startDate])>-.75\
            )\
           ):
       startDate += 1
       
-    # this section is for experimenting and preliminary data analysis 
-
-    if(startDate<len(volatility)-2 and startDate<90): #only show info if the jump happened in the past year/few months (ignore if it reaches the end)
-      # for i in range(startDate,startDate-someSettings['periodLength'],-1):
-      #   print(dates[i]+" - "+str(round(volatility[i],2))+" - "+str(opens[i])+" - "+str(round(delDayRatio[i]-delDayRatio[i+1],2)))
+    # start data analysis here
+    
+    if(startDate<len(volatility)-2 and startDate<90 and closes[startDate-1]>closes[startDate]): #only show info if the jump happened in the past year/few months (ignore if it reaches the end)
+      for i in range(startDate,startDate-someSettings['periodLength'],-1):
+        print(dates[i]+" - "+str(round(volatility[i],2))+" - "+str(opens[i])+" - "+str(round(delDayRatio[i]-delDayRatio[i+1],2)))
         
       #symbols that show up in the graph/meet the conditions
       winners[symb] = {"volatility":volatility[startDate],
@@ -128,22 +146,29 @@ def simIt(symList):
       # plt.legend(loc='right')
       
       plt.figure(2)
-      plt.plot([delDayRatio[i]-delDayRatio[i+1] for i in range(startDate,startDate-someSettings['periodLength'],-1)], label=symb)
-      plt.title("today-yesterday delDayRatio ((close-open)/open)")
+      # plt.plot([delDayRatio[i]-delDayRatio[i+1] for i in range(startDate,startDate-someSettings['periodLength'],-1)], label=symb)
+      plt.plot([closes[i]/closes[startDate] for i in range(startDate+80, startDate-someSettings['periodLength'],-1)], label=symb)
+      # plt.title("today-yesterday delDayRatio ((close-open)/close-1)")
       plt.legend(loc='right')
 
-  #start analysis and comparison here
-  
-  print('\n\n')
-  for e in winners:
-    print(e+" - "+str(round(winners[e]['volatility'],2))+" - "+str(round(winners[e]['startDelDayRatio'],2))+" - "+str(round(winners[e]['nextDelDayRatio'],2)))
-  print('\n\n')
+  # print('\n\n')
   
   sortedSyms = sorted(list(winners.keys()), key=lambda k: float(winners[k]['diff']))[::-1]
-  print(sortedSyms)
+  # print(sortedSyms)
   plt.show()
  
   return sortedSyms
 
 
-simIt(getPennies())
+#function to keep track of info of stocks (the volatility, day change, price, etc)
+def presentList(symList):
+  # for symb in symList:
+    #TODO: check date, market last open date, etc - how many trading days since initial bump
+    
+    
+    # f = open(symb+"--"+str(dt.date.today())+".txt","w")
+    # f.write(
+  return 0
+
+# print(simPast(getPennies()))
+print(getVolatile())
