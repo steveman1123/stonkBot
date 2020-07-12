@@ -8,7 +8,7 @@ from pandas import read_html
 from matplotlib import pyplot as plt
 import datetime as dt
 
-keyFile = open("apikeys.key","r")
+keyFile = open("../apikeys.key","r")
 apiKeys = json.loads(keyFile.read())
 keyFile.close()
 
@@ -19,8 +19,8 @@ settingsFile.close()
 
 #get list of common penny stocks under $price and sorted by gainers (up) or losers (down)
 def getPennies(price=1,updown="up"):
-  #another nasdaq only url: https://stocksunder1.org/nasdaq-stocks-under-1/
   url = 'https://stocksunder1.org/nasdaq-penny-stocks/'
+  # url = 'https://stocksunder1.org/nasdaq-stocks-under-1/' #alt url that can be used
   html = requests.post(url, params={"price":price,"volume":0,"updown":updown}).content
   tableList = read_html(html)
   # print(tableList)
@@ -39,7 +39,7 @@ def getVolatile(lbound=0.8, ubound=5,minPercChange=30, minVol=8000000):
             "CompanyName":"false",
             "Volume":"true",
             "Price":"true",
-            "Change":"true",
+            "Change":"false",
             "SortyBy":"Symbol",
             "SortDirection":"Ascending",
             "ResultsPerPage":"OneHundred",
@@ -57,7 +57,7 @@ def getVolatile(lbound=0.8, ubound=5,minPercChange=30, minVol=8000000):
             "MoreInfo":"false"}
   html = requests.post(url, params=params).content
   tableList = read_html(html)
-  symList = tableList[0]['Symbol'].tolist()
+  symList = tableList[0].transpose().to_dict() #transpose for organization, dictionary to have all wanted data
   return symList
 
 
@@ -160,15 +160,142 @@ def simPast(symList):
   return sortedSyms
 
 
-#function to keep track of info of stocks (the volatility, day change, price, etc)
+# return if a stock should be put on a watchlist
+# https://stocksunder1.org/how-to-trade-penny-stocks/
 def presentList(symList):
-  # for symb in symList:
-    #TODO: check date, market last open date, etc - how many trading days since initial bump
+  validBuys = {}
+  #TODO: check date, market last open date, etc - how many trading days since initial bump
+  for i,symb in enumerate(symList):
+    print("("+str(i+1)+"/"+str(len(symList))+") "+symb)
+    if(not os.path.isfile(someSettings['presentStockPath']+symb+".txt")):
+      url = apiKeys["ALPHAVANTAGEURL"]
+      params= { # NOTE: the information is also available as CSV which would be more efficient
+        'apikey' : apiKeys["ALPHAVANTAGEKEY"],
+        'function' : 'TIME_SERIES_DAILY', #daily resolution (open, high, low, close, volume)
+        'symbol' : symb, #ticker symbol
+        'outputsize' : 'full' #up to 20yrs of data
+      }
+      response = requests.request('GET', url, params=params).text #send request and store response
+      if(len(symList)>=5):
+        time.sleep(19) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
+  
+      out = open(someSettings['presentStockPath']+symb+'.txt','w') #write to file for later usage
+      out.write(response)
+      out.close()
+    
+    #calc price % diff over past 20 days (current price/price of day n) - current must be >= 80% for any
+    #calc volume % diff over average past some days (~60 days?) - must be sufficiently higher (~300% higher?)
+    #TODO: clean up the indexing in here - this looks gross and I think it can be improved
+    dateData = json.loads(open(someSettings['presentStockPath']+symb+".txt","r").read()) #dictionary of all data returned from AV
+    dateData = dateData[list(dateData)[1]] #dict without the metadata - just the date data
+    
+    volAvgDays = min(60,len(list(dateData))) #arbitrary number to avg volumes over
+    checkPriceDays = 20 #check if the price jumped substantially over the last __ days
+    checkPriceAmt = 1.7 #check if the price jumped by this amount in the above days (% - i.e 1.5 = 150%)
+    volGain = 3 #check if the volume increased by this amout (i.e. 3 = 300% or 3x)
+    
+    avgVol = sum([int(dateData[list(dateData)[i]]['5. volume']) for i in range(volAvgDays)])/volAvgDays #avg of volumes over a few days
+    
+    lastVol = int(dateData[list(dateData)[0]]['5. volume']) #the latest volume
+    lastPrice = float(dateData[list(dateData)[0]]['2. high']) #the latest highest price
+
+    validBuys[symb] = "Do Not Watch"
+    if(lastVol/avgVol>volGain): #much larger than normal volume
+      dayPrice = lastPrice
+      i = 1
+      while(i<=checkPriceDays and lastPrice/dayPrice<checkPriceAmt): #
+        dayPrice = float(dateData[list(dateData)[i]]['2. high'])
+        # print(str(i)+" - "+str(lastPrice/dayPrice))
+        i += 1
+      if(lastPrice/dayPrice>=checkPriceAmt):
+        validBuys[symb] = "Watch"
+    
+      
     
     
-    # f = open(symb+"--"+str(dt.date.today())+".txt","w")
+    #save ?
+    # f = open(someSettings['presentStockPath']+symb+"--"+str(dt.date.today())+".txt","w")
     # f.write(
-  return 0
+  return validBuys #return a dict of whether a stock is a valid purchase or not
+
+#basically do what presentList is doing, but look at past data like in simPast
+def simPast2(symList):
+  validBuys = {}
+  #TODO: check date, market last open date, etc - how many trading days since initial bump
+  for i,symb in enumerate(symList):
+    print("("+str(i+1)+"/"+str(len(symList))+") "+symb)
+    if(os.path.isfile(someSettings['presentStockPath']+symb+".txt")): #if a file exists
+      dateData = json.loads(open(someSettings['presentStockPath']+symb+".txt","r").read()) #read it
+      
+      if(dt.datetime.fromtimestamp(os.stat(someSettings['presentStockPath']+symb+".txt").st_mtime).date()<dt.datetime.today()): #if the last time it was pulled was more a day ago
+        os.remove(someSettings['presentStockPath']+symb+".txt") #delete it
+      
+        
+    if(not os.path.isfile(someSettings['presentStockPath']+symb+".txt")): #if the file doesn't exist
+      url = apiKeys["ALPHAVANTAGEURL"]
+      params= { # NOTE: the information is also available as CSV which would be more efficient
+        'apikey' : apiKeys["ALPHAVANTAGEKEY"],
+        'function' : 'TIME_SERIES_DAILY', #daily resolution (open, high, low, close, volume)
+        'symbol' : symb, #ticker symbol
+        'outputsize' : 'full' #up to 20yrs of data
+      }
+      response = requests.request('GET', url, params=params).text #send request and store response
+      
+      out = open(someSettings['presentStockPath']+symb+'.txt','w') #write to file for later usage
+      out.write(response)
+      out.close()
+    
+      if(len(symList)>=5):
+        time.sleep(19) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
+  
+    #calc price % diff over past 20 days (current price/price of day n) - current must be >= 80% for any
+    #calc volume % diff over average past some days (~60 days?) - must be sufficiently higher (~300% higher?)
+    #TODO: clean up the indexing in here - this looks gross and I think it can be improved
+    dateData = json.loads(open(someSettings['presentStockPath']+symb+".txt","r").read()) #dictionary of all data returned from AV
+    dateData = dateData[list(dateData)[1]] #dict without the metadata - just the date data
+    
+    days2wait4fall = 2 #wait for stock price to fall for this many days
+    startDate = days2wait4fall+1 #add 1 to account for the jump day itself
+    days2look = 20 #look back this far for a jump
+    while(float(dateData[list(dateData)[startDate]]['4. close'])/float(dateData[list(dateData)[startDate+1]]['4. close'])<1.3 and startDate<min(days2look,len(dateData)-2)):
+      startDate += 1
+      # if(symb=="WTER"):
+      # print(float(dateData[list(dateData)[startDate]]['4. close'])/float(dateData[list(dateData)[startDate+1]]['4. close']))
+    
+    if(float(dateData[list(dateData)[startDate]]['4. close'])/float(dateData[list(dateData)[startDate+1]]['4. close'])>=1.3):
+      volAvgDays = min(60,len(list(dateData))) #arbitrary number to avg volumes over
+      checkPriceDays = 20 #check if the price jumped substantially over the last __ days
+      checkPriceAmt = 1.7 #check if the price jumped by this amount in the above days (% - i.e 1.5 = 150%)
+      volGain = 3 #check if the volume increased by this amout (i.e. 3 = 300% or 3x, 0.5 = 50% or 0.5x)
+      volLoss = .5 #check if the volume decreases by this amount
+      priceDrop = .4 #price should drop this far when the volume drops
+      
+      avgVol = sum([int(dateData[list(dateData)[i]]['5. volume']) for i in range(startDate,min(startDate+volAvgDays,len(dateData)))])/volAvgDays #avg of volumes over a few days
+      
+      lastVol = int(dateData[list(dateData)[startDate]]['5. volume']) #the latest volume
+      lastPrice = float(dateData[list(dateData)[startDate]]['2. high']) #the latest highest price
+  
+      if(lastVol/avgVol>volGain): #much larger than normal volume
+        #if the next day's price has fallen significantly and the volume has also fallen
+        if(float(dateData[list(dateData)[startDate-days2wait4fall]]['2. high'])/lastPrice-1<priceDrop and int(dateData[list(dateData)[startDate-days2wait4fall]]['5. volume'])<=lastVol*volLoss):
+          dayPrice = lastPrice
+          i = 1
+          # check within the the last few days, check the price has risen, and we're within the valid timeframe
+          while(i<=checkPriceDays and lastPrice/dayPrice<checkPriceAmt and startDate+i<len(dateData)):
+            dayPrice = float(dateData[list(dateData)[startDate+i]]['2. high'])
+            # print(str(i)+" - "+str(lastPrice/dayPrice))
+            i += 1
+          if(lastPrice/dayPrice>=checkPriceAmt):
+            validBuys[symb] = list(dateData)[startDate]
+    
+  return validBuys #return a dict of whether a stock is a valid purchase or not
+
 
 # print(simPast(getPennies()))
-print(getVolatile())
+# v = getVolatile()
+# print(presentList([v[e]['Symbol'] for e in v]))
+watch = simPast2(getPennies())
+print(watch)
+# for e in watch:
+  # if(watch[e]=="Watch"):
+  # print(e+" - "+watch[e])
