@@ -15,8 +15,12 @@ The apikeys file has the actual keys removed for the REST APIs - if you want to 
 
 
 ## External Resources
-alpaca.markets
-alphavantage.com
-stocksunder1.org
-api.nasdaq.com/api/quote/{}/info?assetclass=stocks
-marketwatch.com/tools/stockresearch/screener/results.asp
+[Alpaca](https://alpaca.markets/)
+
+[AlphaVantage](https://alphavantage.com/)
+
+[Stocks Under $1](https://stocksunder1.org/)
+
+[NASDAQ API](https://api.nasdaq.com/api/quote/MSFT/info?assetclass=stocks)
+
+[MarketWatch Stock Screener](https://www.marketwatch.com/tools/stockresearch/screener/)
