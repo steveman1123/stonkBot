@@ -1,7 +1,5 @@
 {
   "periodLength": 10,
-  "pastStockPath": "./pastStock/",
-  "presentStockPath":"./presentStock/",
   "volImpulse": 0.75,
   "minPrice":0.8,
   "maxPrice":5

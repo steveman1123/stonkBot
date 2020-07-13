@@ -8,13 +8,20 @@ from pandas import read_html
 from matplotlib import pyplot as plt
 import datetime as dt
 
-keyFile = open("../apikeys.key","r")
-apiKeys = json.loads(keyFile.read())
-keyFile.close()
+apiKeys = {}
+someSettings = {}
+stockDir = ''
 
-settingsFile = open("algo13.json","r")
-someSettings = json.loads(settingsFile.read())
-settingsFile.close()
+def init(keyFilePath, settingsFilePath, stockDataDir):
+  global apiKeys, someSettings, stockDir
+  keyFile = open(keyFilePath,"r")
+  apiKeys = json.loads(keyFile.read())
+  keyFile.close()
+  
+  settingsFile = open(settingsFilePath,"r")
+  someSettings = json.loads(settingsFile.read())
+  settingsFile.close()
+  stockDir = stockDataDir
 
 
 #get list of common penny stocks under $price and sorted by gainers (up) or losers (down)
@@ -66,12 +73,15 @@ def simPast(symList):
   '''
   the idea is to look at what happens in the following days after a big jump and trade accordingly
   '''
+  global apiKeys
+  global someSettings
+  
   #generate data files for each stock
   print("Getting stock data...")
   winners = {}
   for i,symb in enumerate(symList):
     print("("+str(i+1)+"/"+str(len(symList))+") "+symb)
-    if(not os.path.isfile(someSettings['pastStockPath']+symb+".txt")):
+    if(not os.path.isfile(stockDir+symb+".txt")):
       url = apiKeys["ALPHAVANTAGEURL"]
       params= { # NOTE: the information is also available as CSV which would be more efficient
         'apikey' : apiKeys["ALPHAVANTAGEKEY"],
@@ -82,13 +92,13 @@ def simPast(symList):
       response = requests.request('GET', url, params=params).text #send request and store response
       time.sleep(19) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
   
-      out = open(someSettings['pastStockPath']+symb+'.txt','w') #write to file for later usage
+      out = open(stockDir+symb+'.txt','w') #write to file for later usage
       out.write(response)
       out.close()
       
     
     #gather info about single stock
-    stonkFile = open(someSettings['pastStockPath']+symb+'.txt','r') #open the file containing stonk data
+    stonkFile = open(stockDir+symb+'.txt','r') #open the file containing stonk data
     stonkData = json.loads(stonkFile.read()) #read in as json data
     stonkFile.close()
   
@@ -163,11 +173,13 @@ def simPast(symList):
 # return if a stock should be put on a watchlist
 # https://stocksunder1.org/how-to-trade-penny-stocks/
 def presentList(symList):
+  global apiKeys
+  global someSettings
   validBuys = {}
   #TODO: check date, market last open date, etc - how many trading days since initial bump
   for i,symb in enumerate(symList):
     print("("+str(i+1)+"/"+str(len(symList))+") "+symb)
-    if(not os.path.isfile(someSettings['presentStockPath']+symb+".txt")):
+    if(not os.path.isfile(stockDir+symb+".txt")):
       url = apiKeys["ALPHAVANTAGEURL"]
       params= { # NOTE: the information is also available as CSV which would be more efficient
         'apikey' : apiKeys["ALPHAVANTAGEKEY"],
@@ -179,14 +191,14 @@ def presentList(symList):
       if(len(symList)>=5):
         time.sleep(19) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
   
-      out = open(someSettings['presentStockPath']+symb+'.txt','w') #write to file for later usage
+      out = open(stockDir+symb+'.txt','w') #write to file for later usage
       out.write(response)
       out.close()
     
     #calc price % diff over past 20 days (current price/price of day n) - current must be >= 80% for any
     #calc volume % diff over average past some days (~60 days?) - must be sufficiently higher (~300% higher?)
     #TODO: clean up the indexing in here - this looks gross and I think it can be improved
-    dateData = json.loads(open(someSettings['presentStockPath']+symb+".txt","r").read()) #dictionary of all data returned from AV
+    dateData = json.loads(open(stockDir+symb+".txt","r").read()) #dictionary of all data returned from AV
     dateData = dateData[list(dateData)[1]] #dict without the metadata - just the date data
     
     volAvgDays = min(60,len(list(dateData))) #arbitrary number to avg volumes over
@@ -214,24 +226,26 @@ def presentList(symList):
     
     
     #save ?
-    # f = open(someSettings['presentStockPath']+symb+"--"+str(dt.date.today())+".txt","w")
+    # f = open(stockDir+symb+"--"+str(dt.date.today())+".txt","w")
     # f.write(
   return validBuys #return a dict of whether a stock is a valid purchase or not
 
-#basically do what presentList is doing, but look at past data like in simPast
-def simPast2(symList):
+#basically do what presentList is doing, but like, better...
+def getGainers(symList):
+  global apiKeys
+  global someSettings
   validBuys = {}
   #TODO: check date, market last open date, etc - how many trading days since initial bump
   for i,symb in enumerate(symList):
     print("("+str(i+1)+"/"+str(len(symList))+") "+symb)
-    if(os.path.isfile(someSettings['presentStockPath']+symb+".txt")): #if a file exists
-      dateData = json.loads(open(someSettings['presentStockPath']+symb+".txt","r").read()) #read it
+    if(os.path.isfile(stockDir+symb+".txt")): #if a file exists
+      dateData = json.loads(open(stockDir+symb+".txt","r").read()) #read it
       
-      if(dt.datetime.fromtimestamp(os.stat(someSettings['presentStockPath']+symb+".txt").st_mtime).date()<dt.date.today()): #if the last time it was pulled was more a day ago
-        os.remove(someSettings['presentStockPath']+symb+".txt") #delete it
+      if(dt.datetime.fromtimestamp(os.stat(stockDir+symb+".txt").st_mtime).date()<dt.date.today()): #if the last time it was pulled was more a day ago
+        os.remove(stockDir+symb+".txt") #delete it
       
         
-    if(not os.path.isfile(someSettings['presentStockPath']+symb+".txt")): #if the file doesn't exist
+    if(not os.path.isfile(stockDir+symb+".txt")): #if the file doesn't exist
       url = apiKeys["ALPHAVANTAGEURL"]
       params= { # NOTE: the information is also available as CSV which would be more efficient
         'apikey' : apiKeys["ALPHAVANTAGEKEY"],
@@ -241,7 +255,7 @@ def simPast2(symList):
       }
       response = requests.request('GET', url, params=params).text #send request and store response
       
-      out = open(someSettings['presentStockPath']+symb+'.txt','w') #write to file for later usage
+      out = open(stockDir+symb+'.txt','w') #write to file for later usage
       out.write(response)
       out.close()
     
@@ -251,7 +265,7 @@ def simPast2(symList):
     #calc price % diff over past 20 days (current price/price of day n) - current must be >= 80% for any
     #calc volume % diff over average past some days (~60 days?) - must be sufficiently higher (~300% higher?)
     #TODO: clean up the indexing in here - this looks gross and I think it can be improved
-    dateData = json.loads(open(someSettings['presentStockPath']+symb+".txt","r").read()) #dictionary of all data returned from AV
+    dateData = json.loads(open(stockDir+symb+".txt","r").read()) #dictionary of all data returned from AV
     dateData = dateData[list(dateData)[1]] #dict without the metadata - just the date data
     
     days2wait4fall = 3 #wait for stock price to fall for this many days
@@ -303,16 +317,5 @@ def simPast2(symList):
             if(not missedJump):
               validBuys[symb] = list(dateData)[startDate]
           
-
   return validBuys #return a dict of whether a stock is a valid purchase or not
 
-
-# print(simPast(getPennies()))
-# v = getVolatile()
-# print(presentList([v[e]['Symbol'] for e in v]))
-watch = simPast2(getPennies())
-print("\n"+str(len(watch))+" potential gainers")
-print(json.dumps(watch,indent=2))
-# for e in watch:
-  # if(watch[e]=="Watch"):
-  # print(e+" - "+watch[e])

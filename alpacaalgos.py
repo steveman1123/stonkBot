@@ -1,7 +1,9 @@
 import alpacafxns as a
-import time, random, sys
+import time, random, sys, json
 from datetime import date
 from workdays import networkdays as nwd
+sys.path.append('./Sim/algo13sim')
+import algo13 as a13
 # import alpaca_trade_api as tradeapi
 
 
@@ -753,9 +755,12 @@ def algo12():
           sellAll
     '''
 
-#gurl what the fxns do
+
+
+#gurl what the fxn do
 def algo13():
-	'''
+  a13.init('./Sim/apikeys.key','./Sim/algo13sim/algo13.json', '../stockData/') #init settings and API keys, and stock data directory
+  '''
   doesn't bother with portfolio value
   
   runs a simulation
@@ -766,4 +771,6 @@ def algo13():
   if it goes down a certain amount, sell (avoid major risk)
   sell all at end of period
   '''
+  gainers = a13.getGainers(a13.getPennies())
+  print(json.dumps(gainers,indent=2))
   
