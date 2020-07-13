@@ -759,7 +759,7 @@ def algo12():
 
 #gurl what the fxn do
 def algo13():
-  a13.init('./Sim/apikeys.key','./Sim/algo13sim/algo13.json', '../stockData/') #init settings and API keys, and stock data directory
+  a13.init('../stockStuff/apikeys.key','./Sim/algo13sim/algo13.json', '../stockStuff/stockData/') #init settings and API keys, and stock data directory
   '''
   doesn't bother with portfolio value
   

@@ -6,7 +6,7 @@ from datetime import timedelta
 
 isPaper = 0 #set up as paper trading (testing), or actual trading
 
-keyFile = open("apikeys.key","r")
+keyFile = open("../stockStuff/apikeys.key","r")
 apiKeys = json.loads(keyFile.read())
 keyFile.close()
 
