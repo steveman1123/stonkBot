@@ -108,7 +108,7 @@ def getOrders():
   return json.loads(html)
 
 
-def createOrder(side, qty, sym, orderType, time_in_force):
+def createOrder(side, qty, sym, orderType="market", time_in_force="day"):
   order = {
     "symbol":sym,
     "qty":qty,
