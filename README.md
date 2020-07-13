@@ -19,7 +19,7 @@ The apikeys file has the actual keys removed for the REST APIs - if you want to 
 
 [AlphaVantage](https://alphavantage.com/)
 
-[StockUnder1](https://stocksunder1.org/)
+[Stocks Under $1](https://stocksunder1.org/)
 
 [NASDAQ API](https://api.nasdaq.com/api/quote/MSFT/info?assetclass=stocks)
 
