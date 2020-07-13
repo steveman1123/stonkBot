@@ -254,10 +254,12 @@ def simPast2(symList):
     dateData = json.loads(open(someSettings['presentStockPath']+symb+".txt","r").read()) #dictionary of all data returned from AV
     dateData = dateData[list(dateData)[1]] #dict without the metadata - just the date data
     
-    days2wait4fall = 2 #wait for stock price to fall for this many days
+    days2wait4fall = 3 #wait for stock price to fall for this many days
     startDate = days2wait4fall+1 #add 1 to account for the jump day itself
     days2look = 25 #look back this far for a jump
     firstJumpAmt = 1.3 #stock first must jump by this amount (1.3=130% over 1 day)
+    sellUp = 1.25 #% to sell up at
+    sellDn = 0.5 #% to sell dn at
     
     while(float(dateData[list(dateData)[startDate]]['4. close'])/float(dateData[list(dateData)[startDate+1]]['4. close'])<firstJumpAmt and startDate<min(days2look,len(dateData)-2)):
       startDate += 1
@@ -291,14 +293,15 @@ def simPast2(symList):
           
           if(lastPrice/dayPrice>=checkPriceAmt):
             #the price jumped compared to both the previous day and to the past few days, the volume gained, and the price and the volume both fell
-            
+              
             #check to see if we missed the next jump (where we want to strike)
+            missedJump = False
             for e in range(0,startDate):
               diff = float(dateData[list(dateData)[e]]['4. close'])/float(dateData[list(dateData)[e+1]]['4. close'])
-              if(diff>1.1):
-                print(str(list(dateData)[e])+" - "+str(round(diff,2)))
-            
-            validBuys[symb] = list(dateData)[startDate]
+              if(diff>=sellUp):
+                missedJump = True
+            if(not missedJump):
+              validBuys[symb] = list(dateData)[startDate]
           
 
   return validBuys #return a dict of whether a stock is a valid purchase or not
@@ -308,7 +311,8 @@ def simPast2(symList):
 # v = getVolatile()
 # print(presentList([v[e]['Symbol'] for e in v]))
 watch = simPast2(getPennies())
-print(watch)
+print("\n"+str(len(watch))+" potential gainers")
+print(json.dumps(watch,indent=2))
 # for e in watch:
   # if(watch[e]=="Watch"):
   # print(e+" - "+watch[e])
