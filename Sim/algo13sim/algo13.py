@@ -227,7 +227,7 @@ def simPast2(symList):
     if(os.path.isfile(someSettings['presentStockPath']+symb+".txt")): #if a file exists
       dateData = json.loads(open(someSettings['presentStockPath']+symb+".txt","r").read()) #read it
       
-      if(dt.datetime.fromtimestamp(os.stat(someSettings['presentStockPath']+symb+".txt").st_mtime).date()<dt.datetime.today()): #if the last time it was pulled was more a day ago
+      if(dt.datetime.fromtimestamp(os.stat(someSettings['presentStockPath']+symb+".txt").st_mtime).date()<dt.date.today()): #if the last time it was pulled was more a day ago
         os.remove(someSettings['presentStockPath']+symb+".txt") #delete it
       
         
@@ -256,13 +256,15 @@ def simPast2(symList):
     
     days2wait4fall = 2 #wait for stock price to fall for this many days
     startDate = days2wait4fall+1 #add 1 to account for the jump day itself
-    days2look = 20 #look back this far for a jump
-    while(float(dateData[list(dateData)[startDate]]['4. close'])/float(dateData[list(dateData)[startDate+1]]['4. close'])<1.3 and startDate<min(days2look,len(dateData)-2)):
-      startDate += 1
-      # if(symb=="WTER"):
-      # print(float(dateData[list(dateData)[startDate]]['4. close'])/float(dateData[list(dateData)[startDate+1]]['4. close']))
+    days2look = 25 #look back this far for a jump
+    firstJumpAmt = 1.3 #stock first must jump by this amount (1.3=130% over 1 day)
     
-    if(float(dateData[list(dateData)[startDate]]['4. close'])/float(dateData[list(dateData)[startDate+1]]['4. close'])>=1.3):
+    while(float(dateData[list(dateData)[startDate]]['4. close'])/float(dateData[list(dateData)[startDate+1]]['4. close'])<firstJumpAmt and startDate<min(days2look,len(dateData)-2)):
+      startDate += 1
+    #we know the date of the initial jump (startDate)
+    
+    if(float(dateData[list(dateData)[startDate]]['4. close'])/float(dateData[list(dateData)[startDate+1]]['4. close'])>=firstJumpAmt):
+      #make sure that the jump happened in the time frame rather than too long ago
       volAvgDays = min(60,len(list(dateData))) #arbitrary number to avg volumes over
       checkPriceDays = 20 #check if the price jumped substantially over the last __ days
       checkPriceAmt = 1.7 #check if the price jumped by this amount in the above days (% - i.e 1.5 = 150%)
@@ -276,18 +278,29 @@ def simPast2(symList):
       lastPrice = float(dateData[list(dateData)[startDate]]['2. high']) #the latest highest price
   
       if(lastVol/avgVol>volGain): #much larger than normal volume
+        #volume had to have gained
         #if the next day's price has fallen significantly and the volume has also fallen
         if(float(dateData[list(dateData)[startDate-days2wait4fall]]['2. high'])/lastPrice-1<priceDrop and int(dateData[list(dateData)[startDate-days2wait4fall]]['5. volume'])<=lastVol*volLoss):
+          #the jump happened, the volume gained, the next day's price and volumes have fallen
           dayPrice = lastPrice
-          i = 1
-          # check within the the last few days, check the price has risen, and we're within the valid timeframe
+          i = 1 #magic number?
+          # check within the the last few days, check the price has risen compared to the past some days, and we're within the valid timeframe
           while(i<=checkPriceDays and lastPrice/dayPrice<checkPriceAmt and startDate+i<len(dateData)):
             dayPrice = float(dateData[list(dateData)[startDate+i]]['2. high'])
-            # print(str(i)+" - "+str(lastPrice/dayPrice))
             i += 1
+          
           if(lastPrice/dayPrice>=checkPriceAmt):
+            #the price jumped compared to both the previous day and to the past few days, the volume gained, and the price and the volume both fell
+            
+            #check to see if we missed the next jump (where we want to strike)
+            for e in range(0,startDate):
+              diff = float(dateData[list(dateData)[e]]['4. close'])/float(dateData[list(dateData)[e+1]]['4. close'])
+              if(diff>1.1):
+                print(str(list(dateData)[e])+" - "+str(round(diff,2)))
+            
             validBuys[symb] = list(dateData)[startDate]
-    
+          
+
   return validBuys #return a dict of whether a stock is a valid purchase or not
 
 
