@@ -781,21 +781,45 @@ def algo13():
   lowCash = 10 #enter low cash mode if portfolio reaches under this amount
   lowBuy = 5 #buy this many unique stocks if in low cash mode
 
+  sellUp = 1+.25 #trigger point. Additional logic to see if it goes higher
+  sellDn = 1-.4 #limit loss
+  sellUpDn = 1-.02 #sell 
+
+
   while float(a.getAcct()['portfolio_value'])>minPortVal:
     acct = a.getAcct()
     portVal = float(acct[portfolio_value'])
     cash = float(acct['cash'])
-    print("Portfolio val is $"+str(portVal)+". Minimum balance to hold is $"+str(minPortVal))
+    print("Portfolio val is $"+str(portVal)+". Minimum value to hold is $"+str(minPortVal))
     if(cash>reducedCash): #in normal operating mode
       print("Normal Operation Mode. Available Cash: $"+str(cash))
+      #div cash over all gainers
     else:
       if(cash>lowCash): #in reduced cash mode
        print("Reduced Cash Mode. Available Cash: $"+str(cash))
+       #div cash over $reducedBuy stocks
       else:
         if(cash>minPortVal): #in low cash mode
           print("Low Cash Mode. Available Cash: $"+str(cash))
+          #div cash over $lowBuy cheapest stocks in list
         else:
           if(portVal<=minPortVal): #bottom out mode
+            a.sellAll(0)
             print("Bottom Out Mode. Available Cash: $"+str(cash))
+            break
           else: #low cash but high portfolio means all is invested
             print("Purchased as much as possible. Cash remaining: $"+str(cash))
+
+    positionsHeld = a.getPos()
+    for e in positionsHeld:
+      buyPrice = a.getBuyPrice(e)
+      curPrice = a.getPrice(e)
+      maxPrice = 0
+
+      if(curPrice/buyPrice<=sellDn):
+        print("Lost it on "+e)
+        a.createOrder("sell",
+      elif(curPrice/buyPrice>=sellUp):
+        print("Trigger point reached on "+e+". Seeing if it will go up..."
+        while(a.getPrice(e)/buyPrice>=maxPrice*sellUpDn):
+          
