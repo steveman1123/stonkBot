@@ -9,12 +9,12 @@ There are a number of different algorithms that can be found in the alpacaalgos 
 
 
 
-# API Keys
-The apikeys file has the actual keys removed for the REST APIs - if you want to try it out, *you will need to get your own Alpaca and AlphaVantage keys* and populate the key file
+## API Keys
+The apikeys file has the actual keys removed for the REST APIs - if you want to try it out, **you will need to get your own Alpaca and AlphaVantage keys** and populate the key file
 
 
 
-# External Resources
+## External Resources
 alpaca.markets
 alphavantage.com
 stocksunder1.org
