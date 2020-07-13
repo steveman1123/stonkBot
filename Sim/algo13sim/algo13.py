@@ -28,7 +28,15 @@ def init(keyFilePath, settingsFilePath, stockDataDir):
 def getPennies(price=1,updown="up"):
   url = 'https://stocksunder1.org/nasdaq-penny-stocks/'
   # url = 'https://stocksunder1.org/nasdaq-stocks-under-1/' #alt url that can be used
-  html = requests.post(url, params={"price":price,"volume":0,"updown":updown}).content
+  while True:
+    try:
+      html = requests.post(url, params={"price":price,"volume":0,"updown":updown}).content
+      break
+    except Exception:
+      print("No connection, or other error encountered. Trying again...")
+      time.sleep(3)
+      continue
+
   tableList = read_html(html)
   # print(tableList)
   # symList = tableList[5][0:]['Symbol']
@@ -62,7 +70,15 @@ def getVolatile(lbound=0.8, ubound=5,minPercChange=30, minVol=8000000):
             "Exchange":"NASDAQ",
             "IndustryEnable":"false",
             "MoreInfo":"false"}
-  html = requests.post(url, params=params).content
+  while True:
+    try:
+      html = requests.post(url, params=params).content
+      break
+    except Exception:
+      print("No connection, or other error encountered. Trying again...")
+      time.sleep(3)
+      continue
+
   tableList = read_html(html)
   symList = tableList[0].transpose().to_dict() #transpose for organization, dictionary to have all wanted data
   return symList
@@ -89,7 +105,14 @@ def simPast(symList):
         'symbol' : symb, #ticker symbol
         'outputsize' : 'full' #up to 20yrs of data
       }
-      response = requests.request('GET', url, params=params).text #send request and store response
+      while True:
+        try:
+          response = requests.request('GET', url, params=params).text #send request and store response
+          break
+        except Exception:
+          print("No connection, or other error encountered. Trying again...")
+          time.sleep(3)
+          continue
       time.sleep(19) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
   
       out = open(stockDir+symb+'.txt','w') #write to file for later usage
@@ -187,7 +210,14 @@ def presentList(symList):
         'symbol' : symb, #ticker symbol
         'outputsize' : 'full' #up to 20yrs of data
       }
-      response = requests.request('GET', url, params=params).text #send request and store response
+      while True:
+        response = requests.request('GET', url, params=params).text #send request and store response
+        break
+      except Exception:
+        print("No connection, or other error encountered. Trying again...")
+        time.sleep(3)
+        continue
+
       if(len(symList)>=5):
         time.sleep(19) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
   
@@ -253,8 +283,14 @@ def getGainers(symList):
         'symbol' : symb, #ticker symbol
         'outputsize' : 'full' #up to 20yrs of data
       }
-      response = requests.request('GET', url, params=params).text #send request and store response
-      
+      while True:
+        try:
+          response = requests.request('GET', url, params=params).text #send request and store response
+          break
+        except Exception:
+          print("No connection, or other error encountered. Trying again...")
+          time.sleep(3)
+          continue
       out = open(stockDir+symb+'.txt','w') #write to file for later usage
       out.write(response)
       out.close()
