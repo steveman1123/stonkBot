@@ -4,7 +4,7 @@ from datetime import datetime as dt
 from datetime import date
 from datetime import timedelta
 
-isPaper = 1 #set up as paper trading (testing), or actual trading
+isPaper = 0 #set up as paper trading (testing), or actual trading
 
 keyFile = open("../stockStuff/apikeys.key","r")
 apiKeys = json.loads(keyFile.read())
