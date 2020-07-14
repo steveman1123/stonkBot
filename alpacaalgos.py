@@ -787,39 +787,58 @@ def algo13():
 
 
   while float(a.getAcct()['portfolio_value'])>minPortVal:
-    acct = a.getAcct()
-    portVal = float(acct[portfolio_value'])
-    cash = float(acct['cash'])
-    print("Portfolio val is $"+str(portVal)+". Minimum value to hold is $"+str(minPortVal))
-    if(cash>reducedCash): #in normal operating mode
-      print("Normal Operation Mode. Available Cash: $"+str(cash))
-      #div cash over all gainers
-    else:
-      if(cash>lowCash): #in reduced cash mode
-       print("Reduced Cash Mode. Available Cash: $"+str(cash))
-       #div cash over $reducedBuy stocks
+    if(a.marketIsOpen()):
+      acct = a.getAcct()
+      portVal = float(acct['portfolio_value'])
+      buyPow = float(acct['buying_power'])
+      print("Portfolio val is $"+str(portVal)+". Minimum value to hold is $"+str(minPortVal))
+      if(buyPow>reducedCash): #in normal operating mode
+        print("Normal Operation Mode. Available Buying Power: $"+str(buyPow))
+        #div cash over all gainers
+        for e in gainers:
+          print(a.createOrder("buy",int((buyPow/len(gainers))/a.getPrice(e)),e,"market","day"))
       else:
-        if(cash>minPortVal): #in low cash mode
-          print("Low Cash Mode. Available Cash: $"+str(cash))
-          #div cash over $lowBuy cheapest stocks in list
+        if(buyPow>lowCash): #in reduced cash mode
+         print("Reduced Cash Mode. Available Buying Power: $"+str(buyPow))
+         #div cash over $reducedBuy stocks
+         for i in range(reducedBuy):
+           print(a.createOrder("buy",int((buyPow/reducedBuy)/a.getPrice(list(gainers)[i])),list(gainers)[i],"market","day"))
         else:
-          if(portVal<=minPortVal): #bottom out mode
-            a.sellAll(0)
-            print("Bottom Out Mode. Available Cash: $"+str(cash))
-            break
-          else: #low cash but high portfolio means all is invested
-            print("Purchased as much as possible. Cash remaining: $"+str(cash))
-
-    positionsHeld = a.getPos()
-    for e in positionsHeld:
-      buyPrice = a.getBuyPrice(e)
-      curPrice = a.getPrice(e)
-      maxPrice = 0
-
-      if(curPrice/buyPrice<=sellDn):
-        print("Lost it on "+e)
-        a.createOrder("sell",
-      elif(curPrice/buyPrice>=sellUp):
-        print("Trigger point reached on "+e+". Seeing if it will go up..."
-        while(a.getPrice(e)/buyPrice>=maxPrice*sellUpDn):
-          
+          if(buyPow>minPortVal): #in low cash mode
+            print("Low Cash Mode. Available Buying Power: $"+str(buyPow))
+            #div cash over $lowBuy cheapest stocks in list
+            for i in range(lowBuy):
+              print(a.createOrder("buy",int((buyPow/reducedBuy)/a.getPrice(list(gainers)[i])),list(gainers)[i],"market","day"))
+          else:
+            if(portVal<=minPortVal): #bottom out mode
+              a.sellAll(0)
+              print("Bottom Out Mode. Available Buying Power: $"+str(buyPow))
+              break
+            else: #low cash but high portfolio means all is invested
+              print("Available Buying Power: $"+str(buyPow))
+              for e in a.getPos():
+                print(e) #TODO: include day change data, last price, whatever else we want to know
+              
+      
+      positionsHeld = a.getPos()
+      for e in positionsHeld:
+        print(e)
+        buyPrice = a.getBuyPrice(e)
+        curPrice = a.getPrice(e)
+        maxPrice = 0
+  
+        if(curPrice/buyPrice<=sellDn):
+          print("Lost it on "+e)
+          a.createOrder("sell",a.getShares(e),e,"limit","day",curPrice)
+        elif(curPrice/buyPrice>=sellUp):
+          print("Trigger point reached on "+e+". Seeing if it will go up...")
+          while(a.getPrice(e)/buyPrice>=maxPrice*sellUpDn):
+            maxPrice = max(maxPrice, a.getPrice())
+          print(a.createOrder("sell",a.getShares(e),e,"limit","day",maxPrice))
+      
+      time.sleep(60)
+      
+    else:
+      tto = a.timeTillOpen()
+      print("Market is closed. Will open again in "+str(tto)+" seconds.")
+      time.sleep(tto)

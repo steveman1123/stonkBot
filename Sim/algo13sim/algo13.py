@@ -211,12 +211,13 @@ def presentList(symList):
         'outputsize' : 'full' #up to 20yrs of data
       }
       while True:
-        response = requests.request('GET', url, params=params).text #send request and store response
-        break
-      except Exception:
-        print("No connection, or other error encountered. Trying again...")
-        time.sleep(3)
-        continue
+        try:
+          response = requests.request('GET', url, params=params).text #send request and store response
+          break
+        except Exception:
+          print("No connection, or other error encountered. Trying again...")
+          time.sleep(3)
+          continue
 
       if(len(symList)>=5):
         time.sleep(19) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
@@ -271,7 +272,7 @@ def getGainers(symList):
     if(os.path.isfile(stockDir+symb+".txt")): #if a file exists
       dateData = json.loads(open(stockDir+symb+".txt","r").read()) #read it
       
-      if(dt.datetime.fromtimestamp(os.stat(stockDir+symb+".txt").st_mtime).date()<dt.date.today()): #if the last time it was pulled was more a day ago
+      if((dt.date.today()-dt.datetime.fromtimestamp(os.stat(stockDir+symb+".txt").st_mtime).date()).days>3): #if the last time it was pulled was more 3 days ago
         os.remove(stockDir+symb+".txt") #delete it
       
         

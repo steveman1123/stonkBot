@@ -4,7 +4,7 @@ from datetime import datetime as dt
 from datetime import date
 from datetime import timedelta
 
-isPaper = 0 #set up as paper trading (testing), or actual trading
+isPaper = 1 #set up as paper trading (testing), or actual trading
 
 keyFile = open("../stockStuff/apikeys.key","r")
 apiKeys = json.loads(keyFile.read())
@@ -108,7 +108,7 @@ def getOrders():
   return json.loads(html)
 
 
-def createOrder(side, qty, sym, orderType="market", time_in_force="day"):
+def createOrder(side, qty, sym, orderType="market", time_in_force="day", limPrice=0):
   order = {
     "symbol":sym,
     "qty":qty,
@@ -116,6 +116,8 @@ def createOrder(side, qty, sym, orderType="market", time_in_force="day"):
     "side":side,
     "time_in_force":time_in_force
   }
+  if(orderType=="limit"):
+    order['take_profit'] = {'limit_price':str(limPrice)}
   while True:
     try:
       r = requests.post(ORDERSURL, json=order, headers=HEADERS)
