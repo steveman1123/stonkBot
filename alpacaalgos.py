@@ -774,7 +774,6 @@ def algo13():
   - stop loss at ~60%
   - limit gain at ~25%
   '''
-  gainers = a13.getGainers(a13.getPennies()) #list of stocks that may gain in the near future
   minPortVal = 5 #stop trading if portfolio reaches this amount
   reducedCash = 100 #enter reduced cash mode if portfolio reaches under this amount
   reducedBuy = 10 #buy this many unique stocks if in reduced cash mode
@@ -785,9 +784,20 @@ def algo13():
   sellDn = 1-.4 #limit loss
   sellUpDn = 1-.02 #sell 
 
+  gainers = a13.getGainers(a13.getPennies()) #list of stocks that may gain in the near future
+  f = open("../stockStuff/latestTrades13.json","r")
+  latestTrades = json.loads(f.read())
+  f.close()
+
   #TODO: include logic to avoid buy/sell on same day - buy near close if the price didn't go up real high during the day
+  #TODO: change last tradedate stuff - https://alpaca.markets/docs/api-documentation/api-v2/account-activities/
   while float(a.getAcct()['portfolio_value'])>minPortVal:
     if(a.marketIsOpen()):
+      print("Market is open")
+      f = open("../stockStuff/latestTrades13.json","r")
+      latestTrades = json.loads(f.read())
+      f.close()
+      
       acct = a.getAcct()
       portVal = float(acct['portfolio_value'])
       buyPow = float(acct['buying_power'])
@@ -796,49 +806,68 @@ def algo13():
         print("Normal Operation Mode. Available Buying Power: $"+str(buyPow))
         #div cash over all gainers
         for e in gainers:
-          print(a.createOrder("buy",int((buyPow/len(gainers))/a.getPrice(e)),e,"market","day"))
+          shares2buy = int((buyPow/gainers)/a.getPrice(list(gainers)[e]))
+          if(shares2buy>0):
+            print(a.createOrder("buy",shares2buy,e,"market","day"))
+            latestTradeDate[e['symbol']] = dt.date.today()
       else:
         if(buyPow>lowCash): #in reduced cash mode
-         print("Reduced Cash Mode. Available Buying Power: $"+str(buyPow))
-         #div cash over $reducedBuy stocks
-         for i in range(reducedBuy):
-           print(a.createOrder("buy",int((buyPow/reducedBuy)/a.getPrice(list(gainers)[i])),list(gainers)[i],"market","day"))
+          print("Reduced Cash Mode. Available Buying Power: $"+str(buyPow))
+          #div cash over $reducedBuy stocks
+          for i in range(reducedBuy):
+            shares2buy = int((buyPow/reducedBuy)/a.getPrice(list(gainers)[i]))
+            if(shares2buy>0):
+              print(a.createOrder("buy",shares2buy,list(gainers)[i],"market","day"))
+              latestTradeDate[e['symbol']] = dt.date.today()
         else:
           if(buyPow>minPortVal): #in low cash mode
             print("Low Cash Mode. Available Buying Power: $"+str(buyPow))
             #div cash over $lowBuy cheapest stocks in list
             for i in range(lowBuy):
-              print(a.createOrder("buy",int((buyPow/lowBuy)/a.getPrice(list(gainers)[i])),list(gainers)[i],"market","day"))
+              shares2buy = int((buyPow/lowBuy)/a.getPrice(list(gainers)[i]))
+              if(shares2buy>0):
+                print(a.createOrder("buy",shares2buy,list(gainers)[i],"market","day"))
+                latestTradeDate[e['symbol']] = dt.date.today()
           else:
             if(portVal<=minPortVal): #bottom out mode
               a.sellAll(0)
               print("Bottom Out Mode. Available Buying Power: $"+str(buyPow))
               break
             else: #low cash but high portfolio means all is invested
-              print("Available Buying Power: $"+str(buyPow))
-              for e in a.getPos():
-                print(e) #TODO: include day change data, last price, whatever else we want to know
+              print("Portfolio Value: $"+str(portVal)+"Available Buying Power: $"+str(buyPow))
+              
               
       
       positionsHeld = a.getPos()
       for e in positionsHeld:
-        print(e['symbol'])
-        buyPrice = float(e['avg_entry_price'])
-        curPrice = float(a.getPrice(e['symbol']))
-        maxPrice = 0
-  
-        if(curPrice/buyPrice<=sellDn):
-          print("Lost it on "+e['symbol'])
-          a.createOrder("sell",a.getShares(e['symbol']),e['symbol'],"limit","day",curPrice)
-        elif(curPrice/buyPrice>=sellUp):
-          print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
-          while(a.getPrice(e['symbol'])/buyPrice>=maxPrice*sellUpDn):
-            maxPrice = max(maxPrice, a.getPrice(e['symbol']))
-          print(a.createOrder("sell",a.getShares(e['symbol']),e['symbol'],"limit","day",maxPrice))
+        lastTradeDate = dt.datetime.strptime(latestTrades[e['symbol']],'%Y-%m-%d').date()
+        if(lastTradeDate<dt.date.today()): #prevent trading on the same day
+          print(e['symbol']+" - qty: "+e['qty']+" - value: "+e['market_value'])
+          buyPrice = float(e['avg_entry_price'])
+          curPrice = float(e['current_price'])
+          maxPrice = 0
+    
+          if(curPrice/buyPrice<=sellDn):
+            print("Lost it on "+e['symbol'])
+            print(a.createOrder("sell",a.getShares(e['symbol']),e['symbol'],"limit","day",curPrice))
+            latestTradeDate[e['symbol']] = dt.date.today()
+          elif(curPrice/buyPrice>=sellUp):
+            print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
+            while(a.getPrice(e['symbol'])/buyPrice>=maxPrice*sellUpDn):
+              maxPrice = max(maxPrice, a.getPrice(e['symbol']))
+            print(a.createOrder("sell",a.getShares(e['symbol']),e['symbol'],"limit","day",maxPrice))
+            latestTradeDate[e['symbol']] = dt.date.today()
       
       time.sleep(60)
       
     else:
+      f = open("../stockStuff/latestTrades13.json","w")
+      f.write(json.dumps(latestTrades, indent=2))
+      f.close()
+      print("Market closed. Will update stock list in 1 hour.")
+      time.sleep(3600)
+      print("Updating stock list")
+      gainers = a13.getGainers(a13.getPennies()) #list of stocks that may gain in the near future
       tto = a.timeTillOpen()
-      print("Market is closed. Will open again in "+str(tto)+" seconds.")
+      print("Market will open again in "+str(int(tto/60))+" minutes.")
       time.sleep(tto)

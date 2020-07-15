@@ -39,8 +39,11 @@ def getPennies(price=1,updown="up"):
 
   tableList = read_html(html)
   # print(tableList)
-  symList = tableList[5][0:]['Symbol']
-  #symList = tableList[5][1:][0] #this keeps changing (possibly intentionally)
+  try:
+    symList = tableList[5][0:]['Symbol']
+  except Exception:
+    symList = tableList[5][1:][0] #this keeps changing (possibly intentionally)
+  
   symList = [re.sub(r'\W+','',e.replace(' predictions','')) for e in symList] #strip "predictions" and any non alphanumerics
   # print(tableList[5][0:]['Symbol'])
   return symList
@@ -272,7 +275,7 @@ def getGainers(symList):
     if(os.path.isfile(stockDir+symb+".txt")): #if a file exists
       dateData = json.loads(open(stockDir+symb+".txt","r").read()) #read it
       
-      if((dt.date.today()-dt.datetime.fromtimestamp(os.stat(stockDir+symb+".txt").st_mtime).date()).days>3): #if the last time it was pulled was more 3 days ago
+      if((dt.date.today()-dt.datetime.fromtimestamp(os.stat(stockDir+symb+".txt").st_mtime).date()).days>1): #if the last time it was pulled was more 3 days ago
         os.remove(stockDir+symb+".txt") #delete it
       
         
@@ -282,7 +285,7 @@ def getGainers(symList):
         'apikey' : apiKeys["ALPHAVANTAGEKEY"],
         'function' : 'TIME_SERIES_DAILY', #daily resolution (open, high, low, close, volume)
         'symbol' : symb, #ticker symbol
-        'outputsize' : 'full' #up to 20yrs of data
+        'outputsize' : 'compact' #compact=last 100 days, full=up to 20 years
       }
       while True:
         try:
