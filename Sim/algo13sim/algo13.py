@@ -39,10 +39,10 @@ def getPennies(price=1,updown="up"):
 
   tableList = read_html(html)
   # print(tableList)
-  # symList = tableList[5][0:]['Symbol']
-  symList = tableList[5][1:][0] #this keeps changing (possibly intentionally)
+  symList = tableList[5][0:]['Symbol']
+  #symList = tableList[5][1:][0] #this keeps changing (possibly intentionally)
   symList = [re.sub(r'\W+','',e.replace(' predictions','')) for e in symList] #strip "predictions" and any non alphanumerics
-#  print(tableList[5][0:]['Symbol'])
+  # print(tableList[5][0:]['Symbol'])
   return symList
 
 #gets a list of volatile stocks using criteria outlined here: https://stocksunder1.org/how-to-trade-penny-stocks/

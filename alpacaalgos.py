@@ -785,7 +785,7 @@ def algo13():
   sellDn = 1-.4 #limit loss
   sellUpDn = 1-.02 #sell 
 
-
+  #TODO: include logic to avoid buy/sell on same day - buy near close if the price didn't go up real high during the day
   while float(a.getAcct()['portfolio_value'])>minPortVal:
     if(a.marketIsOpen()):
       acct = a.getAcct()
@@ -808,7 +808,7 @@ def algo13():
             print("Low Cash Mode. Available Buying Power: $"+str(buyPow))
             #div cash over $lowBuy cheapest stocks in list
             for i in range(lowBuy):
-              print(a.createOrder("buy",int((buyPow/reducedBuy)/a.getPrice(list(gainers)[i])),list(gainers)[i],"market","day"))
+              print(a.createOrder("buy",int((buyPow/lowBuy)/a.getPrice(list(gainers)[i])),list(gainers)[i],"market","day"))
           else:
             if(portVal<=minPortVal): #bottom out mode
               a.sellAll(0)
@@ -822,19 +822,19 @@ def algo13():
       
       positionsHeld = a.getPos()
       for e in positionsHeld:
-        print(e)
-        buyPrice = a.getBuyPrice(e)
-        curPrice = a.getPrice(e)
+        print(e['symbol'])
+        buyPrice = float(e['avg_entry_price'])
+        curPrice = float(a.getPrice(e['symbol']))
         maxPrice = 0
   
         if(curPrice/buyPrice<=sellDn):
-          print("Lost it on "+e)
-          a.createOrder("sell",a.getShares(e),e,"limit","day",curPrice)
+          print("Lost it on "+e['symbol'])
+          a.createOrder("sell",a.getShares(e['symbol']),e['symbol'],"limit","day",curPrice)
         elif(curPrice/buyPrice>=sellUp):
-          print("Trigger point reached on "+e+". Seeing if it will go up...")
-          while(a.getPrice(e)/buyPrice>=maxPrice*sellUpDn):
-            maxPrice = max(maxPrice, a.getPrice())
-          print(a.createOrder("sell",a.getShares(e),e,"limit","day",maxPrice))
+          print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
+          while(a.getPrice(e['symbol'])/buyPrice>=maxPrice*sellUpDn):
+            maxPrice = max(maxPrice, a.getPrice(e['symbol']))
+          print(a.createOrder("sell",a.getShares(e['symbol']),e['symbol'],"limit","day",maxPrice))
       
       time.sleep(60)
       
