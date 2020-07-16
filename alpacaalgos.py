@@ -873,7 +873,7 @@ def algo13():
             print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
             while(a.getPrice(e['symbol'])/buyPrice>=maxPrice*sellUpDn):
               curPrice = a.getPrice(e['symbol'])
-              print(e['symbol']+" - "+curPrice/buyPrice)
+              print(e['symbol']+" - "+str(curPrice/buyPrice))
               maxPrice = max(maxPrice, curPrice)
               time.sleep(3)
               
