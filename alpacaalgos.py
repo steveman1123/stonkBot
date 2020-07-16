@@ -804,7 +804,7 @@ def algo13():
       acct = a.getAcct()
       portVal = float(acct['portfolio_value'])
       buyPow = float(acct['buying_power'])
-      print("Portfolio val is $"+str(portVal)+". Minimum value to hold is $"+str(minPortVal)+". Sell targets are "+str(sellUp)+" or "+str(sellDn))
+      print("Portfolio val is $"+str(portVal)+". Sell targets are "+str(sellUp)+" or "+str(sellDn))
       if(buyPow>reducedCash): #in normal operating mode
         print("Normal Operation Mode. Available Buying Power: $"+str(buyPow))
         #div cash over all gainers
