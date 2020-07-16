@@ -855,6 +855,7 @@ def algo13():
       
       positionsHeld = a.getPos()
       for e in positionsHeld:
+        print(e['symbol'])
         try:
           lastTradeDate = dt.datetime.strptime(latestTrades[list(gainers)[i]],'%Y-%m-%d').date()
         except Exception:
@@ -873,7 +874,7 @@ def algo13():
             print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
             while(a.getPrice(e['symbol'])/buyPrice>=maxPrice*sellUpDn):
               maxPrice = max(maxPrice, a.getPrice(e['symbol']))
-            print(a.createOrder("sell",e['qty']),e['symbol'],"limit","day",maxPrice*sellUpDn)
+            print(a.createOrder("sell",e['qty'],e['symbol'],"limit","day",curPrice))
             latestTradeDate[e['symbol']] = dt.date.today()
       
       time.sleep(60)
