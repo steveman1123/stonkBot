@@ -782,7 +782,7 @@ def algo13():
   lowBuy = 5 #buy this many unique stocks if in low cash mode
   minCash = 1 #buy until this amt is left in buying power/cash balance
 
-  sellUp = 1+.18 #trigger point. Additional logic to see if it goes higher
+  sellUp = 1+.19 #trigger point. Additional logic to see if it goes higher
   sellDn = 1-.4 #limit loss
   sellUpDn = 1-.02 #sell 
 
@@ -855,7 +855,6 @@ def algo13():
       
       positionsHeld = a.getPos()
       for e in positionsHeld:
-        print(e['symbol'])
         try:
           lastTradeDate = dt.datetime.strptime(latestTrades[list(gainers)[i]],'%Y-%m-%d').date()
         except Exception:
