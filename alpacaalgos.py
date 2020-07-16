@@ -794,7 +794,11 @@ def algo13():
   #TODO: include logic to avoid buy/sell on same day - buy near close if the price didn't go up real high during the day
   #      can buy multiple times in one day, but not buy then sell or sell then buy. Also, if remaining cash>minCash but <lowCash, find the cheapest one in gainers list, & invest the rest there
   #TODO: change last tradedate stuff - https://alpaca.markets/docs/api-documentation/api-v2/account-activities/
+  #TODO: change in reduced/low cash mode to buy randomly from list instead of top ones
   while float(a.getAcct()['portfolio_value'])>minPortVal:
+    gainers = list(gainers) #randomize list so when buying new ones, they won't always choose the top of the original list
+    random.shuffle(gainers)
+    
     if(a.marketIsOpen()):
       print("Market is open")
       f = open("../stockStuff/latestTrades13.json","r")
@@ -809,40 +813,40 @@ def algo13():
         print("Normal Operation Mode. Available Buying Power: $"+str(buyPow))
         #div cash over all gainers
         for e in gainers:
-          shares2buy = int((buyPow/gainers)/a.getPrice(list(gainers)[e]))
+          shares2buy = int((buyPow/gainers)/a.getPrice(e))
           try:
-            lastTradeDate = dt.datetime.strptime(latestTrades[list(gainers)[i]],'%Y-%m-%d').date()
+            lastTradeDate = dt.datetime.strptime(latestTrades[e],'%Y-%m-%d').date()
           except Exception:
             lastTradeDate = dt.date.today()-dt.timedelta(1)
           if(shares2buy>0 and lastTradeDate<date.today()):
             print(a.createOrder("buy",shares2buy,e,"market","day"))
-            latestTrades[e['symbol']] = str(date.today())
+            latestTrades[e] = str(date.today())
       else:
         if(buyPow>lowCash): #in reduced cash mode
           print("Reduced Cash Mode. Available Buying Power: $"+str(buyPow))
           #div cash over $reducedBuy stocks
-          for i in range(reducedBuy):
-            shares2buy = int((buyPow/reducedBuy)/a.getPrice(list(gainers)[i]))
+          for i in range(min(reducedBuy,len(gainers))):
+            shares2buy = int((buyPow/reducedBuy)/a.getPrice(gainers[i]))
             try:
-              lastTradeDate = dt.datetime.strptime(latestTrades[list(gainers)[i]],'%Y-%m-%d').date()
+              lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]],'%Y-%m-%d').date()
             except Exception:
               lastTradeDate = dt.date.today()-dt.timedelta(1)
             if(shares2buy>0 and lastTradeDate<date.today()):
-              print(a.createOrder("buy",shares2buy,list(gainers)[i],"market","day"))
-              latestTrades[list(gainers)[i]] = str(date.today())
+              print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
+              latestTrades[gainers[i]] = str(date.today())
         else:
           if(buyPow>minCash): #in low cash mode
             print("Low Cash Mode. Available Buying Power: $"+str(buyPow))
             #div cash over $lowBuy cheapest stocks in list
-            for i in range(lowBuy):
-              shares2buy = int((buyPow/lowBuy)/a.getPrice(list(gainers)[i]))
+            for i in range(min(lowBuy,len(gainers))):
+              shares2buy = int((buyPow/lowBuy)/a.getPrice(gainers[i]))
               try:
-                lastTradeDate = dt.datetime.strptime(latestTrades[list(gainers)[i]],'%Y-%m-%d').date()
+                lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]],'%Y-%m-%d').date()
               except Exception:
                 lastTradeDate = dt.date.today()-dt.timedelta(1)
               if(shares2buy>0 and lastTradeDate<date.today()):
-                print(a.createOrder("buy",shares2buy,list(gainers)[i],"market","day"))
-                latestTrades[list(gainers)[i]] = str(date.today())
+                print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
+                latestTrades[gainers[i]] = str(date.today())
           else:
             if(portVal<=minPortVal): #bottom out mode
               a.sellAll(0)
@@ -856,7 +860,7 @@ def algo13():
       positionsHeld = a.getPos()
       for e in positionsHeld:
         try:
-          lastTradeDate = dt.datetime.strptime(latestTrades[list(gainers)[i]],'%Y-%m-%d').date()
+          lastTradeDate = dt.datetime.strptime(latestTrades[e['symbol']],'%Y-%m-%d').date()
         except Exception:
           lastTradeDate = dt.date.today()-dt.timedelta(1)
         if(lastTradeDate<date.today()): #prevent trading on the same day
@@ -878,7 +882,7 @@ def algo13():
               time.sleep(3)
               
             print(a.createOrder("sell",e['qty'],e['symbol']))
-            latestTrades[e['symbol']] = dt.date.today()
+            latestTrades[e['symbol']] = str(date.today())
       
       time.sleep(60)
       
