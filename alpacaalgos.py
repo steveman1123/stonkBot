@@ -1,6 +1,7 @@
 import alpacafxns as a
 import time, random, sys, json
 from datetime import date
+import datetime as dt
 from workdays import networkdays as nwd
 sys.path.append('./Sim/algo13sim')
 import algo13 as a13
@@ -779,8 +780,9 @@ def algo13():
   reducedBuy = 10 #buy this many unique stocks if in reduced cash mode
   lowCash = 10 #enter low cash mode if portfolio reaches under this amount
   lowBuy = 5 #buy this many unique stocks if in low cash mode
+  minCash = 1 #buy until this amt is left in buying power/cash balance
 
-  sellUp = 1+.25 #trigger point. Additional logic to see if it goes higher
+  sellUp = 1+.2 #trigger point. Additional logic to see if it goes higher
   sellDn = 1-.4 #limit loss
   sellUpDn = 1-.02 #sell 
 
@@ -790,6 +792,7 @@ def algo13():
   f.close()
 
   #TODO: include logic to avoid buy/sell on same day - buy near close if the price didn't go up real high during the day
+  #      can buy multiple times in one day, but not buy then sell or sell then buy. Also, if remaining cash>minCash but <lowCash, find the cheapest one in gainers list, & invest the rest there
   #TODO: change last tradedate stuff - https://alpaca.markets/docs/api-documentation/api-v2/account-activities/
   while float(a.getAcct()['portfolio_value'])>minPortVal:
     if(a.marketIsOpen()):
@@ -809,7 +812,7 @@ def algo13():
           shares2buy = int((buyPow/gainers)/a.getPrice(list(gainers)[e]))
           if(shares2buy>0):
             print(a.createOrder("buy",shares2buy,e,"market","day"))
-            latestTradeDate[e['symbol']] = dt.date.today()
+            latestTrades[e['symbol']] = str(date.today())
       else:
         if(buyPow>lowCash): #in reduced cash mode
           print("Reduced Cash Mode. Available Buying Power: $"+str(buyPow))
@@ -818,30 +821,30 @@ def algo13():
             shares2buy = int((buyPow/reducedBuy)/a.getPrice(list(gainers)[i]))
             if(shares2buy>0):
               print(a.createOrder("buy",shares2buy,list(gainers)[i],"market","day"))
-              latestTradeDate[e['symbol']] = dt.date.today()
+              latestTrades[list(gainers)[i]] = str(date.today())
         else:
-          if(buyPow>minPortVal): #in low cash mode
+          if(buyPow>minCash): #in low cash mode
             print("Low Cash Mode. Available Buying Power: $"+str(buyPow))
             #div cash over $lowBuy cheapest stocks in list
             for i in range(lowBuy):
               shares2buy = int((buyPow/lowBuy)/a.getPrice(list(gainers)[i]))
               if(shares2buy>0):
                 print(a.createOrder("buy",shares2buy,list(gainers)[i],"market","day"))
-                latestTradeDate[e['symbol']] = dt.date.today()
+                latestTrades[list(gainers)[i]] = str(date.today())
           else:
             if(portVal<=minPortVal): #bottom out mode
               a.sellAll(0)
               print("Bottom Out Mode. Available Buying Power: $"+str(buyPow))
               break
             else: #low cash but high portfolio means all is invested
-              print("Portfolio Value: $"+str(portVal)+"Available Buying Power: $"+str(buyPow))
+              print("Portfolio Value: $"+str(portVal)+", Available Buying Power: $"+str(buyPow))
               
               
       
       positionsHeld = a.getPos()
       for e in positionsHeld:
         lastTradeDate = dt.datetime.strptime(latestTrades[e['symbol']],'%Y-%m-%d').date()
-        if(lastTradeDate<dt.date.today()): #prevent trading on the same day
+        if(lastTradeDate<date.today()): #prevent trading on the same day
           print(e['symbol']+" - qty: "+e['qty']+" - value: "+e['market_value'])
           buyPrice = float(e['avg_entry_price'])
           curPrice = float(e['current_price'])
