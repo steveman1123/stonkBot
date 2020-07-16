@@ -804,7 +804,7 @@ def algo13():
       acct = a.getAcct()
       portVal = float(acct['portfolio_value'])
       buyPow = float(acct['buying_power'])
-      print("Portfolio val is $"+str(portVal)+". Minimum value to hold is $"+str(minPortVal))
+      print("Portfolio val is $"+str(portVal)+". Minimum value to hold is $"+str(minPortVal)+". Sell targets are "+str(sellUp)+" or "+str(sellDn))
       if(buyPow>reducedCash): #in normal operating mode
         print("Normal Operation Mode. Available Buying Power: $"+str(buyPow))
         #div cash over all gainers
@@ -886,10 +886,11 @@ def algo13():
       f = open("../stockStuff/latestTrades13.json","w")
       f.write(json.dumps(latestTrades, indent=2))
       f.close()
-      print("Market closed. Will update stock list in 1 hour.")
-      time.sleep(3600)
+      print("Market closed. Will update stock list 1 hour before next open.")
+      tto = a.timeTillOpen()
+      time.sleep(tto-3600)
       print("Updating stock list")
       gainers = a13.getGainers(a13.getPennies()) #list of stocks that may gain in the near future
       tto = a.timeTillOpen()
-      print("Market will reopen in "+str(int(tto/60))+" minutes.")
+      print("Market will open in "+str(int(tto/60))+" minutes.")
       time.sleep(tto)
