@@ -874,7 +874,7 @@ def algo13():
             while(a.getPrice(e['symbol'])/buyPrice>=maxPrice*sellUpDn):
               maxPrice = max(maxPrice, a.getPrice(e['symbol']))
             print(a.createOrder("sell",e['qty'],e['symbol'],"limit","day",curPrice))
-            laastTradeDate[e['symbol']] = dt.date.today()
+            lastTradeDate[e['symbol']] = dt.date.today()
       
       time.sleep(60)
       
