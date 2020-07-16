@@ -252,6 +252,7 @@ def timeTillOpen():
 
 # return the current price of the indicated stock
 def getPrice(symb):
+  #TODO: can use alpaca position['current_price']
   url = 'https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks'.format(symb)
   while True:
     try:

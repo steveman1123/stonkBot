@@ -872,9 +872,13 @@ def algo13():
           elif(curPrice/buyPrice>=sellUp):
             print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
             while(a.getPrice(e['symbol'])/buyPrice>=maxPrice*sellUpDn):
-              maxPrice = max(maxPrice, a.getPrice(e['symbol']))
+              curPrice = a.getPrice(e['symbol'])
+              print(e['symbol']+" - "+curPrice/buyPrice)
+              maxPrice = max(maxPrice, curPrice)
+              time.sleep(3)
+              
             print(a.createOrder("sell",e['qty'],e['symbol'],"limit","day",curPrice))
-            lastTradeDate[e['symbol']] = dt.date.today()
+            latestTrades[e['symbol']] = dt.date.today()
       
       time.sleep(60)
       
