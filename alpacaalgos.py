@@ -782,7 +782,7 @@ def algo13():
   lowBuy = 5 #buy this many unique stocks if in low cash mode
   minCash = 1 #buy until this amt is left in buying power/cash balance
 
-  sellUp = 1+.2 #trigger point. Additional logic to see if it goes higher
+  sellUp = 1+.18 #trigger point. Additional logic to see if it goes higher
   sellDn = 1-.4 #limit loss
   sellUpDn = 1-.02 #sell 
 
@@ -810,7 +810,11 @@ def algo13():
         #div cash over all gainers
         for e in gainers:
           shares2buy = int((buyPow/gainers)/a.getPrice(list(gainers)[e]))
-          if(shares2buy>0):
+          try:
+            lastTradeDate = dt.datetime.strptime(latestTrades[list(gainers)[i]],'%Y-%m-%d').date()
+          except Exception:
+            lastTradeDate = dt.date.today()-dt.timedelta(1)
+          if(shares2buy>0 and lastTradeDate<date.today()):
             print(a.createOrder("buy",shares2buy,e,"market","day"))
             latestTrades[e['symbol']] = str(date.today())
       else:
@@ -819,7 +823,11 @@ def algo13():
           #div cash over $reducedBuy stocks
           for i in range(reducedBuy):
             shares2buy = int((buyPow/reducedBuy)/a.getPrice(list(gainers)[i]))
-            if(shares2buy>0):
+            try:
+              lastTradeDate = dt.datetime.strptime(latestTrades[list(gainers)[i]],'%Y-%m-%d').date()
+            except Exception:
+              lastTradeDate = dt.date.today()-dt.timedelta(1)
+            if(shares2buy>0 and lastTradeDate<date.today()):
               print(a.createOrder("buy",shares2buy,list(gainers)[i],"market","day"))
               latestTrades[list(gainers)[i]] = str(date.today())
         else:
@@ -828,7 +836,11 @@ def algo13():
             #div cash over $lowBuy cheapest stocks in list
             for i in range(lowBuy):
               shares2buy = int((buyPow/lowBuy)/a.getPrice(list(gainers)[i]))
-              if(shares2buy>0):
+              try:
+                lastTradeDate = dt.datetime.strptime(latestTrades[list(gainers)[i]],'%Y-%m-%d').date()
+              except Exception:
+                lastTradeDate = dt.date.today()-dt.timedelta(1)
+              if(shares2buy>0 and lastTradeDate<date.today()):
                 print(a.createOrder("buy",shares2buy,list(gainers)[i],"market","day"))
                 latestTrades[list(gainers)[i]] = str(date.today())
           else:
@@ -843,22 +855,25 @@ def algo13():
       
       positionsHeld = a.getPos()
       for e in positionsHeld:
-        lastTradeDate = dt.datetime.strptime(latestTrades[e['symbol']],'%Y-%m-%d').date()
+        try:
+          lastTradeDate = dt.datetime.strptime(latestTrades[list(gainers)[i]],'%Y-%m-%d').date()
+        except Exception:
+          lastTradeDate = dt.date.today()-dt.timedelta(1)
         if(lastTradeDate<date.today()): #prevent trading on the same day
-          print(e['symbol']+" - qty: "+e['qty']+" - value: "+e['market_value'])
           buyPrice = float(e['avg_entry_price'])
           curPrice = float(e['current_price'])
           maxPrice = 0
+          print(e['symbol']+" - qty: "+e['qty']+" - change: "+str(round(curPrice/buyPrice,2)))
     
           if(curPrice/buyPrice<=sellDn):
             print("Lost it on "+e['symbol'])
-            print(a.createOrder("sell",a.getShares(e['symbol']),e['symbol'],"limit","day",curPrice))
+            print(a.createOrder("sell",e['qty'],e['symbol'],"limit","day",curPrice))
             latestTradeDate[e['symbol']] = dt.date.today()
           elif(curPrice/buyPrice>=sellUp):
             print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
             while(a.getPrice(e['symbol'])/buyPrice>=maxPrice*sellUpDn):
               maxPrice = max(maxPrice, a.getPrice(e['symbol']))
-            print(a.createOrder("sell",a.getShares(e['symbol']),e['symbol'],"limit","day",maxPrice))
+            print(a.createOrder("sell",e['qty']),e['symbol'],"limit","day",maxPrice*sellUpDn)
             latestTradeDate[e['symbol']] = dt.date.today()
       
       time.sleep(60)
@@ -872,5 +887,5 @@ def algo13():
       print("Updating stock list")
       gainers = a13.getGainers(a13.getPennies()) #list of stocks that may gain in the near future
       tto = a.timeTillOpen()
-      print("Market will open again in "+str(int(tto/60))+" minutes.")
+      print("Market will reopen in "+str(int(tto/60))+" minutes.")
       time.sleep(tto)
