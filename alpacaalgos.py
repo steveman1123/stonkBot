@@ -786,18 +786,16 @@ def algo13():
   sellDn = 1-.4 #limit loss
   sellUpDn = 1-.02 #sell 
 
-  gainers = a13.getGainers(a13.getPennies()) #list of stocks that may gain in the near future
+  gainers = list(a13.getGainers(a13.getPennies())) #list of stocks that may gain in the near future
   f = open("../stockStuff/latestTrades13.json","r")
   latestTrades = json.loads(f.read())
   f.close()
 
   #TODO: include logic to avoid buy/sell on same day - buy near close if the price didn't go up real high during the day
-  #      can buy multiple times in one day, but not buy then sell or sell then buy. Also, if remaining cash>minCash but <lowCash, find the cheapest one in gainers list, & invest the rest there
+  #      can buy multiple times in one day, but not buy then sell or sell then buy.
   #TODO: change last tradedate stuff - https://alpaca.markets/docs/api-documentation/api-v2/account-activities/
-  #TODO: change in reduced/low cash mode to buy randomly from list instead of top ones
   while float(a.getAcct()['portfolio_value'])>minPortVal:
-    gainers = list(gainers) #randomize list so when buying new ones, they won't always choose the top of the original list
-    random.shuffle(gainers)
+    random.shuffle(gainers) #randomize list so when buying new ones, they won't always choose the top of the original list
     
     if(a.marketIsOpen()):
       print("Market is open")
@@ -815,12 +813,15 @@ def algo13():
         for e in gainers:
           shares2buy = int((buyPow/gainers)/a.getPrice(e))
           try:
-            lastTradeDate = dt.datetime.strptime(latestTrades[e],'%Y-%m-%d').date()
+            lastTradeDate = dt.datetime.strptime(latestTrades[e][0],'%Y-%m-%d').date()
           except Exception:
             lastTradeDate = dt.date.today()-dt.timedelta(1)
           if(shares2buy>0 and lastTradeDate<date.today()):
             print(a.createOrder("buy",shares2buy,e,"market","day"))
-            latestTrades[e] = str(date.today())
+            latestTrades[e] = [str(date.today()), "buy"]
+            f = open("../stockStuff/latestTrades13.json","w")
+            f.write(json.dumps(latestTrades, indent=2))
+            f.close()
       else:
         if(buyPow>lowCash): #in reduced cash mode
           print("Reduced Cash Mode. Available Buying Power: $"+str(buyPow))
@@ -828,12 +829,15 @@ def algo13():
           for i in range(min(reducedBuy,len(gainers))):
             shares2buy = int((buyPow/reducedBuy)/a.getPrice(gainers[i]))
             try:
-              lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]],'%Y-%m-%d').date()
+              lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
             except Exception:
               lastTradeDate = dt.date.today()-dt.timedelta(1)
             if(shares2buy>0 and lastTradeDate<date.today()):
               print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
-              latestTrades[gainers[i]] = str(date.today())
+              latestTrades[gainers[i]] = [str(date.today()), "buy"]
+              f = open("../stockStuff/latestTrades13.json","w")
+              f.write(json.dumps(latestTrades, indent=2))
+              f.close()
         else:
           if(buyPow>minCash): #in low cash mode
             print("Low Cash Mode. Available Buying Power: $"+str(buyPow))
@@ -841,15 +845,27 @@ def algo13():
             for i in range(min(lowBuy,len(gainers))):
               shares2buy = int((buyPow/lowBuy)/a.getPrice(gainers[i]))
               try:
-                lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]],'%Y-%m-%d').date()
+                lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
               except Exception:
                 lastTradeDate = dt.date.today()-dt.timedelta(1)
               if(shares2buy>0 and lastTradeDate<date.today()):
                 print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
-                latestTrades[gainers[i]] = str(date.today())
+                latestTrades[gainers[i]] = [str(date.today()), "buy"]
+                f = open("../stockStuff/latestTrades13.json","w")
+                f.write(json.dumps(latestTrades, indent=2))
+                f.close()
           else:
+            if(buyPow>minCash):
+              print("Buying power is greater than minCash, and less than lowCash - TODO")
+              #TODO: if remaining cash>minCash but <lowCash, find the cheapest one in gainers list, & invest the rest there
+              
             if(portVal<=minPortVal): #bottom out mode
               a.sellAll(0)
+              for e in latestTrades:
+                latestTrades[e] = [str(date.today()),"sell"]
+              f = open("../stockStuff/latestTrades13.json","w")
+              f.write(json.dumps(latestTrades, indent=2))
+              f.close()
               print("Bottom Out Mode. Available Buying Power: $"+str(buyPow))
               break
             else: #low cash but high portfolio means all is invested
@@ -860,9 +876,9 @@ def algo13():
       positionsHeld = a.getPos()
       for e in positionsHeld:
         try:
-          lastTradeDate = dt.datetime.strptime(latestTrades[e['symbol']],'%Y-%m-%d').date()
+          lastTradeDate = dt.datetime.strptime(latestTrades[e['symbol']][0],'%Y-%m-%d').date()
         except Exception:
-          lastTradeDate = dt.date.today()-dt.timedelta(1)
+          lastTradeDate = date.today()-dt.timedelta(1) #in the event that there is no trade history with a stock, then we set it to an arbitrary time in the past to ensure the trade executes
         if(lastTradeDate<date.today()): #prevent trading on the same day
           buyPrice = float(e['avg_entry_price'])
           curPrice = float(e['current_price'])
@@ -872,7 +888,10 @@ def algo13():
           if(curPrice/buyPrice<=sellDn):
             print("Lost it on "+e['symbol'])
             print(a.createOrder("sell",e['qty'],e['symbol']))
-            lastTradeDate[e['symbol']] = dt.date.today()
+            latestTrades[e['symbol']] = [str(date.today()), "sell"]
+            f = open("../stockStuff/latestTrades13.json","w")
+            f.write(json.dumps(latestTrades, indent=2))
+            f.close()
           elif(curPrice/buyPrice>=sellUp):
             print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
             while(a.getPrice(e['symbol'])/buyPrice>=maxPrice*sellUpDn):
@@ -882,19 +901,19 @@ def algo13():
               time.sleep(3)
               
             print(a.createOrder("sell",e['qty'],e['symbol']))
-            latestTrades[e['symbol']] = str(date.today())
+            latestTrades[e['symbol']] = [str(date.today()), "sell"]
+            f = open("../stockStuff/latestTrades13.json","w")
+            f.write(json.dumps(latestTrades, indent=2))
+            f.close()
       
       time.sleep(60)
       
     else:
-      f = open("../stockStuff/latestTrades13.json","w")
-      f.write(json.dumps(latestTrades, indent=2))
-      f.close()
       print("Market closed. Will update stock list 1 hour before next open.")
       tto = a.timeTillOpen()
       time.sleep(tto-3600)
       print("Updating stock list")
-      gainers = a13.getGainers(a13.getPennies()) #list of stocks that may gain in the near future
+      gainers = list(a13.getGainers(a13.getPennies())) #list of stocks that may gain in the near future
       tto = a.timeTillOpen()
       print("Market will open in "+str(int(tto/60))+" minutes.")
       time.sleep(tto)
