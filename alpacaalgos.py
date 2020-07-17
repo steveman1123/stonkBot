@@ -890,7 +890,7 @@ def algo13():
           lastTradeDate = date.today()-dt.timedelta(1)
           lastTradeType = "NA"
           
-        if(lastTradeDate<date.today() and lastTradeType=="sell"): #prevent selling on the same day as a buy (only sell if only other trade today was a sell)
+        if(lastTradeDate<date.today() or lastTradeType=="sell"): #prevent selling on the same day as a buy (only sell if only other trade today was a sell)
           buyPrice = float(e['avg_entry_price'])
           curPrice = float(e['current_price'])
           maxPrice = 0
