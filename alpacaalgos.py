@@ -819,7 +819,7 @@ def algo13():
             lastTradeDate = date.today()-dt.timedelta(1)
             lastTradeType = "NA"
             
-          if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType="NA" or lastTradeType="buy")):
+          if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
             print(a.createOrder("buy",shares2buy,e,"market","day"))
             latestTrades[e] = [str(date.today()), "buy"]
             f = open("../stockStuff/latestTrades13.json","w")
@@ -838,7 +838,7 @@ def algo13():
               lastTradeDate = date.today()-dt.timedelta(1)
               lastTradeType = "NA"
               
-            if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType="NA" or lastTradeType="buy")):
+            if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
               print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
               latestTrades[gainers[i]] = [str(date.today()), "buy"]
               f = open("../stockStuff/latestTrades13.json","w")
@@ -857,7 +857,7 @@ def algo13():
                 lastTradeDate = date.today()-dt.timedelta(1)
                 lastTradeType = "NA"
                 
-              if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType="NA" or lastTradeType="buy")):
+              if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
                 print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
                 latestTrades[gainers[i]] = [str(date.today()), "buy"]
                 f = open("../stockStuff/latestTrades13.json","w")
@@ -891,7 +891,7 @@ def algo13():
           lastTradeDate = date.today()-dt.timedelta(1)
           lastTradeType = "NA"
           
-        if(lastTradeDate<date.today() and lastTradeType="sell"): #prevent selling on the same day as a buy (only sell if only other trade today was a sell)
+        if(lastTradeDate<date.today() and lastTradeType=="sell"): #prevent selling on the same day as a buy (only sell if only other trade today was a sell)
           buyPrice = float(e['avg_entry_price'])
           curPrice = float(e['current_price'])
           maxPrice = 0
