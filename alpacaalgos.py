@@ -791,14 +791,12 @@ def algo13():
   latestTrades = json.loads(f.read())
   f.close()
 
-  #TODO: include logic to avoid buy/sell on same day - buy near close if the price didn't go up real high during the day
-  #      can buy multiple times in one day, but not buy then sell or sell then buy.
   #TODO: change last tradedate stuff - https://alpaca.markets/docs/api-documentation/api-v2/account-activities/
   while float(a.getAcct()['portfolio_value'])>minPortVal:
     random.shuffle(gainers) #randomize list so when buying new ones, they won't always choose the top of the original list
     
     if(a.marketIsOpen()):
-      print("Market is open")
+      print("\nMarket is open")
       f = open("../stockStuff/latestTrades13.json","r")
       latestTrades = json.loads(f.read())
       f.close()
@@ -891,6 +889,7 @@ def algo13():
           lastTradeDate = date.today()-dt.timedelta(1)
           lastTradeType = "NA"
           
+        print("Tradable Stocks today:")
         if(lastTradeDate<date.today() and lastTradeType=="sell"): #prevent selling on the same day as a buy (only sell if only other trade today was a sell)
           buyPrice = float(e['avg_entry_price'])
           curPrice = float(e['current_price'])
