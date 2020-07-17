@@ -881,6 +881,7 @@ def algo13():
               
       
       positionsHeld = a.getPos()
+      print("Tradable Stocks today:")
       for e in positionsHeld:
         try:
           lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
@@ -889,7 +890,6 @@ def algo13():
           lastTradeDate = date.today()-dt.timedelta(1)
           lastTradeType = "NA"
           
-        print("Tradable Stocks today:")
         if(lastTradeDate<date.today() and lastTradeType=="sell"): #prevent selling on the same day as a buy (only sell if only other trade today was a sell)
           buyPrice = float(e['avg_entry_price'])
           curPrice = float(e['current_price'])
