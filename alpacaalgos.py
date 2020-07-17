@@ -782,7 +782,7 @@ def algo13():
   lowBuy = 5 #buy this many unique stocks if in low cash mode
   minCash = 1 #buy until this amt is left in buying power/cash balance
 
-  sellUp = 1+.19 #trigger point. Additional logic to see if it goes higher
+  sellUp = 1+.2 #trigger point. Additional logic to see if it goes higher
   sellDn = 1-.4 #limit loss
   sellUpDn = 1-.02 #sell 
 
@@ -813,10 +813,13 @@ def algo13():
         for e in gainers:
           shares2buy = int((buyPow/gainers)/a.getPrice(e))
           try:
-            lastTradeDate = dt.datetime.strptime(latestTrades[e][0],'%Y-%m-%d').date()
+            lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
+            lastTradeType = latestTrades[gainers[i]][1]
           except Exception:
-            lastTradeDate = dt.date.today()-dt.timedelta(1)
-          if(shares2buy>0 and lastTradeDate<date.today()):
+            lastTradeDate = date.today()-dt.timedelta(1)
+            lastTradeType = "NA"
+            
+          if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType="NA" or lastTradeType="buy")):
             print(a.createOrder("buy",shares2buy,e,"market","day"))
             latestTrades[e] = [str(date.today()), "buy"]
             f = open("../stockStuff/latestTrades13.json","w")
@@ -830,9 +833,12 @@ def algo13():
             shares2buy = int((buyPow/reducedBuy)/a.getPrice(gainers[i]))
             try:
               lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
+              lastTradeType = latestTrades[gainers[i]][1]
             except Exception:
-              lastTradeDate = dt.date.today()-dt.timedelta(1)
-            if(shares2buy>0 and lastTradeDate<date.today()):
+              lastTradeDate = date.today()-dt.timedelta(1)
+              lastTradeType = "NA"
+              
+            if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType="NA" or lastTradeType="buy")):
               print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
               latestTrades[gainers[i]] = [str(date.today()), "buy"]
               f = open("../stockStuff/latestTrades13.json","w")
@@ -846,9 +852,12 @@ def algo13():
               shares2buy = int((buyPow/lowBuy)/a.getPrice(gainers[i]))
               try:
                 lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
+                lastTradeType = latestTrades[gainers[i]][1]
               except Exception:
-                lastTradeDate = dt.date.today()-dt.timedelta(1)
-              if(shares2buy>0 and lastTradeDate<date.today()):
+                lastTradeDate = date.today()-dt.timedelta(1)
+                lastTradeType = "NA"
+                
+              if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType="NA" or lastTradeType="buy")):
                 print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
                 latestTrades[gainers[i]] = [str(date.today()), "buy"]
                 f = open("../stockStuff/latestTrades13.json","w")
@@ -860,7 +869,7 @@ def algo13():
               #TODO: if remaining cash>minCash but <lowCash, find the cheapest one in gainers list, & invest the rest there
               
             if(portVal<=minPortVal): #bottom out mode
-              a.sellAll(0)
+              a.sellAll(0) #TODO: replace this with a loop to avoid buying/selling on same day
               for e in latestTrades:
                 latestTrades[e] = [str(date.today()),"sell"]
               f = open("../stockStuff/latestTrades13.json","w")
@@ -876,10 +885,13 @@ def algo13():
       positionsHeld = a.getPos()
       for e in positionsHeld:
         try:
-          lastTradeDate = dt.datetime.strptime(latestTrades[e['symbol']][0],'%Y-%m-%d').date()
+          lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
+          lastTradeType = latestTrades[gainers[i]][1]
         except Exception:
-          lastTradeDate = date.today()-dt.timedelta(1) #in the event that there is no trade history with a stock, then we set it to an arbitrary time in the past to ensure the trade executes
-        if(lastTradeDate<date.today()): #prevent trading on the same day
+          lastTradeDate = date.today()-dt.timedelta(1)
+          lastTradeType = "NA"
+          
+        if(lastTradeDate<date.today() and lastTradeType="sell"): #prevent selling on the same day as a buy (only sell if only other trade today was a sell)
           buyPrice = float(e['avg_entry_price'])
           curPrice = float(e['current_price'])
           maxPrice = 0

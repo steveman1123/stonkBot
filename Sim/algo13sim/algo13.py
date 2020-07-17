@@ -275,7 +275,7 @@ def getGainers(symList):
     if(os.path.isfile(stockDir+symb+".txt")): #if a file exists
       dateData = json.loads(open(stockDir+symb+".txt","r").read()) #read it
       
-      if((dt.date.today()-dt.datetime.fromtimestamp(os.stat(stockDir+symb+".txt").st_mtime).date()).days>1): #if the last time it was pulled was more 3 days ago
+      if((dt.date.today()-dt.datetime.fromtimestamp(os.stat(stockDir+symb+".txt").st_mtime).date()).days>0): #if the last time it was pulled was more than __ days ago
         os.remove(stockDir+symb+".txt") #delete it
       
         
