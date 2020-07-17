@@ -897,7 +897,7 @@ def algo13():
             while(curPrice/buyPrice>=maxPrice/buyPrice*sellUpDn):
               curPrice = a.getPrice(e['symbol'])
               maxPrice = max(maxPrice, curPrice)
-              print(e['symbol']+" - "+str(round(curPrice/buyPrice,2))+" - "+str(round(maxPrice/buyPrice*sellUpDn)))
+              print(e['symbol']+" - "+str(round(curPrice/buyPrice,2))+" - "+str(round(maxPrice/buyPrice*sellUpDn,2)))
               time.sleep(3)
               
             print(a.createOrder("sell",e['qty'],e['symbol']))
