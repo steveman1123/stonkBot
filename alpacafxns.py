@@ -252,7 +252,15 @@ def timeTillOpen():
 
 # return the current price of the indicated stock
 def getPrice(symb):
-  #TODO: can use alpaca position['current_price']
+  #Thre folowing commented code only works for stocks currently owned, not for any stock
+  # pos = getPos()
+  # for e in pos:
+  #   if(e['symbol']==symb):
+  #     return e['current_price']
+  # print("Invalid Stock")
+  # return 0
+  
+  
   url = 'https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks'.format(symb)
   while True:
     try:
@@ -329,6 +337,6 @@ def openCloseTimes(checkDate): #checkdate of format yyyy-mm-dd
 def sharesPurchasable(symb):
   price = getPrice(symb)
   if(price):
-    return int(float(getAcct()['cash'])/price)
+    return int(float(getAcct()['buying_power'])/price)
   else:
     return 0
