@@ -784,12 +784,15 @@ def algo13():
 
   sellUp = 1+.2 #trigger point. Additional logic to see if it goes higher
   sellDn = 1-.4 #limit loss
-  sellUpDn = 1-.02 #sell 
-
-  gainers = list(a13.getGainers(a13.getPennies())) #list of stocks that may gain in the near future
-  f = open("../stockStuff/latestTrades13.json","r")
-  latestTrades = json.loads(f.read())
-  f.close()
+  sellUpDn = 1-.02 #sell
+  
+  gainers = []
+  
+  if(date.today().weekday()<5): #not saturday or sunday
+    gainers = list(a13.getGainers(a13.getPennies())) #list of stocks that may gain in the near future
+    f = open("../stockStuff/latestTrades13.json","r")
+    latestTrades = json.loads(f.read())
+    f.close()
 
   #TODO: change last tradedate stuff - https://alpaca.markets/docs/api-documentation/api-v2/account-activities/
   while float(a.getAcct()['portfolio_value'])>minPortVal:
@@ -922,7 +925,12 @@ def algo13():
       
     else:
       print("Market closed. Will update stock list 1 hour before next open.")
-      tto = a.timeTillOpen()
+      if(dt.date.today().weekday()<4): #mon-thurs
+        tto = a.timeTillOpen()
+      else: #fri-sun
+        tto = (a.openCloseTimes(str(dt.date.today()+dt.timedelta(days=7-dt.date.today().weekday())))[0]-dt.datetime.now()).seconds
+      
+      print("Opening in "+str(int(tto/60))+" minutes")
       time.sleep(tto-3600)
       print("Updating stock list")
       gainers = list(a13.getGainers(a13.getPennies())) #list of stocks that may gain in the near future
