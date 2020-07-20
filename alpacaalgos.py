@@ -759,6 +759,9 @@ def algo12():
 
 
 #generates list of potential gainers, trades based off amount of cash
+#TODO: add time limit (~7 weeks?)
+#TODO: check if stock is up, then don't buy today, only look to sell
+#TODO: check if currently held stock already peaked - if it did then lower expectations and try to sell at a profit still
 def algo13():
   a13.init('../stockStuff/apikeys.key','./Sim/algo13sim/algo13.json', '../stockStuff/stockData/') #init settings and API keys, and stock data directory
   '''
