@@ -116,7 +116,8 @@ def simPast(symList):
           print("No connection, or other error encountered. Trying again...")
           time.sleep(3)
           continue
-      time.sleep(19) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
+      if(i<len(symList)): #only delay if it's not the last one
+        time.sleep(11) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
   
       out = open(stockDir+symb+'.txt','w') #write to file for later usage
       out.write(response)
@@ -223,7 +224,7 @@ def presentList(symList):
           continue
 
       if(len(symList)>=5):
-        time.sleep(19) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
+        time.sleep(11) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
   
       out = open(stockDir+symb+'.txt','w') #write to file for later usage
       out.write(response)
@@ -299,8 +300,8 @@ def getGainers(symList):
       out.write(response)
       out.close()
     
-      if(len(symList)>=5):
-        time.sleep(19) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
+      if(len(symList)>=5 and i<len(symList)):
+        time.sleep(11) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
   
     #calc price % diff over past 20 days (current price/price of day n) - current must be >= 80% for any
     #calc volume % diff over average past some days (~60 days?) - must be sufficiently higher (~300% higher?)

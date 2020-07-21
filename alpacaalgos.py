@@ -935,7 +935,7 @@ def algo13():
         tto = (a.openCloseTimes(str(dt.date.today()+dt.timedelta(days=7-dt.date.today().weekday())))[0]-dt.datetime.now()).seconds
       
       print("Opening in "+str(int(tto/60))+" minutes")
-      time.sleep(tto-3600)
+      time.sleep(tto-3600) if(tto-3600>0) else time.sleep(tto)
       print("Updating stock list")
       gainers = list(a13.getGainers(a13.getPennies())) #list of stocks that may gain in the near future
       tto = a.timeTillOpen()
