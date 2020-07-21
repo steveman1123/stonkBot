@@ -762,6 +762,7 @@ def algo12():
 #TODO: add time limit (~7 weeks?)
 #TODO: check if stock is up, then don't buy today, only look to sell
 #TODO: check if currently held stock already peaked - if it did then lower expectations and try to sell at a profit still
+#TODO: multithread for when a stock trips the sellUp point to check that one more frequently, but not lose track of the other stocks
 def algo13():
   a13.init('../stockStuff/apikeys.key','./Sim/algo13sim/algo13.json', '../stockStuff/stockData/') #init settings and API keys, and stock data directory
   '''
@@ -901,7 +902,7 @@ def algo13():
           buyPrice = float(e['avg_entry_price'])
           curPrice = float(e['current_price'])
           maxPrice = 0
-          print(e['symbol']+" - qty: "+e['qty']+" - change: "+str(round(curPrice/buyPrice,2)))
+          print(e['symbol']+"\t-\tqty: "+e['qty']+"\t-\tchange: "+str(round(curPrice/buyPrice,2)))
     
           if(curPrice/buyPrice<=sellDn):
             print("Lost it on "+e['symbol'])
