@@ -761,7 +761,6 @@ def algo12():
 #generates list of potential gainers, trades based off amount of cash
 #TODO: check if stock is up, then don't buy today, only look to sell - easier equiv solution: only buy near close
 #TODO: check if currently held stock already peaked - if it did then lower expectations and try to sell at a profit still
-#TODO: multithread for when a stock trips the sellUp point to check that one more frequently, but not lose track of the other stocks
 def algo13():
   a13.init('../stockStuff/apikeys.key','./Sim/algo13sim/algo13.json', '../stockStuff/stockData/') #init settings and API keys, and stock data directory
   '''
@@ -811,6 +810,8 @@ def algo13():
       
       portVal = float(a.getAcct()['portfolio_value'])
       print("Portfolio val is $"+str(portVal)+". Sell targets are "+str(sellUp)+" or "+str(sellDn))
+      
+      #check here if the time is close to close - in the function, check that the requested stock didn't peak today
       check2buy(gainers, latestTrades, minPortVal,reducedCash,reducedBuy,lowCash,lowBuy,minCash)
               
       
@@ -837,7 +838,7 @@ def algo13():
 
 
 
-#for algo13 - check to sell a list of stocks (to be used as a separate thread)
+#for algo13 - check to sell a list of stocks
 def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
   for e in symList:
     try:
@@ -873,8 +874,6 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
         f = open("../stockStuff/latestTrades13.json","w")
         f.write(json.dumps(latestTrades, indent=2))
         f.close()
-
-
 
 
 #for aglo13 - triggered selling-up - this is the one that gets multithreaded
