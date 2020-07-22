@@ -714,7 +714,7 @@ def algo12():
     
     
   '''
-  Algo outline (probably wrong now):
+  Algo12 outline (probably wrong now):
   
   only buy at/near close, and sell at open EXCEPT
   during the day:
@@ -759,8 +759,7 @@ def algo12():
 
 
 #generates list of potential gainers, trades based off amount of cash
-#TODO: add time limit (~7 weeks?)
-#TODO: check if stock is up, then don't buy today, only look to sell
+#TODO: check if stock is up, then don't buy today, only look to sell - easier equiv solution: only buy near close
 #TODO: check if currently held stock already peaked - if it did then lower expectations and try to sell at a profit still
 #TODO: multithread for when a stock trips the sellUp point to check that one more frequently, but not lose track of the other stocks
 def algo13():
@@ -787,8 +786,8 @@ def algo13():
   minCash = 1 #buy until this amt is left in buying power/cash balance
 
   sellUp = 1+.2 #trigger point. Additional logic to see if it goes higher
-  sellDn = 1-.4 #limit loss
-  sellUpDn = 1-.02 #sell
+  sellDn = 1-.3 #limit loss
+  sellUpDn = 1-.02 #sell if it triggers sellUp then drops sufficiently
   
   gainers = []
   
@@ -798,7 +797,7 @@ def algo13():
     latestTrades = json.loads(f.read())
     f.close()
 
-  #TODO: change last tradedate stuff - https://alpaca.markets/docs/api-documentation/api-v2/account-activities/
+  #TODO (optional): change last tradedate stuff - https://alpaca.markets/docs/api-documentation/api-v2/account-activities/
   while float(a.getAcct()['portfolio_value'])>minPortVal:
     random.shuffle(gainers) #randomize list so when buying new ones, they won't always choose the top of the original list
     
@@ -812,6 +811,7 @@ def algo13():
       portVal = float(acct['portfolio_value'])
       buyPow = float(acct['buying_power'])
       print("Portfolio val is $"+str(portVal)+". Sell targets are "+str(sellUp)+" or "+str(sellDn))
+      #TODO: check here for if close to close and if max of today was sufficiently high to trigger a sell (second bump) - if triggered, don't buy, just skip it
       if(buyPow>reducedCash): #in normal operating mode
         print("Normal Operation Mode. Available Buying Power: $"+str(buyPow))
         #div cash over all gainers
@@ -898,6 +898,8 @@ def algo13():
           lastTradeType = "NA"
         
         # print(e['symbol']+" - "+str(lastTradeDate)+" - "+lastTradeType)
+        #TODO: make an exception that if the price is really skyrocketing, then it's okay to sell (i.e. price increase by > 75%)
+        #TODO: move this into its own function and make it its own thread
         if(lastTradeDate<date.today() or lastTradeType=="sell"): #prevent selling on the same day as a buy (only sell if only other trade today was a sell)
           buyPrice = float(e['avg_entry_price'])
           curPrice = float(e['current_price'])
