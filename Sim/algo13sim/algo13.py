@@ -291,8 +291,6 @@ def getGainers(symList):
       while True:
         try:
           response = requests.request('GET', url, params=params).text #send request and store response
-          dateData = json.loads(response) #load into json to make sure it's valid
-          dateData = dateData[list(dateData)[1]] #make sure all the json data is present
           break
         except Exception:
           print("No connection, or other error encountered. Trying again...")
@@ -303,7 +301,7 @@ def getGainers(symList):
       out.close()
     
       if(len(symList)>=5 and i<len(symList)):
-        time.sleep(12) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
+        time.sleep(11) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
   
     #calc price % diff over past 20 days (current price/price of day n) - current must be >= 80% for any
     #calc volume % diff over average past some days (~60 days?) - must be sufficiently higher (~300% higher?)
@@ -314,7 +312,7 @@ def getGainers(symList):
     days2wait4fall = 3 #wait for stock price to fall for this many days
     startDate = days2wait4fall+1 #add 1 to account for the jump day itself
     days2look = 25 #look back this far for a jump
-    firstJumpAmt = 1.3 #stock first must jump by at least this amount (1.3=130% over 1 day)
+    firstJumpAmt = 1.3 #stock first must jump by this amount (1.3=130% over 1 day)
     sellUp = 1.25 #% to sell up at
     sellDn = 0.5 #% to sell dn at
     
@@ -358,7 +356,7 @@ def getGainers(symList):
               if(diff>=sellUp):
                 missedJump = True
             if(not missedJump):
-              validBuys[symb] = list(dateData)[startDate] #return the stock and the date it initially jumped
+              validBuys[symb] = list(dateData)[startDate] #return the stock and the date it initiall 
           
   return validBuys #return a dict of whether a stock is a valid purchase or not
 
