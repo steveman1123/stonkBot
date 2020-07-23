@@ -870,12 +870,6 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
         triggerThread = threading.Thread(target=triggeredUp, args=(e, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades))
         triggerThread.start()
 
-          
-        print(a.createOrder("sell",e['qty'],e['symbol']))
-        latestTrades[e['symbol']] = [str(date.today()), "sell"]
-        f = open("../stockStuff/latestTrades13.json","w")
-        f.write(json.dumps(latestTrades, indent=2))
-        f.close()
 
 
 #for aglo13 - triggered selling-up - this is the one that gets multithreaded
@@ -885,6 +879,12 @@ def triggeredUp(symbObj, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades):
     maxPrice = max(maxPrice, curPrice)
     print(symbObj['symbol']+" - "+str(round(curPrice/buyPrice,2))+" - "+str(round(maxPrice/buyPrice*sellUpDn,2)))
     time.sleep(3)
+  
+  print(a.createOrder("sell",e['qty'],e['symbol']))
+  latestTrades[e['symbol']] = [str(date.today()), "sell"]
+  f = open("../stockStuff/latestTrades13.json","w")
+  f.write(json.dumps(latestTrades, indent=2))
+  f.close()
 
 
 #for algo13 - whether to buy a stock or not
