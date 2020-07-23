@@ -760,7 +760,9 @@ def algo12():
 
 #generates list of potential gainers, trades based off amount of cash
 #TODO: check if stock is up, then don't buy today, only look to sell - easier equiv solution: only buy near close
-#TODO: check if currently held stock already peaked - if it did then lower expectations and try to sell at a profit still
+#TODO: check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still
+#TODO: setup web interface to viewbaic stock/portfolio data without having to log in
+#TODO: keep gainers date and estimate days until jump (appx 5 weeks after first jump date +/- 3 weeks)
 def algo13():
   a13.init('../stockStuff/apikeys.key','./Sim/algo13sim/algo13.json', '../stockStuff/stockData/') #init settings and API keys, and stock data directory
   '''
