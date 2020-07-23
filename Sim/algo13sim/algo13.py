@@ -111,13 +111,15 @@ def simPast(symList):
       while True:
         try:
           response = requests.request('GET', url, params=params).text #send request and store response
+          stonkData = json.loads(response) #read in as json data
+          dateData = stonkData[list(stonkData.keys())[1]] #time series (daily) - index 0=meta data, 1=stock data
           break
         except Exception:
           print("No connection, or other error encountered. Trying again...")
           time.sleep(3)
           continue
       if(i<len(symList)): #only delay if it's not the last one
-        time.sleep(11) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
+        time.sleep(12.5) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
   
       out = open(stockDir+symb+'.txt','w') #write to file for later usage
       out.write(response)
@@ -291,8 +293,11 @@ def getGainers(symList):
       while True:
         try:
           response = requests.request('GET', url, params=params).text #send request and store response
+          dateData = json.loads(response) #dictionary of all data returned from AV
+          dateData = dateData[list(dateData)[1]] #dict without the metadata - just the date data
           break
         except Exception:
+#          print(response)
           print("No connection, or other error encountered. Trying again...")
           time.sleep(3)
           continue
@@ -301,7 +306,7 @@ def getGainers(symList):
       out.close()
     
       if(len(symList)>=5 and i<len(symList)):
-        time.sleep(11) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
+        time.sleep(12.5) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
   
     #calc price % diff over past 20 days (current price/price of day n) - current must be >= 80% for any
     #calc volume % diff over average past some days (~60 days?) - must be sufficiently higher (~300% higher?)

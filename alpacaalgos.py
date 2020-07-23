@@ -878,7 +878,7 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
 
 #for aglo13 - triggered selling-up - this is the one that gets multithreaded
 def triggeredUp(symbObj, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades):
-  while(curPrice/buyPrice>=maxPrice/buyPrice*sellUpDn):
+  while(curPrice/buyPrice>=maxPrice/buyPrice*sellUpDn and a.timeTillClose()>=30):
     curPrice = a.getPrice(symbObj['symbol'])
     maxPrice = max(maxPrice, curPrice)
     print(symbObj['symbol']+" - "+str(round(curPrice/buyPrice,2))+" - "+str(round(maxPrice/buyPrice*sellUpDn,2)))

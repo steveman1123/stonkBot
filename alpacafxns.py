@@ -252,19 +252,11 @@ def timeTillOpen():
 
 # return the current price of the indicated stock
 def getPrice(symb):
-  #Thre folowing commented code only works for stocks currently owned, not for any stock
-  # pos = getPos()
-  # for e in pos:
-  #   if(e['symbol']==symb):
-  #     return e['current_price']
-  # print("Invalid Stock")
-  # return 0
-  
-  
-  url = 'https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks'.format(symb)
+  #url = 'https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks'.format(symb) #use this URL to avoid alpaca (doesn't seem to work sometimes though)
+  url = 'https://data.alpaca.markets/v1/last/stocks/{}'.format(symb)
   while True:
     try:
-      response = requests.request('GET', url).text #send request and store response
+      response = requests.get(url,headers=HEADERS).text #send request and store response
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
@@ -272,7 +264,8 @@ def getPrice(symb):
       continue
 
   try:
-    latestPrice = float(json.loads(response)["data"]["primaryData"]["lastSalePrice"][1:])
+    #latestPrice = float(json.loads(response)["data"]["primaryData"]["lastSalePrice"][1:]) #use this line for the alt. URL
+    latestPrice = float(json.loads(response)['last']['price'])
     return latestPrice
   except Exception:
     print("Invalid Stock")
