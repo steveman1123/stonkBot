@@ -857,7 +857,7 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn, gainerDates):
       buyPrice = float(e['avg_entry_price'])
       curPrice = float(e['current_price'])
       maxPrice = 0
-      print(e['symbol']+"\t-\tlast jump: "+gainerDates[e['symbol']]+"\t-\tqty: "+e['qty']+"\t-\tchange: "+str(round(curPrice/buyPrice,2)))
+      print(e['symbol']+"\t-\tqty: "+e['qty']+"\t-\tchange: "+str(round(curPrice/buyPrice,2)))
   
       if(curPrice/buyPrice<=sellDn):
         print("Lost it on "+e['symbol'])
@@ -882,8 +882,8 @@ def triggeredUp(symbObj, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades):
     print(symbObj['symbol']+" - "+str(round(curPrice/buyPrice,2))+" - "+str(round(maxPrice/buyPrice*sellUpDn,2)))
     time.sleep(3)
   
-  print(a.createOrder("sell",e['qty'],e['symbol']))
-  latestTrades[e['symbol']] = [str(date.today()), "sell"]
+  print(a.createOrder("sell",symbObj['qty'],symbObj['symbol']))
+  latestTrades[symbObj['symbol']] = [str(date.today()), "sell"]
   f = open("../stockStuff/latestTrades13.json","w")
   f.write(json.dumps(latestTrades, indent=2))
   f.close()
