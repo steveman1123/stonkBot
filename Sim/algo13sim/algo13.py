@@ -297,7 +297,6 @@ def getGainers(symList):
           dateData = dateData[list(dateData)[1]] #dict without the metadata - just the date data
           break
         except Exception:
-#          print(response)
           print("No connection, or other error encountered. Trying again...")
           time.sleep(3)
           continue
@@ -305,7 +304,7 @@ def getGainers(symList):
       out.write(response)
       out.close()
     
-      if(len(symList)>=5 and i<len(symList)):
+      if(len(symList)>=5 and i<len(symList)-1):
         time.sleep(12.5) #max requests of 5 per minute for free alphavantage account, delay to stay under that limit
   
     #calc price % diff over past 20 days (current price/price of day n) - current must be >= 80% for any
@@ -345,7 +344,7 @@ def getGainers(symList):
         if(float(dateData[list(dateData)[startDate-days2wait4fall]]['2. high'])/lastPrice-1<priceDrop and int(dateData[list(dateData)[startDate-days2wait4fall]]['5. volume'])<=lastVol*volLoss):
           #the jump happened, the volume gained, the next day's price and volumes have fallen
           dayPrice = lastPrice
-          i = 1 #magic number?
+          i = 1 #magic number? TODO: figure out exactly what this counter is doing
           # check within the the last few days, check the price has risen compared to the past some days, and we're within the valid timeframe
           while(i<=checkPriceDays and lastPrice/dayPrice<checkPriceAmt and startDate+i<len(dateData)):
             dayPrice = float(dateData[list(dateData)[startDate+i]]['2. high'])
@@ -361,7 +360,7 @@ def getGainers(symList):
               if(diff>=sellUp):
                 missedJump = True
             if(not missedJump):
-              validBuys[symb] = list(dateData)[startDate] #return the stock and the date it initiall 
+              validBuys[symb] = list(dateData)[startDate] #return the stock and the date it initially jumped
           
-  return validBuys #return a dict of whether a stock is a valid purchase or not
+  return validBuys #return a dict of valid stocks and the date of their latest jump
 

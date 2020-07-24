@@ -759,10 +759,9 @@ def algo12():
 
 
 #generates list of potential gainers, trades based off amount of cash
-#TODO: check if stock is up, then don't buy today, only look to sell - easier equiv solution: only buy near close
-#TODO: check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still
-#TODO: setup web interface to viewbaic stock/portfolio data without having to log in
-#TODO: keep gainers date and estimate days until jump (appx 5 weeks after first jump date +/- 3 weeks)
+#TODO: check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still(this should only happen is there's a network error or durning testing stuff)
+#TODO: setup web interface to view basic stock/portfolio data without having to log in
+#TODO: keep gainers date and estimate days until jump (appx 5 weeks after first jump date +/- 3 weeks) to satisfy my impatience
 def algo13():
   a13.init('../stockStuff/apikeys.key','./Sim/algo13sim/algo13.json', '../stockStuff/stockData/') #init settings and API keys, and stock data directory
   '''
@@ -800,7 +799,6 @@ def algo13():
 
   portVal = float(a.getAcct()['portfolio_value'])
 
-  #TODO (optional): change last tradedate stuff - https://alpaca.markets/docs/api-documentation/api-v2/account-activities/
   while portVal>minPortVal:
     random.shuffle(gainers) #randomize list so when buying new ones, they won't always choose the top of the original list
     
@@ -835,8 +833,6 @@ def algo13():
       tto = a.timeTillOpen()
       print("Market will open in "+str(int(tto/60))+" minutes.")
       time.sleep(tto)
-
-
 
 
 
@@ -892,31 +888,15 @@ def check2buy(gainers, latestTrades, minPortVal, reducedCash, reducedBuy, lowCas
   acct = a.getAcct()
   portVal = float(acct['portfolio_value'])
   buyPow = float(acct['buying_power'])
-  #TODO: check here for if close to close and if max of today was sufficiently high to trigger a sell (second bump) - if triggered, don't buy, just skip it
-  if(buyPow>reducedCash): #in normal operating mode
-    print("Normal Operation Mode. Available Buying Power: $"+str(buyPow))
-    #div cash over all gainers
-    for e in gainers:
-      shares2buy = int((buyPow/len(gainers))/a.getPrice(e))
-      try:
-        lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
-        lastTradeType = latestTrades[gainers[i]][1]
-      except Exception:
-        lastTradeDate = date.today()-dt.timedelta(1)
-        lastTradeType = "NA"
-        
-      if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
-        print(a.createOrder("buy",shares2buy,e,"market","day"))
-        latestTrades[e] = [str(date.today()), "buy"]
-        f = open("../stockStuff/latestTrades13.json","w")
-        f.write(json.dumps(latestTrades, indent=2))
-        f.close()
-  else:
-    if(buyPow>lowCash): #in reduced cash mode
-      print("Reduced Cash Mode. Available Buying Power: $"+str(buyPow))
-      #div cash over $reducedBuy stocks
-      for i in range(min(reducedBuy,len(gainers))):
-        shares2buy = int((buyPow/reducedBuy)/a.getPrice(gainers[i]))
+  nowInSec = (dt.datetime.now()-dt.datetime.combine(dt.date.today(),dt.datetime.min.time())).seconds #there might be a better way to get this, but this returns the time of day in seconds
+  ttc = a.timeTillClose() #returns the time till next market close in seconds
+  if(ttc-nowInSec>0 and ttc-nowInSec<5*60): #must be within 5 minutes of close to start buying
+    #TODO: check here for the day's high to see if it reached the threshold for each stock - remove ones that it did from the gainers list
+    if(buyPow>reducedCash): #in normal operating mode
+      print("Normal Operation Mode. Available Buying Power: $"+str(buyPow))
+      #div cash over all gainers
+      for e in gainers:
+        shares2buy = int((buyPow/len(gainers))/a.getPrice(e))
         try:
           lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
           lastTradeType = latestTrades[gainers[i]][1]
@@ -925,17 +905,17 @@ def check2buy(gainers, latestTrades, minPortVal, reducedCash, reducedBuy, lowCas
           lastTradeType = "NA"
           
         if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
-          print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
-          latestTrades[gainers[i]] = [str(date.today()), "buy"]
+          print(a.createOrder("buy",shares2buy,e,"market","day"))
+          latestTrades[e] = [str(date.today()), "buy"]
           f = open("../stockStuff/latestTrades13.json","w")
           f.write(json.dumps(latestTrades, indent=2))
           f.close()
     else:
-      if(buyPow>minCash): #in low cash mode
-        print("Low Cash Mode. Available Buying Power: $"+str(buyPow))
-        #div cash over $lowBuy cheapest stocks in list
-        for i in range(min(lowBuy,len(gainers))):
-          shares2buy = int((buyPow/lowBuy)/a.getPrice(gainers[i]))
+      if(buyPow>lowCash): #in reduced cash mode
+        print("Reduced Cash Mode. Available Buying Power: $"+str(buyPow))
+        #div cash over $reducedBuy stocks
+        for i in range(min(reducedBuy,len(gainers))):
+          shares2buy = int((buyPow/reducedBuy)/a.getPrice(gainers[i]))
           try:
             lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
             lastTradeType = latestTrades[gainers[i]][1]
@@ -950,19 +930,38 @@ def check2buy(gainers, latestTrades, minPortVal, reducedCash, reducedBuy, lowCas
             f.write(json.dumps(latestTrades, indent=2))
             f.close()
       else:
-        if(buyPow>minCash):
-          print("Buying power is greater than minCash, and less than lowCash - TODO")
-          #TODO: if remaining cash>minCash but <lowCash, find the cheapest one in gainers list, & invest the rest there
-          
-        if(portVal<=minPortVal): #bottom out mode
-          a.sellAll(0) #TODO: replace this with a loop to avoid buying/selling on same day
-          for e in latestTrades:
-            latestTrades[e] = [str(date.today()),"sell"]
-          f = open("../stockStuff/latestTrades13.json","w")
-          f.write(json.dumps(latestTrades, indent=2))
-          f.close()
-          print("Bottom Out Mode. Available Buying Power: $"+str(buyPow))
-          # break
-        else: #low cash but high portfolio means all is invested
-          print("Portfolio Value: $"+str(portVal)+", Available Buying Power: $"+str(buyPow))
+        if(buyPow>minCash): #in low cash mode
+          print("Low Cash Mode. Available Buying Power: $"+str(buyPow))
+          #div cash over $lowBuy cheapest stocks in list
+          for i in range(min(lowBuy,len(gainers))):
+            shares2buy = int((buyPow/lowBuy)/a.getPrice(gainers[i]))
+            try:
+              lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
+              lastTradeType = latestTrades[gainers[i]][1]
+            except Exception:
+              lastTradeDate = date.today()-dt.timedelta(1)
+              lastTradeType = "NA"
+              
+            if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
+              print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
+              latestTrades[gainers[i]] = [str(date.today()), "buy"]
+              f = open("../stockStuff/latestTrades13.json","w")
+              f.write(json.dumps(latestTrades, indent=2))
+              f.close()
+        else:
+          if(buyPow>minCash):
+            print("Buying power is greater than minCash, and less than lowCash - TODO")
+            #TODO: if remaining cash>minCash but <lowCash, find the cheapest one in gainers list, & invest the rest there
+            
+          if(portVal<=minPortVal): #bottom out mode
+            a.sellAll(0) #TODO: replace this with a loop to avoid buying/selling on same day
+            for e in latestTrades:
+              latestTrades[e] = [str(date.today()),"sell"]
+            f = open("../stockStuff/latestTrades13.json","w")
+            f.write(json.dumps(latestTrades, indent=2))
+            f.close()
+            print("Bottom Out Mode. Available Buying Power: $"+str(buyPow))
+            # break
+          else: #low cash but high portfolio means all is invested
+            print("Portfolio Value: $"+str(portVal)+", Available Buying Power: $"+str(buyPow))
           
