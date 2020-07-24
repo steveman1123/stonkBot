@@ -30,7 +30,7 @@ CALURL = "{}/v2/calendar".format(ENDPOINTURL) #calendar url
 
 #get list of common penny stocks under $price and sorted by gainers (up) or losers (down)
 def getPennies(price=1,updown="up"):
-  url = 'https://stocksunder1.org/'
+  url = 'https://stocksunder1.org/nasdaq-penny-stocks/'
 
   while True:
     try:
@@ -43,7 +43,7 @@ def getPennies(price=1,updown="up"):
 
   tableList = read_html(html)
   try:
-    symList = tableList[2][0][5:]
+    symList = tableList[5][1:][0]
     symList = [e.replace(' predictions','') for e in symList]
     return symList
   except Exception:

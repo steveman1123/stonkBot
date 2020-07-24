@@ -42,7 +42,7 @@ def getPennies(price=1,updown="up"):
   try:
     symList = tableList[5][0:]['Symbol']
   except Exception:
-    symList = tableList[5][1:][0] #this keeps changing (possibly intentionally)
+    symList = tableList[5][1:][0] #this keeps changing (possibly intentionally - possibly due to switching btw windows and linux?)
   
   symList = [re.sub(r'\W+','',e.replace(' predictions','')) for e in symList] #strip "predictions" and any non alphanumerics
   # print(tableList[5][0:]['Symbol'])

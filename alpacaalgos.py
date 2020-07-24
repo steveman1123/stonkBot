@@ -789,13 +789,17 @@ def algo13():
   sellDn = 1-.3 #limit loss
   sellUpDn = 1-.02 #sell if it triggers sellUp then drops sufficiently
   
+  gainerDates = {}
   gainers = []
   
   if(date.today().weekday()<5): #not saturday or sunday
-    gainers = list(a13.getGainers(a13.getPennies())) #list of stocks that may gain in the near future
+    #list of stocks that may gain in the near future as well as currently held stocks and their last gain date
+    gainerDates = a13.getGainers(list(set(a13.getPennies()+[e['symbol'] for e in a.getPos()]))) #combine nasdaq list & my stocks & remove duplicates - order doesn't matter
+    gainers = list(gainerDates) #list of just the stock symbols - program was written before gainerDates was introduced. Should eventually be rewritten to get rid of this one in favor of that single variable
     f = open("../stockStuff/latestTrades13.json","r")
     latestTrades = json.loads(f.read())
     f.close()
+  # print(json.dumps(gainerDates,indent=2))
 
   portVal = float(a.getAcct()['portfolio_value'])
 
@@ -816,7 +820,7 @@ def algo13():
               
       
       print("Tradable Stocks:")
-      check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn)
+      check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn, gainerDates)
       time.sleep(60)
       
     else:
@@ -829,7 +833,9 @@ def algo13():
       print("Opening in "+str(int(tto/60))+" minutes")
       time.sleep(tto-3600) if(tto-3600>0) else time.sleep(tto)
       print("Updating stock list")
-      gainers = list(a13.getGainers(a13.getPennies())) #list of stocks that may gain in the near future
+      #list of stocks that may gain in the near future as well as currently held stocks and their last gain date
+      gainerDates = a13.getGainers(list(set(a13.getPennies()+[e['symbol'] for e in a.getPos()]))) #combine nasdaq list & my stocks & remove duplicates - order doesn't matter
+      gainers = list(gainerDates) #list of just the stock symbols
       tto = a.timeTillOpen()
       print("Market will open in "+str(int(tto/60))+" minutes.")
       time.sleep(tto)
@@ -837,7 +843,7 @@ def algo13():
 
 
 #for algo13 - check to sell a list of stocks
-def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
+def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn, gainerDates):
   for e in symList:
     try:
       lastTradeDate = dt.datetime.strptime(latestTrades[e['symbol']][0],'%Y-%m-%d').date()
@@ -851,7 +857,7 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
       buyPrice = float(e['avg_entry_price'])
       curPrice = float(e['current_price'])
       maxPrice = 0
-      print(e['symbol']+"\t-\tqty: "+e['qty']+"\t-\tchange: "+str(round(curPrice/buyPrice,2)))
+      print(e['symbol']+"\t-\tlast jump: "+gainerDates[e['symbol']]+"\t-\tqty: "+e['qty']+"\t-\tchange: "+str(round(curPrice/buyPrice,2)))
   
       if(curPrice/buyPrice<=sellDn):
         print("Lost it on "+e['symbol'])
