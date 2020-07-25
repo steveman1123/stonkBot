@@ -1,3 +1,4 @@
+#TODO: clean up dependencies to not import twice, etc
 import alpacafxns as a
 import time, random, sys, json, threading
 from datetime import date
@@ -868,10 +869,9 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn, gainerDates):
         f.close()
       elif(curPrice/buyPrice>=sellUp):
         print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
-        # triggeredUp(e, curPrice, buyPrice maxPrice, sellUpDn, latestTrades)
+        #TODO: only start a new thread if a new stock is ready to be sold - else just leave it/don't start a new thread
         triggerThread = threading.Thread(target=triggeredUp, args=(e, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades))
         triggerThread.start()
-
 
 
 #for aglo13 - triggered selling-up - this is the one that gets multithreaded

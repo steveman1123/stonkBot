@@ -1,8 +1,6 @@
 import requests, json, random, re, time
 from pandas import read_html
-from datetime import datetime as dt
-from datetime import date
-from datetime import timedelta
+from datetime import date, timedelta, datetime as dt
 
 isPaper = 0 #set up as paper trading (testing), or actual trading
 
@@ -252,11 +250,12 @@ def timeTillOpen():
 
 # return the current price of the indicated stock
 def getPrice(symb):
-  #url = 'https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks'.format(symb) #use this URL to avoid alpaca (doesn't seem to work sometimes though)
+  #url = 'https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks'.format(symb) #use this URL to avoid alpaca
   url = 'https://data.alpaca.markets/v1/last/stocks/{}'.format(symb)
   while True:
     try:
       response = requests.get(url,headers=HEADERS).text #send request and store response
+      # response = requests.get(url,headers={"User-Agent": "-"}).text #nasdaq url requires a non-empty user-agent string
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
