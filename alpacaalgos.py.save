@@ -828,8 +828,8 @@ def algo13():
       if(dt.date.today().weekday()<4): #mon-thurs
         tto = a.timeTillOpen()
       else: #fri-sun
-        tto = (a.openCloseTimes(str(dt.date.today()+dt.timedelta(days=7-dt.date.today().weekday())))[0]-dt.datetime.now()).total_seconds()
-
+        tto = (a.openCloseTimes(str(dt.date.today()+dt.timedelta(days=7-dt.date.today().weekday())))[0]-dt.datetime.now()).seconds
+      
       print("Opening in "+str(int(tto/60))+" minutes")
       time.sleep(tto-3600) if(tto-3600>0) else time.sleep(tto)
       print("Updating stock list")
