@@ -763,7 +763,8 @@ def algo12():
 #TODO: check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still(this should only happen is there's a network error or durning testing stuff)
 #TODO: setup web interface to view basic stock/portfolio data without having to log in
 #TODO: keep gainers date and estimate days until jump (appx 5 weeks after first jump date +/- 3 weeks) to satisfy my impatience
-#TODO: process stock data from nasdaq directly (rather than thru AV - https://www.nasdaq.com/api/v1/historical/{symb}/stocks/{start yyyy-mm-dd}/{end yyyy-mm-dd} (will probably need to set some headers to get the returned csv file)
+#TODO: process stock data from nasdaq directly (rather than thru AV - https://www.nasdaq.com/api/v1/historical/{symb}/stocks/{start yyyy-mm-dd}/{end yyyy-mm-dd} (with header={"user-agent":"-"})
+#TODO: get the stock list from market watch and combine with stocksunder1 list & currently held stocks - https://www.marketwatch.com/tools/stockresearch/screener/results.asp?submit=Screen&Symbol=true&Volume=true&Price=true&SortyBy=Symbol&ResultsPerPage=OneHundred&TradesShareEnable=true&TradesShareMin=&TradesShareMax=5&Exchange=NASDAQ
 def algo13(): a13.init('../stockStuff/apikeys.key','./Sim/algo13sim/algo13.json', '../stockStuff/stockData/') #init settings and API keys, and stock data directory
 ''' buy/sell logic:
   - if cash<some amt (reduced cash mode) 
