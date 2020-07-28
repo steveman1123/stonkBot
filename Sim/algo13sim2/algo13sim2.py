@@ -1,5 +1,10 @@
 import requests, csv, os, time, re
+import datetime as dt
 from pandas import read_html
+
+global stockDir
+stockDir = "./stockData/"
+
 
 #get list of stocks from stocksUnder1 and marketWatch lists
 def getList():
@@ -83,7 +88,7 @@ def getList():
 
 
 #get the history of a stock from the nasdaq api (date format is yyyy-mm-dd)
-#returns as 2d array order of Date, Close/Last, Volume, Open, High, Low
+#returns as 2d array order of Date, Close/Last, Volume, Open, High, Low sorted by dates newest to oldest
 def getHistory(symb, startDate, endDate): 
   #write to file after checking that the file doesn't already exist (we don't want to abuse the api)
   url = f'https://www.nasdaq.com/api/v1/historical/{symb}/stocks/{startDate}/{endDate}/'
@@ -95,12 +100,12 @@ def getHistory(symb, startDate, endDate):
       print("No connection, or other error encountered. Trying again...")
       time.sleep(3)
       continue
-  out = open(symb+'.csv','w') #write to file for later usage
+  out = open(stockDir+symb+'.csv','w') #write to file for later usage
   out.write(r)
   out.close()
 
   #read csv and convert to array
-  with open(symb+".csv") as csv_file:
+  with open(stockDir+symb+".csv") as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     out = [e for e in csv_reader]
 
@@ -110,8 +115,25 @@ def getHistory(symb, startDate, endDate):
 #checks whether something is a good buy or not (if not, return why - no initial jump or second jump already missed).
 #if it is a good buy, return initial jump date
 #same criteria as in getGainers() of other algo13sim
-def goodBuy(history):
-
+def goodBuy(symb):
+  days2look = 30 #trading days - days to look for a jump
+  avgVolOver = 30 #average the volume over this many days
+  days2request = days2look+avgVolOver #real days, not trading days
+  volJump = 3 #volume must be this many x greater than average volume
+  priceJump1 = 1.4 #first price must jump at least this much in one day
+  
+  hist = a.getHistory(symb, str(dt.date.today()-dt.timedelta(days=days2request)), str(dt.date.today()))
+  i=1 #skip the first row (contains headers)
+  isgood = False
+  while(i<days2look):
+    avgVol = average([e[2] for e in hist[i:i+avgVolOver]])#average volumes from i to i+avgVolOver
+    if(hist[i][2]>volJump*avgVol and hist[i][1]>=priceJump1*hist[i+1][1]): #big volume and big gain
+      
+    #loop through the dates to find a jump
+    #if there is one, look for a fall (record the fall date)
+    #look for a second rise - if there isn't one, return true
+    #else return false
+    
   '''
   if(<no jump>):
     return "no jump"
