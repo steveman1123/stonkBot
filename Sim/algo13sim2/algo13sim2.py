@@ -115,6 +115,7 @@ def getHistory(symb, startDate, endDate):
 #checks whether something is a good buy or not (if not, return why - no initial jump or second jump already missed).
 #if it is a good buy, return initial jump date
 #same criteria as in getGainers() of other algo13sim
+'''
 def goodBuy(symb):
   days2look = 30 #trading days - days to look for a jump
   avgVolOver = 30 #average the volume over this many days
@@ -126,22 +127,23 @@ def goodBuy(symb):
   i=1 #skip the first row (contains headers)
   isgood = False
   while(i<days2look):
-    avgVol = average([e[2] for e in hist[i:i+avgVolOver]])#average volumes from i to i+avgVolOver
+    avgVol = average([e[2] for e in hist[i+1:i+avgVolOver]])#average volumes from i to i+avgVolOver
     if(hist[i][2]>volJump*avgVol and hist[i][1]>=priceJump1*hist[i+1][1]): #big volume and big gain
-      
+      for j in range(i,2,-1): #go the other direction now looking for a fall (skipping col headers and latest day (because we need to look ahead))
+        if(h[j]
     #loop through the dates to find a jump
     #if there is one, look for a fall (record the fall date)
     #look for a second rise - if there isn't one, return true
     #else return false
     
-  '''
+
   if(<no jump>):
     return "no jump"
   elif(<second jump happened already>):
     return "missed it"
   else: #there was a jump, and the second jump hasn't happened yet
     return jumpDate
-  '''
+'''
 
 
 #just like in the other algo13sim, return a list of gainers and their initial jump date

@@ -854,12 +854,12 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn, gainerDates):
       lastTradeDate = date.today()-dt.timedelta(1)
       lastTradeType = "NA"
     
-    #TODO: move this into its own function and make it its own thread
+    #TODO: check for change from the open - not from the buyPrice (in case the stock falls a bunch since we bought it, then if it jumps the x%, it might not reach the x% gain from when we bought it, but that's the risk of the market
     if(lastTradeDate<date.today() or lastTradeType=="sell" or float(e['current_price'])/float(e['avg_entry_price'])>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
       buyPrice = float(e['avg_entry_price'])
       curPrice = float(e['current_price'])
       maxPrice = 0
-      print(e['symbol']+"\t-\tqty: "+e['qty']+"\t-\tchange: "+str(round(curPrice/buyPrice,2)))
+      print(e['symbol']+"\t-\tFirst Jump: "+"TBD"+"\t-\tchange: "+str(round(curPrice/buyPrice,2)))
   
       if(curPrice/buyPrice<=sellDn):
         print("Lost it on "+e['symbol'])
@@ -870,9 +870,10 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn, gainerDates):
         f.close()
       elif(curPrice/buyPrice>=sellUp):
         print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
-        #TODO: only start a new thread if a new stock is ready to be sold - else just leave it/don't start a new thread
-        triggerThread = threading.Thread(target=triggeredUp, args=(e, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades))
-        triggerThread.start()
+        if(not e in [t.getName() for t in threading.enumerate()]): #if the thread is not found in names of the running threads, then start it (this stops multiple instances of the same stock thread)
+          triggerThread = threading.Thread(target=triggeredUp, args=(e, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades)) #init the thread
+          triggerThread.setName(e) #set the name to the stock symb
+          triggerThread.start() #start the thread
 
 
 #for aglo13 - triggered selling-up - this is the one that gets multithreaded
