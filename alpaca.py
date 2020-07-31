@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 #alpaca investing test 1
 
 import alpacaalgos as algos

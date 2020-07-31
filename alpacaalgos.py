@@ -822,8 +822,10 @@ def algo13():
       
       print("Tradable Stocks:")
       check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn, gainerDates)
-      f = open('/var/www/stonks.json')
-      f.write(json.dumps({"portVal":round(portVal,2),"updated":dt.datetime.now().strftime("%Y-%m-%d, %H:%M")})) #write out to display on a web interface
+
+      f = open("/var/www/stonks.json",'w')
+      f.write(json.dumps({"portVal":round(portVal,2),"updated":dt.datetime.now().strftime("%Y-%m-%d, %H:%M")}))
+      f.close()
       time.sleep(60)
       
     else:
