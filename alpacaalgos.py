@@ -763,9 +763,9 @@ def algo12():
 
 #generates list of potential gainers, trades based off amount of cash
 #TODO: check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still(this should only happen is there's a network error or durning testing stuff)
-#TODO: keep gainers date and estimate days until jump (appx 5 weeks after first jump date +/- 3 weeks) to satisfy my impatience
-#TODO: process stock data from nasdaq directly (rather than thru AV - https://www.nasdaq.com/api/v1/historical/{symb}/stocks/{start yyyy-mm-dd}/{end yyyy-mm-dd} (with header={"user-agent":"-"})
+#TODO: keep gainers date and estimate days until jump (appx 5 weeks after first jump date +/- 3 weeks) to satisfy my impatience (data stored, now need to display)
 #TODO: get the stock list from market watch and combine with stocksunder1 list & currently held stocks - https://www.marketwatch.com/tools/stockresearch/screener/results.asp?submit=Screen&Symbol=true&Volume=true&Price=true&SortyBy=Symbol&ResultsPerPage=OneHundred&TradesShareEnable=true&TradesShareMin=&TradesShareMax=5&Exchange=NASDAQ
+#     ^ TODO: related to above, check for invalid stocks/stock unable to be bought on alpaca
 def algo13():
   a13.init('../stockStuff/apikeys.key','./Sim/algo13sim/algo13.json', '../stockStuff/stockData/') #init settings and API keys, and stock data directory
   ''' buy/sell logic:
@@ -846,7 +846,6 @@ def algo13():
       time.sleep(tto)
 
 
-
 #for algo13 - check to sell a list of stocks
 def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn, gainerDates):
   for e in symList:
@@ -878,7 +877,6 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn, gainerDates):
           triggerThread.setName(e) #set the name to the stock symb
           triggerThread.start() #start the thread
 
-
 #for aglo13 - triggered selling-up - this is the one that gets multithreaded
 def triggeredUp(symbObj, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades):
   while(curPrice/buyPrice>=maxPrice/buyPrice*sellUpDn and a.timeTillClose()>=30):
@@ -893,7 +891,6 @@ def triggeredUp(symbObj, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades):
   f.write(json.dumps(latestTrades, indent=2))
   f.close()
 
-
 #for algo13 - whether to buy a stock or not
 def check2buy(gainers, latestTrades, minPortVal, reducedCash, reducedBuy, lowCash, lowBuy, minCash):
   acct = a.getAcct()
@@ -905,26 +902,9 @@ def check2buy(gainers, latestTrades, minPortVal, reducedCash, reducedBuy, lowCas
       print("Normal Operation Mode. Available Buying Power: $"+str(buyPow))
       #div cash over all gainers
       for e in gainers:
-        shares2buy = int((buyPow/len(gainers))/a.getPrice(e))
-        try:
-          lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
-          lastTradeType = latestTrades[gainers[i]][1]
-        except Exception:
-          lastTradeDate = date.today()-dt.timedelta(1)
-          lastTradeType = "NA"
-          
-        if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
-          print(a.createOrder("buy",shares2buy,e,"market","day"))
-          latestTrades[e] = [str(date.today()), "buy"]
-          f = open("../stockStuff/latestTrades13.json","w")
-          f.write(json.dumps(latestTrades, indent=2))
-          f.close()
-    else:
-      if(buyPow>lowCash): #in reduced cash mode
-        print("Reduced Cash Mode. Available Buying Power: $"+str(buyPow))
-        #div cash over $reducedBuy stocks
-        for i in range(min(reducedBuy,len(gainers))):
-          shares2buy = int((buyPow/reducedBuy)/a.getPrice(gainers[i]))
+        curPrice = a.getPrice(gainers[i])
+        if(curPrice>0 and reducedBuy>0): #don't bother buying if the stock is invalid
+          shares2buy = int((buyPow/reducedBuy)/curPrice)
           try:
             lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
             lastTradeType = latestTrades[gainers[i]][1]
@@ -933,17 +913,19 @@ def check2buy(gainers, latestTrades, minPortVal, reducedCash, reducedBuy, lowCas
             lastTradeType = "NA"
             
           if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
-            print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
-            latestTrades[gainers[i]] = [str(date.today()), "buy"]
+            print(a.createOrder("buy",shares2buy,e,"market","day"))
+            latestTrades[e] = [str(date.today()), "buy"]
             f = open("../stockStuff/latestTrades13.json","w")
             f.write(json.dumps(latestTrades, indent=2))
             f.close()
-      else:
-        if(buyPow>minCash): #in low cash mode
-          print("Low Cash Mode. Available Buying Power: $"+str(buyPow))
-          #div cash over $lowBuy cheapest stocks in list
-          for i in range(min(lowBuy,len(gainers))):
-            shares2buy = int((buyPow/lowBuy)/a.getPrice(gainers[i]))
+    else:
+      if(buyPow>lowCash): #in reduced cash mode
+        print("Reduced Cash Mode. Available Buying Power: $"+str(buyPow))
+        #div cash over $reducedBuy stocks
+        for i in range(min(reducedBuy,len(gainers))):
+          curPrice = a.getPrice(gainers[i])
+          if(curPrice>0 and reducedBuy>0): #don't bother buying if the stock is invalid
+            shares2buy = int((buyPow/reducedBuy)/curPrice)
             try:
               lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
               lastTradeType = latestTrades[gainers[i]][1]
@@ -957,6 +939,27 @@ def check2buy(gainers, latestTrades, minPortVal, reducedCash, reducedBuy, lowCas
               f = open("../stockStuff/latestTrades13.json","w")
               f.write(json.dumps(latestTrades, indent=2))
               f.close()
+      else:
+        if(buyPow>minCash): #in low cash mode
+          print("Low Cash Mode. Available Buying Power: $"+str(buyPow))
+          #div cash over $lowBuy cheapest stocks in list
+          for i in range(min(lowBuy,len(gainers))):
+            curPrice = a.getPrice(gainers[i])
+            if(curPrice>0): #don't bother buying if the stock is invalid
+              shares2buy = int((buyPow/reducedBuy)/curPrice)
+              try:
+                lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
+                lastTradeType = latestTrades[gainers[i]][1]
+              except Exception:
+                lastTradeDate = date.today()-dt.timedelta(1)
+                lastTradeType = "NA"
+                
+              if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
+                print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
+                latestTrades[gainers[i]] = [str(date.today()), "buy"]
+                f = open("../stockStuff/latestTrades13.json","w")
+                f.write(json.dumps(latestTrades, indent=2))
+                f.close()
         else:
           if(buyPow>minCash):
             print("Buying power is greater than minCash, and less than lowCash - TODO")
@@ -969,16 +972,8 @@ def check2buy(gainers, latestTrades, minPortVal, reducedCash, reducedBuy, lowCas
             f = open("../stockStuff/latestTrades13.json","w")
             f.write(json.dumps(latestTrades, indent=2))
             f.close()
-            print("Bottom Out Mode. Available Buying Power: $"+str(buyPow))
+            print("We're fucked boys. Available Buying Power: $"+str(buyPow))#TODO: replace the buyPow var or update it
             # break
           else: #low cash but high portfolio means all is invested
             print("Portfolio Value: $"+str(portVal)+", Available Buying Power: $"+str(buyPow))
           
-
-#ALGO13-2 - essentially identical to algo13, but with new and improved functions to gather date in the a132 module
-def algo13_2():
-#  positions = a.getPos()
-#  symbList = a132.getList() #marketwatch and stocksunder1 list
-#  symbList = list(set(symbList + [e['symbol'] for e in positions])) #include currently held positions and remove duplicates
-
-  print(a132.getList())

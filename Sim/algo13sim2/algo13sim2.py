@@ -10,7 +10,7 @@ stockDir = "./stockData/"
 def getList():
   symbList = []
  
-  
+  '''  
   url = 'https://www.marketwatch.com/tools/stockresearch/screener/results.asp'
   #many of the options listed are optional and can be removed from the get request
   params = {
@@ -72,8 +72,8 @@ def getList():
         time.sleep(3)
         continue
     symbList += read_html(r)[0]['Symbol'].values.tolist()
+  '''  
   
-
   #now that we have the marketWatch list, let's get the stocksunder1 list - essentially the getPennies() fxn from other files
   url = 'https://stocksunder1.org/nasdaq-penny-stocks/'
   print("Getting stocksunder1 data...")
@@ -207,3 +207,4 @@ def getGainers():
     # else:
     #   print('')
   # print(json.dumps(gainers,indent=2))
+  return gainers
