@@ -824,7 +824,7 @@ def algo13():
       check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn, gainerDates)
 
       f = open("/var/www/stonks.json",'w')
-      f.write(json.dumps({"portVal":round(portVal,2),"updated":dt.datetime.now().strftime("%Y-%m-%d, %H:%M")}))
+      f.write(json.dumps({"portVal":round(portVal,2),"updated":dt.datetime.now().strftime("%Y-%m-%d, %H:%M")+" CST"}))
       f.close()
       time.sleep(60)
       
