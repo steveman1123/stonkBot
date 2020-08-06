@@ -872,13 +872,14 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn, gainerDates):
         f.close()
       elif(curPrice/buyPrice>=sellUp):
         print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
-        if(not e in [t.getName() for t in threading.enumerate()]): #if the thread is not found in names of the running threads, then start it (this stops multiple instances of the same stock thread)
+        if(not e['symbol'] in [t.getName() for t in threading.enumerate()]): #if the thread is not found in names of the running threads, then start it (this stops multiple instances of the same stock thread)
           triggerThread = threading.Thread(target=triggeredUp, args=(e, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades)) #init the thread
-          triggerThread.setName(e) #set the name to the stock symb
+          triggerThread.setName(e['symbol']) #set the name to the stock symb
           triggerThread.start() #start the thread
 
 #for aglo13 - triggered selling-up - this is the one that gets multithreaded
 def triggeredUp(symbObj, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades):
+  print("Starting thread for"+symObj['symbol'])
   while(curPrice/buyPrice>=maxPrice/buyPrice*sellUpDn and a.timeTillClose()>=30):
     curPrice = a.getPrice(symbObj['symbol'])
     maxPrice = max(maxPrice, curPrice)
@@ -892,6 +893,7 @@ def triggeredUp(symbObj, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades):
   f.close()
 
 #for algo13 - whether to buy a stock or not
+#TODO: DO NOT BUY if a stock is currently being evaluated for sell (i.e. trigger up occured on that stock) - remove any triggeredUp threads from stock list
 def check2buy(gainers, latestTrades, minPortVal, reducedCash, reducedBuy, lowCash, lowBuy, minCash):
   acct = a.getAcct()
   portVal = float(acct['portfolio_value'])

@@ -267,7 +267,7 @@ def getPrice(symb):
     latestPrice = float(json.loads(response)['last']['price'])
     return latestPrice
   except Exception:
-    print("Invalid Stock")
+    print("Invalid Stock - "+symb)
     return 0
     
 #return the number of shares held of a given stock
