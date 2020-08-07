@@ -78,7 +78,7 @@ def algo13():
               
       
       print("Tradable Stocks:")
-      check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn, gainerDates)
+      check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn)
 
       f = open("/var/www/stonks.json",'w')
       f.write(json.dumps({"portVal":round(portVal,2),"updated":dt.datetime.now().strftime("%Y-%m-%d, %H:%M")+" CST"}))
@@ -115,7 +115,7 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
       try:
         print(e['symbol']+"\t-\tAppx Jump Date: "+gainerDates[e['symbol']][1]+"\t-\tchange: "+str(round(curPrice/buyPrice,2)))
       except Exception:
-        print(e['symbol']+"\t-\tAppx Jump Date: "+"TBD"+"\t-\tchange: "+str(round(curPrice/buyPrice,2)))
+        print(e['symbol']+"\t-\tAppx Jump Date: "+"TBD"+"\t\t-\tchange: "+str(round(curPrice/buyPrice,2)))
       
       if(curPrice/buyPrice<=sellDn):
         print("Lost it on "+e['symbol'])

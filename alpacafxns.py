@@ -110,7 +110,7 @@ def getOrders():
 
 #look to buy/sell a position
 def createOrder(side, qty, sym, orderType="market", time_in_force="day", limPrice=0):
-  if(isTradable(sym)):
+  if(a13.isTradable(sym)):
     order = {
       "symbol":sym,
       "qty":qty,
