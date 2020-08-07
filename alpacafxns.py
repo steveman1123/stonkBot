@@ -1,6 +1,7 @@
 import requests, json, random, re, time
 from pandas import read_html
 from datetime import date, timedelta, datetime as dt
+import algo13 as a13
 
 isPaper = 0 #set up as paper trading (testing), or actual trading
 
@@ -25,6 +26,7 @@ ORDERSURL = "{}/v2/orders".format(ENDPOINTURL) #orders url
 POSURL = "{}/v2/positions".format(ENDPOINTURL) #positions url
 CLKURL = "{}/v2/clock".format(ENDPOINTURL) #clock url
 CALURL = "{}/v2/calendar".format(ENDPOINTURL) #calendar url
+ASSETURL = "{}/v2/assets".format(ENDPOINTURL) #asset url
 
 #get list of common penny stocks under $price and sorted by gainers (up) or losers (down)
 def getPennies(price=1,updown="up"):
@@ -106,31 +108,35 @@ def getOrders():
   return json.loads(html)
 
 
+#look to buy/sell a position
 def createOrder(side, qty, sym, orderType="market", time_in_force="day", limPrice=0):
-  order = {
-    "symbol":sym,
-    "qty":qty,
-    "type":orderType,
-    "side":side,
-    "time_in_force":time_in_force
-  }
-  if(orderType=="limit"):
-    order['take_profit'] = {'limit_price':str(limPrice)}
-  while True:
+  if(isTradable(sym)):
+    order = {
+      "symbol":sym,
+      "qty":qty,
+      "type":orderType,
+      "side":side,
+      "time_in_force":time_in_force
+    }
+    if(orderType=="limit"): #TODO: this returns an error if used. Fix
+      order['take_profit'] = {'limit_price':str(limPrice)}
+    while True:
+      try:
+        r = requests.post(ORDERSURL, json=order, headers=HEADERS)
+        break
+      except Exception:
+        print("No connection, or other error encountered. Trying again...")
+        time.sleep(3)
+        continue
+  
+    r = json.loads(r.content.decode("utf-8"))
+    # print(r)
     try:
-      r = requests.post(ORDERSURL, json=order, headers=HEADERS)
-      break
+      return "Order to "+r["side"]+" "+r["qty"]+" share(s) of "+r["symbol"]+" at "+r["updated_at"]+" - "+r["status"]
     except Exception:
-      print("No connection, or other error encountered. Trying again...")
-      time.sleep(3)
-      continue
-
-  r = json.loads(r.content.decode("utf-8"))
-  # print(r)
-  try:
-    return "Order to "+r["side"]+" "+r["qty"]+" share(s) of "+r["symbol"]+" at "+r["updated_at"]+" - "+r["status"]
-  except Exception:
-    return "Error: "+json.dumps(r)
+      return "Error: "+json.dumps(r)
+  else:
+    return sym+" is not tradable"
 
 #buy numToBuy different stocks from the symlist, sharesOfEach of each stock (e.g. buy 25 stocks from this list, and 10 of each)
 def buyRandom(numToBuy, symList, sharesOfEach):
@@ -248,28 +254,7 @@ def timeTillOpen():
   now = dt(int(now[0]),int(now[1]),int(now[2]),int(now[3]/3600),int(now[3]%3600/60),int(now[3]%60))
   return (op - now).seconds
 
-# return the current price of the indicated stock
-def getPrice(symb):
-  #url = 'https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks'.format(symb) #use this URL to avoid alpaca
-  url = 'https://data.alpaca.markets/v1/last/stocks/{}'.format(symb)
-  while True:
-    try:
-      response = requests.get(url,headers=HEADERS).text #send request and store response
-      # response = requests.get(url,headers={"User-Agent": "-"}).text #nasdaq url requires a non-empty user-agent string
-      break
-    except Exception:
-      print("No connection, or other error encountered. Trying again...")
-      time.sleep(3)
-      continue
 
-  try:
-    #latestPrice = float(json.loads(response)["data"]["primaryData"]["lastSalePrice"][1:]) #use this line for the alt. URL
-    latestPrice = float(json.loads(response)['last']['price'])
-    return latestPrice
-  except Exception:
-    print("Invalid Stock - "+symb)
-    return 0
-    
 #return the number of shares held of a given stock
 def getShares(symb):
   while True:
@@ -316,7 +301,7 @@ def openCloseTimes(checkDate): #checkdate of format yyyy-mm-dd
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
-      a.time.sleep(3)
+      time.sleep(3)
       continue
   
   #subtract 1 from hours to convert from EST (NYSE time), to CST (my time)
@@ -327,8 +312,44 @@ def openCloseTimes(checkDate): #checkdate of format yyyy-mm-dd
 
 #return the (integer) number of shares of a given stock able to be bought with the available cash
 def sharesPurchasable(symb):
-  price = getPrice(symb)
+  price = a13.getPrice(symb)
   if(price):
     return int(float(getAcct()['buying_power'])/price)
   else:
     return 0
+
+# return the current price of the indicated stock
+def getPrice(symb):
+  #url = 'https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks'.format(symb) #use this URL to avoid alpaca
+  url = 'https://data.alpaca.markets/v1/last/stocks/{}'.format(symb)
+  while True:
+    try:
+      response = requests.get(url,headers=HEADERS).text #send request and store response
+      # response = requests.get(url,headers={"User-Agent": "-"}).text #nasdaq url requires a non-empty user-agent string
+      break
+    except Exception:
+      print("No connection, or other error encountered. Trying again...")
+      time.sleep(3)
+      continue
+
+  try:
+    #latestPrice = float(json.loads(response)["data"]["primaryData"]["lastSalePrice"][1:]) #use this line for the alt. URL
+    latestPrice = float(json.loads(response)['last']['price'])
+    return latestPrice
+  except Exception:
+    print("Invalid Stock - "+symb)
+    return 0
+
+
+#make sure that we can trade it on alpaca too
+def isAlpacaTradable(symb):
+  tradable = False
+  while True:
+   try:
+     tradable = json.loads(requests.get(ASSETURL+"/"+symb, headers=HEADERS).content)['tradable']
+     break
+   except Exception:
+     print("No connection, or other error encountered. Trying again...")
+     time.sleep(3)
+     continue
+  return tradable

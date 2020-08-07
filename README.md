@@ -5,12 +5,11 @@ Additionally, it uses AlphaVantage and a few other external sites for simulating
 
 Please be aware that this is a my first _real_ "software engineering" project, and a personal project at that, so the code is by no means pretty, organized well, optimized, etc. It's meant for non-day trading (i.e. having less than $25k to throw around).
 
-There are a number of different algorithms that can be found in the alpacaalgos file. As of 2020-07-12, algo12 and algo13 are the most up-to-date and operable methods. Algo10 is fundamentally different than the previous ones, and algo13 is also fundamentally different than the previous ones
-
+The naming conventions are very odd due to how quickly things have changed, and the file/function names haven't kept up
 
 
 ## API Keys
-The apikeys file has the actual keys removed for the REST APIs - if you want to try it out, **you will need to get your own Alpaca and AlphaVantage keys** and populate the key file
+The apikeys file has the actual keys removed for the REST APIs - if you want to try it out, **you will need to get your own Alpaca keys** and populate the key file - The alphaVantage keys are no longer necessary due to new updates using the nasdaq api.
 
 
 
@@ -21,11 +20,15 @@ The apikeys file has the actual keys removed for the REST APIs - if you want to 
 
 [Stocks Under $1](https://stocksunder1.org/)
 
-[NASDAQ API](https://api.nasdaq.com/api/quote/MSFT/info?assetclass=stocks)
+[NASDAQ Quote API](https://api.nasdaq.com/api/quote/MSFT/info?assetclass=stocks)
+
+[NASDAQ Historical API](https://www.nasdaq.com/api/v1/historical/MSFT/stocks/2019-04-20/2020-04-20/)
 
 [MarketWatch Stock Screener](https://www.marketwatch.com/tools/stockresearch/screener/)
 
 
+## Disclaimer
+I do not claim to be a financial expert and cannot be held accountable for any losses you may incur as a result of using this software
 
 Copyright 2020 Steven Williams
 
