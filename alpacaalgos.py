@@ -13,10 +13,6 @@ gainerDates = {} #global list of gainers plus their initial jump date and predic
 stocksUpdatedToday = False
 
 #generates list of potential gainers, trades based off amount of cash
-#TODO: check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still(this should only happen is there's a network error or durning testing stuff)
-#TODO: keep gainers date and estimate days until jump (appx 5 weeks after first jump date +/- 3 weeks) to satisfy my impatience (data stored, now need to display)
-#     ^ TODO: relates to above todo's, add switch to getGainers() to switch between stocks owned (keep looking back until a jump is found (up to 1 year)) and stocks not owned (only check in the last month or so)
-#TODO: check for invalid stocks/stock unable to be bought on alpaca
 #TODO: add logic that if the portVal >20k, then keep 1k cash out on friday to be withdrawn
 #TODO: redo buy logic to x number of stocks if 10x buying power is held (max of length of gainers list)
 def algo13():
@@ -34,7 +30,7 @@ def algo13():
   '''
   global gainers, gainerDates, stocksUpdatedToday
   
-  minPortVal = 5 #stop trading if portfolio reaches this amount
+  minPortVal = 50 #stop trading if portfolio reaches this amount
   reducedCash = 100 #enter reduced cash mode if portfolio reaches under this amount
   reducedBuy = 10 #buy this many unique stocks if in reduced cash mode
   lowCash = 10 #enter low cash mode if portfolio reaches under this amount
@@ -45,15 +41,11 @@ def algo13():
   sellDn = 1-.3 #limit loss
   sellUpDn = 1-.02 #sell if it triggers sellUp then drops sufficiently
   
-  
-  if(date.today().weekday()<5 and not a.marketIsOpen()): #not saturday or sunday
-    updateThread = threading.Thread(target=updateStockList) #init the thread
-    updateThread.setName('listUpdate') #set the name to the stock symb
-    updateThread.start() #start the thread
+  #init the stock list if we rereun during the week
+  if(date.today().weekday()<5): #not saturday or sunday
     f = open("../stockStuff/latestTrades13.json","r")
     latestTrades = json.loads(f.read())
     f.close()
-  # print(json.dumps(gainerDates,indent=2))
 
   portVal = float(a.getAcct()['portfolio_value'])
 
@@ -103,42 +95,43 @@ def algo13():
 def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
   global gainerDates
   for e in symList:
-    try:
-      lastTradeDate = dt.datetime.strptime(latestTrades[e['symbol']][0],'%Y-%m-%d').date()
-      lastTradeType = latestTrades[e['symbol']][1]
-    except Exception:
-      lastTradeDate = date.today()-dt.timedelta(1)
-      lastTradeType = "NA"
-    
-    #TODO: check for change from the open - not from the buyPrice (in case the stock falls a bunch since we bought it, then if it jumps the x%, it might not reach the x% gain from when we bought it, but that's the risk of the market
-    if(lastTradeDate<date.today() or lastTradeType=="sell" or float(e['current_price'])/float(e['avg_entry_price'])>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
-      buyPrice = float(e['avg_entry_price'])
-      curPrice = float(e['current_price'])
-      maxPrice = 0
+    if(a.isAlpacaTradable(e)): #just skip it if it can't be traded
       try:
-        print(e['symbol']+"\t-\tAppx Jump Date: "+gainerDates[e['symbol']][1]+"\t-\tchange: "+str(round(curPrice/buyPrice,2)))
+        lastTradeDate = dt.datetime.strptime(latestTrades[e['symbol']][0],'%Y-%m-%d').date()
+        lastTradeType = latestTrades[e['symbol']][1]
       except Exception:
-        print(e['symbol']+"\t-\tAppx Jump Date: "+"TBD"+"\t\t-\tchange: "+str(round(curPrice/buyPrice,2)))
+        lastTradeDate = date.today()-dt.timedelta(1)
+        lastTradeType = "NA"
       
-      if(curPrice/buyPrice<=sellDn):
-        print("Lost it on "+e['symbol'])
-        print(a.createOrder("sell",e['qty'],e['symbol']))
-        latestTrades[e['symbol']] = [str(date.today()), "sell"]
-        f = open("../stockStuff/latestTrades13.json","w")
-        f.write(json.dumps(latestTrades, indent=2))
-        f.close()
-      elif(curPrice/buyPrice>=sellUp):
-        print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
-        if(not e['symbol'] in [t.getName() for t in threading.enumerate()]): #if the thread is not found in names of the running threads, then start it (this stops multiple instances of the same stock thread)
-          triggerThread = threading.Thread(target=triggeredUp, args=(e, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades)) #init the thread
-          triggerThread.setName(e['symbol']) #set the name to the stock symb
-          triggerThread.start() #start the thread
+      #TODO: check for change from the open - not from the buyPrice (in case the stock falls a bunch since we bought it, then if it jumps the x%, it might not reach the x% gain from when we bought it, but that's the risk of the market
+      if(lastTradeDate<date.today() or lastTradeType=="sell" or float(e['current_price'])/float(e['avg_entry_price'])>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
+        buyPrice = float(e['avg_entry_price'])
+        curPrice = float(e['current_price'])
+        maxPrice = 0
+        try:
+          print(e['symbol']+"\t-\tAppx Jump Date: "+gainerDates[e['symbol']][1]+"\t-\tchange: "+str(round(curPrice/buyPrice,2)))
+        except Exception:
+          print(e['symbol']+"\t-\tAppx Jump Date: "+"TBD"+"\t\t-\tchange: "+str(round(curPrice/buyPrice,2)))
+        
+        if(curPrice/buyPrice<=sellDn):
+          print("Lost it on "+e['symbol'])
+          print(a.createOrder("sell",e['qty'],e['symbol']))
+          latestTrades[e['symbol']] = [str(date.today()), "sell"]
+          f = open("../stockStuff/latestTrades13.json","w")
+          f.write(json.dumps(latestTrades, indent=2))
+          f.close()
+        elif(curPrice/buyPrice>=sellUp):
+          print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
+          if(not e['symbol'] in [t.getName() for t in threading.enumerate()]): #if the thread is not found in names of the running threads, then start it (this stops multiple instances of the same stock thread)
+            triggerThread = threading.Thread(target=triggeredUp, args=(e, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades)) #init the thread
+            triggerThread.setName(e['symbol']) #set the name to the stock symb
+            triggerThread.start() #start the thread
 
 #for aglo13 - triggered selling-up - this is the one that gets multithreaded
 def triggeredUp(symbObj, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades):
   print("Starting thread for "+symObj['symbol'])
   while(curPrice/buyPrice>=maxPrice/buyPrice*sellUpDn and a.timeTillClose()>=30):
-    curPrice = a13.getPrice(symbObj['symbol'])
+    curPrice = a.getPrice(symbObj['symbol'])
     maxPrice = max(maxPrice, curPrice)
     print(symbObj['symbol']+" - "+str(round(curPrice/buyPrice,2))+" - "+str(round(maxPrice/buyPrice*sellUpDn,2)))
     time.sleep(3)
@@ -162,29 +155,9 @@ def check2buy(latestTrades, minPortVal, reducedCash, reducedBuy, lowCash, lowBuy
     print("Normal Operation Mode. Available Buying Power: $"+str(buyPow))
     #div cash over all gainers
     for e in gainers:
-      curPrice = a13.getPrice(gainers[i])
-      if(curPrice>0 and reducedBuy>0): #don't bother buying if the stock is invalid
-        shares2buy = int((buyPow/reducedBuy)/curPrice)
-        try:
-          lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
-          lastTradeType = latestTrades[gainers[i]][1]
-        except Exception:
-          lastTradeDate = date.today()-dt.timedelta(1)
-          lastTradeType = "NA"
-          
-        if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
-          print(a.createOrder("buy",shares2buy,e,"market","day"))
-          latestTrades[e] = [str(date.today()), "buy"]
-          f = open("../stockStuff/latestTrades13.json","w")
-          f.write(json.dumps(latestTrades, indent=2))
-          f.close()
-  else:
-    if(buyPow>lowCash): #in reduced cash mode
-      print("Reduced Cash Mode. Available Buying Power: $"+str(buyPow))
-      #div cash over $reducedBuy stocks
-      for i in range(min(reducedBuy,len(gainers))):
-        curPrice = a13.getPrice(gainers[i])
-        if(curPrice>0 and reducedBuy>0): #don't bother buying if the stock is invalid
+      if(a.isAlpacaTradable(e)):
+        curPrice = a.getPrice(e)
+        if(curPrice>0 and reducedBuy>0): #don't bother buying if the stock is invalid (no div0)
           shares2buy = int((buyPow/reducedBuy)/curPrice)
           try:
             lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
@@ -193,19 +166,21 @@ def check2buy(latestTrades, minPortVal, reducedCash, reducedBuy, lowCash, lowBuy
             lastTradeDate = date.today()-dt.timedelta(1)
             lastTradeType = "NA"
             
+          #check to make sure that we're not buying/selling on the same day
           if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
-            print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
-            latestTrades[gainers[i]] = [str(date.today()), "buy"]
+            print(a.createOrder("buy",shares2buy,e,"market","day"))
+            latestTrades[e] = [str(date.today()), "buy"]
             f = open("../stockStuff/latestTrades13.json","w")
             f.write(json.dumps(latestTrades, indent=2))
             f.close()
-    else:
-      if(buyPow>minCash): #in low cash mode
-        print("Low Cash Mode. Available Buying Power: $"+str(buyPow))
-        #div cash over $lowBuy cheapest stocks in list
-        for i in range(min(lowBuy,len(gainers))):
-          curPrice = a13.getPrice(gainers[i])
-          if(curPrice>0): #don't bother buying if the stock is invalid
+  else:
+    if(buyPow>lowCash): #in reduced cash mode
+      print("Reduced Cash Mode. Available Buying Power: $"+str(buyPow))
+      #div cash over $reducedBuy stocks
+      for i in range(min(reducedBuy,len(gainers))):
+        if(a.isAlpacaTradable(gainers[i])): #just skip it if it can't be traded
+          curPrice = a.getPrice(gainers[i])
+          if(curPrice>0 and reducedBuy>0): #don't bother buying if the stock is invalid
             shares2buy = int((buyPow/reducedBuy)/curPrice)
             try:
               lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
@@ -220,20 +195,30 @@ def check2buy(latestTrades, minPortVal, reducedCash, reducedBuy, lowCash, lowBuy
               f = open("../stockStuff/latestTrades13.json","w")
               f.write(json.dumps(latestTrades, indent=2))
               f.close()
+    else:
+      if(buyPow>minCash): #in low cash mode
+        print("Low Cash Mode. Available Buying Power: $"+str(buyPow))
+        #div cash over $lowBuy cheapest stocks in list
+        for i in range(min(lowBuy,len(gainers))):
+          if(a.isAlpacaTradable(gainers[i])): #just skip it if it can't be traded
+            curPrice = a.getPrice(gainers[i])
+            if(curPrice>0): #don't bother buying if the stock is invalid
+              shares2buy = int((buyPow/reducedBuy)/curPrice)
+              try:
+                lastTradeDate = dt.datetime.strptime(latestTrades[gainers[i]][0],'%Y-%m-%d').date()
+                lastTradeType = latestTrades[gainers[i]][1]
+              except Exception:
+                lastTradeDate = date.today()-dt.timedelta(1)
+                lastTradeType = "NA"
+                
+              if(shares2buy>0 and (lastTradeDate<date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
+                print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
+                latestTrades[gainers[i]] = [str(date.today()), "buy"]
+                f = open("../stockStuff/latestTrades13.json","w")
+                f.write(json.dumps(latestTrades, indent=2))
+                f.close()
       else:
-        if(buyPow>minCash):
-          print("Buying power is greater than minCash, and less than lowCash - Holding")
-        if(portVal<=minPortVal): #bottom out mode
-          a.sellAll(0) #TODO: replace this with a loop to avoid buying/selling on same day
-          for e in latestTrades:
-            latestTrades[e] = [str(date.today()),"sell"]
-          f = open("../stockStuff/latestTrades13.json","w")
-          f.write(json.dumps(latestTrades, indent=2))
-          f.close()
-          
-          print("We're fucked boys. Available Buying Power: $"+a.getAcct()['buying_power']) #use most up-to-date buy pow rather than buyPow var (which wasn't updated after sell off)
-        else: #low cash but high portfolio means all is invested
-          print("Portfolio Value: $"+str(portVal)+", Available Buying Power: $"+str(buyPow))
+        print("Buying power is less than minCash - Holding")
 
 #for algo13 - update the stock list - takes ~5 minutes to process 400 stocks
 def updateStockList():
