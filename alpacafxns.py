@@ -244,10 +244,10 @@ def isAlpacaTradable(symb):
   tradable = False
   while True:
     try:
-     tradable = json.loads(requests.get(ASSETURL+"/"+symb, headers=HEADERS).content)['tradable']
-     break
-   except Exception:
-     print("No connection, or other error encountered. Trying again...")
-     time.sleep(3)
-     continue
+      tradable = json.loads(requests.get(ASSETURL+"/"+symb, headers=HEADERS).content)['tradable']
+      break
+    except Exception:
+      print("No connection, or other error encountered. Trying again...")
+      time.sleep(3)
+      continue
   return tradable
