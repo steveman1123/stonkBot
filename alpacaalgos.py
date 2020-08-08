@@ -10,13 +10,15 @@ import alpacafxns as a
 
 gainers = [] #global list of potential gaining stocks
 gainerDates = {} #global list of gainers plus their initial jump date and predicted next jump date
+stocksUpdatedToday = False
 
 #generates list of potential gainers, trades based off amount of cash
 #TODO: check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still(this should only happen is there's a network error or durning testing stuff)
 #TODO: keep gainers date and estimate days until jump (appx 5 weeks after first jump date +/- 3 weeks) to satisfy my impatience (data stored, now need to display)
 #     ^ TODO: relates to above todo's, add switch to getGainers() to switch between stocks owned (keep looking back until a jump is found (up to 1 year)) and stocks not owned (only check in the last month or so)
-#TODO: get the stock list from market watch and combine with stocksunder1 list & currently held stocks - https://www.marketwatch.com/tools/stockresearch/screener/results.asp?submit=Screen&Symbol=true&Volume=true&Price=true&SortyBy=Symbol&ResultsPerPage=OneHundred&TradesShareEnable=true&TradesShareMin=&TradesShareMax=5&Exchange=NASDAQ
-#     ^ TODO: related to above, check for invalid stocks/stock unable to be bought on alpaca
+#TODO: check for invalid stocks/stock unable to be bought on alpaca
+#TODO: add logic that if the portVal >20k, then keep 1k cash out on friday to be withdrawn
+#TODO: redo buy logic to x number of stocks if 10x buying power is held (max of length of gainers list)
 def algo13():
   a13.init('../stockStuff/apikeys.key','./Sim/algo13sim/algo13.json', '../stockStuff/stockData/') #init settings and API keys, and stock data directory
   ''' buy/sell logic:
@@ -44,7 +46,7 @@ def algo13():
   sellUpDn = 1-.02 #sell if it triggers sellUp then drops sufficiently
   
   
-  if(date.today().weekday()<5): #not saturday or sunday
+  if(date.today().weekday()<5 and not a.marketIsOpen()): #not saturday or sunday
     updateThread = threading.Thread(target=updateStockList) #init the thread
     updateThread.setName('listUpdate') #set the name to the stock symb
     updateThread.start() #start the thread
@@ -67,14 +69,15 @@ def algo13():
       portVal = float(a.getAcct()['portfolio_value'])
       print("Portfolio val is $"+str(portVal)+". Sell targets are "+str(sellUp)+" or "+str(sellDn))
       
-      if(a.timeTillClose()<15*60 and not stocksUpdatedToday):
+      #update te stock list 20 minutes before close, if it's not already updated and if it's not currently updating
+      if(a.timeTillClose()<20*60 and (not stocksUpdatedToday) and ('listUpdate' not in [t.getName() for t in threading.enumerate()])):
         updateThread = threading.Thread(target=updateStockList) #init the thread
         updateThread.setName('listUpdate') #set the name to the stock symb
         updateThread.start() #start the thread
       
       #check here if the time is close to close - in the function, check that the requested stock didn't peak today
       if(a.timeTillClose()<=5*60): #must be within 5 minutes of close to start buying
-        check2buy(gainers, latestTrades, minPortVal,reducedCash,reducedBuy,lowCash,lowBuy,minCash)
+        check2buy(latestTrades, minPortVal,reducedCash,reducedBuy,lowCash,lowBuy,minCash)
               
       
       print("Tradable Stocks:")
