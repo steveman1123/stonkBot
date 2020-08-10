@@ -30,6 +30,7 @@ def algo13():
   '''
   global gainers, gainerDates, stocksUpdatedToday
   
+  maxBuyPow = 1000 #TODO: add logic that if the actual buying power is > this, then available buying power is (actual minus this)
   minPortVal = 50 #stop trading if portfolio reaches this amount
   reducedCash = 100 #enter reduced cash mode if portfolio reaches under this amount
   reducedBuy = 10 #buy this many unique stocks if in reduced cash mode
@@ -95,7 +96,7 @@ def algo13():
 def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
   global gainerDates
   for e in symList:
-    if(a.isAlpacaTradable(e)): #just skip it if it can't be traded
+    if(a.isAlpacaTradable(e['symbol'])): #just skip it if it can't be traded
       try:
         lastTradeDate = dt.datetime.strptime(latestTrades[e['symbol']][0],'%Y-%m-%d').date()
         lastTradeType = latestTrades[e['symbol']][1]
@@ -129,7 +130,7 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
 
 #for aglo13 - triggered selling-up - this is the one that gets multithreaded
 def triggeredUp(symbObj, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades):
-  print("Starting thread for "+symObj['symbol'])
+  print("Starting thread for "+symbObj['symbol'])
   while(curPrice/buyPrice>=maxPrice/buyPrice*sellUpDn and a.timeTillClose()>=30):
     curPrice = a.getPrice(symbObj['symbol'])
     maxPrice = max(maxPrice, curPrice)
