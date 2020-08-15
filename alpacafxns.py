@@ -1,5 +1,4 @@
-import requests, json, random, re, time
-from pandas import read_html
+import requests, json, re, time
 from datetime import date, timedelta, datetime as dt
 import algo13 as a13
 

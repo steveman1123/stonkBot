@@ -1,7 +1,7 @@
 #This module has morphed into essentially any function that doesn't require alpaca or keys to use
 import json,requests,os,time,re,csv,math
-from pandas import read_html
 import datetime as dt
+from bs4 import BeautifulSoup as bs
 
 apiKeys = {}
 someSettings = {}
@@ -27,9 +27,8 @@ def isTradable(symb):
   return isTradable
 
 #get list of stocks from stocksUnder1 and marketWatch lists
-#TODO: change out using pandas library to use html parser (to avoid using pandas and numpy so it can run on lighter hardware)
 def getList():
-  symbList = []
+  symbList = list()
  
   
   url = 'https://www.marketwatch.com/tools/stockresearch/screener/results.asp'
@@ -92,7 +91,10 @@ def getList():
         print("No connection or other error encountered. Trying again...")
         time.sleep(3)
         continue
-    symbList += read_html(r)[0]['Symbol'].values.tolist()
+    table = bs(r,'html.parser').find_all('table')[0]
+    for e in table.find_all('tr')[1::]:
+      symbList.append(e.find_all('td')[0].get_text())
+
   
   
   #now that we have the marketWatch list, let's get the stocksunder1 list - essentially the getPennies() fxn from other files
@@ -107,14 +109,12 @@ def getList():
       time.sleep(3)
       continue
 
-  tableList = read_html(html)
-  try:
-    symList = tableList[5][0:]['Symbol']
-  except Exception:
-    symList = tableList[5][1:][0] #this keeps changing (possibly intentionally - possibly due to switching btw windows and linux?)
-
-  symList = [re.sub(r'\W+','',e.replace(' predictions','')) for e in symList] #strip "predictions" and any non alphanumerics
-
+  table = bs(html,'html.parser').find_all('table')[6] #6th table in the webpage - this may change depending on the webpage
+  symList = list()
+  for e in table.find_all('tr')[1::]: #skip the first element as that's the header
+    #print(re.sub(r'\W+','',e.find_all('td')[0].get_text().replace(' predictions','')))
+    symList += re.sub(r'\W+','',e.find_all('td')[0].get_text().replace(' predictions',''))
+  
   print("Removing Duplicates...")
   symbList = list(set(symbList+symList)) #combine and remove duplicates
   
