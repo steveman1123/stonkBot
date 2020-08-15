@@ -27,6 +27,7 @@ def isTradable(symb):
   return isTradable
 
 #get list of stocks from stocksUnder1 and marketWatch lists
+#TODO: change out using pandas library to use html parser (to avoid using pandas and numpy so it can run on lighter hardware)
 def getList():
   symbList = []
  
