@@ -7,18 +7,18 @@ Please be aware that this is my first _real_ "software engineering" project, and
 ## API Keys and Folder Structure
 The apikeys file has the actual keys removed for the REST APIs - if you want to try it out, **you will need to get your own Alpaca keys** and populate the key file - The alphaVantage keys are no longer necessary due to new updates using the nasdaq api.
 The overall folder structure should look something like this:
-``
-stocks/
-|
-+-stockStuff/
-| |
-| +-stockData/
-| +-apikeys.key
-|
-+-stonkBot/ (this repo)
-  |
-  +-etc...
-``
+::
+    stocks/
+    |
+    +-stockStuff/
+    | |
+    | +-stockData/
+    | +-apikeys.key
+    |
+    +-stonkBot/ (this repo)
+      |
+      +-etc...
+
 
 ## External Resources
 [Alpaca](https://alpaca.markets/)
