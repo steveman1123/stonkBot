@@ -1,6 +1,6 @@
 import requests, json, re, time
-from datetime import date, timedelta, datetime as dt
-import algo13 as a13
+import otherfxns as o
+import datetime as dt
 
 isPaper = 0 #set up as paper trading (testing), or actual trading
 
@@ -108,7 +108,7 @@ def sellAll(isManual=1):
 
 #look to buy/sell a position
 def createOrder(side, qty, sym, orderType="market", time_in_force="day", limPrice=0):
-  if(a13.isTradable(sym)):
+  if(o.isTradable(sym)):
     order = {
       "symbol":sym,
       "qty":qty,
@@ -175,9 +175,9 @@ def timeTillClose():
       continue
 
   cl = re.split('[-:T.]',cl[:-2])
-  cl = dt(int(cl[0]),int(cl[1]),int(cl[2]),int(cl[3]),int(cl[4]))
+  cl = dt.datetime(int(cl[0]),int(cl[1]),int(cl[2]),int(cl[3]),int(cl[4]))
   now = marketTime()
-  now = dt(int(now[0]),int(now[1]),int(now[2]),int(now[3]/3600),int(now[3]%3600/60),int(now[3]%60))
+  now = dt.datetime(int(now[0]),int(now[1]),int(now[2]),int(now[3]/3600),int(now[3]%3600/60),int(now[3]%60))
   return (cl - now).seconds
 
 #time until next market open - in seconds
@@ -192,9 +192,9 @@ def timeTillOpen():
       continue
 
   op = re.split('[-:T.]',op[:-2])
-  op = dt(int(op[0]),int(op[1]),int(op[2]),int(op[3]),int(op[4]))
+  op = dt.datetime(int(op[0]),int(op[1]),int(op[2]),int(op[3]),int(op[4]))
   now = marketTime()
-  now = dt(int(now[0]),int(now[1]),int(now[2]),int(now[3]/3600),int(now[3]%3600/60),int(now[3]%60))
+  now = dt.datetime(int(now[0]),int(now[1]),int(now[2]),int(now[3]/3600),int(now[3]%3600/60),int(now[3]%60))
   return (op - now).seconds
 
 #return the open and close times of a given day (EST)
@@ -214,7 +214,7 @@ def openCloseTimes(checkDate): #checkdate of format yyyy-mm-dd
   #subtract 1 from hours to convert from EST (NYSE time), to CST (my time)
   d["open"] = str(int(d["open"].split(":")[0])-1)+":"+d["open"].split(":")[1]
   d["close"] = str(int(d["close"].split(":")[0])-1)+":"+d["close"].split(":")[1]
-  return [dt.strptime(d["date"]+d["open"],"%Y-%m-%d%H:%M"), dt.strptime(d["date"]+d["close"],"%Y-%m-%d%H:%M")]
+  return [dt.datetime.strptime(d["date"]+d["open"],"%Y-%m-%d%H:%M"), dt.datetime.strptime(d["date"]+d["close"],"%Y-%m-%d%H:%M")]
 
 # return the current price of the indicated stock
 def getPrice(symb):
