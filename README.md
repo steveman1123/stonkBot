@@ -1,17 +1,24 @@
 # stonkBot
 The first go at a stock trading bot using Alpaca API
 
-Additionally, it uses AlphaVantage and a few other external sites for simulating on past data.
-
-Please be aware that this is a my first _real_ "software engineering" project, and a personal project at that, so the code is by no means pretty, organized well, optimized, etc. It's meant for non-day trading (i.e. having less than $25k to throw around).
-
-The naming conventions are very odd due to how quickly things have changed, and the file/function names haven't kept up
+Please be aware that this is my first _real_ "software engineering" project, and a personal project at that, so the code is by no means pretty, organized well, optimized, etc. It's meant for non-day trading (i.e. having less than $25k to throw around).
 
 
-## API Keys
+## API Keys and Folder Structure
 The apikeys file has the actual keys removed for the REST APIs - if you want to try it out, **you will need to get your own Alpaca keys** and populate the key file - The alphaVantage keys are no longer necessary due to new updates using the nasdaq api.
-
-
+The overall folder structure should look something like this:
+``
+stocks/
+|
++-stockStuff/
+| |
+| +-stockData/
+| +-apikeys.key
+|
++-stonkBot/ (this repo)
+  |
+  +-etc...
+``
 
 ## External Resources
 [Alpaca](https://alpaca.markets/)
