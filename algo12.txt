@@ -1,1 +1,0 @@
-{"periodDateStart": "", "periodPortStart": "", "lastTradeDate": "", "lastSellPrice": , "symb": "F"}
