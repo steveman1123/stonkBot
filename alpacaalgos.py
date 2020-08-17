@@ -1,4 +1,4 @@
-#TODO: clean up dependencies to not import twice, etc
+#TODO: change save dirs so we don't write to the sd card a bajillion times and remove csv files when done to not suck up room
 import random, sys, threading
 import datetime as dt
 from workdays import networkdays as nwd
@@ -75,7 +75,7 @@ def algo13():
       print("Tradable Stocks:")
       check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn)
 
-      f = open("/var/www/stonks.json",'w')
+      f = open("../stockStuff/webData.json",'w')
       f.write(a.json.dumps({"portVal":round(portVal,2),"updated":dt.datetime.now().strftime("%Y-%m-%d, %H:%M")+" CST"}))
       f.close()
       a.time.sleep(60)

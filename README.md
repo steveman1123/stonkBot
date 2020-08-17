@@ -13,7 +13,8 @@ Internet connection (if the power goes out for a while while using this (like mi
 1. Download the repo
 2. Create the folder structure as seen in the next section (move the apikeys-template and latestTrades-template files to the stockStuff folder)
 3. Install any missing python modules
-4. Profit
+4. Run continuously (it works best if left alone completely)
+5. Profit
 
 
 ## API Keys and Folder Structure
