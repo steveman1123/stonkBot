@@ -6,7 +6,9 @@ Please be aware that this is my first _real_ "software engineering" project, and
 # How To Run
 ## Pre-reqs
 Python 3.7 or greater
+
 Linux OS (mostly tested on Rasbian, had issues with Windows for some reason)
+
 Internet connection (if the power goes out for a while while using this (like mine did), I'd suggest finding a way to sell everything before the portfolio value starts dropping (like mine did))
 
 
@@ -19,6 +21,7 @@ Internet connection (if the power goes out for a while while using this (like mi
 
 ## API Keys and Folder Structure
 The apikeys file has the actual keys removed for the REST APIs - if you want to try it out, **you will need to get your own Alpaca keys** and populate the key file - The alphaVantage keys are no longer necessary due to new updates using the nasdaq api.
+
 The overall folder structure should look something like this:
 ```
 stocks/
