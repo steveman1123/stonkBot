@@ -3,6 +3,18 @@ The first go at a stock trading bot using Alpaca API
 
 Please be aware that this is my first _real_ "software engineering" project, and a personal project at that, so the code is by no means pretty, organized well, optimized, etc. It's meant for non-day trading (i.e. having less than $25k to throw around).
 
+# How To Run
+## Pre-reqs
+Python 3.7 or greater
+Linux OS (mostly tested on Rasbian, had issues with Windows for some reason)
+Internet connection (if the power goes out for a while while using this (like mine did), I'd suggest finding a way to sell everything before the portfolio value starts dropping (like mine did))
+
+
+1. Download the repo
+2. Create the folder structure as seen in the next section (move the apikeys-template and latestTrades-template files to the stockStuff folder)
+3. Install any missing python modules
+4. Profit
+
 
 ## API Keys and Folder Structure
 The apikeys file has the actual keys removed for the REST APIs - if you want to try it out, **you will need to get your own Alpaca keys** and populate the key file - The alphaVantage keys are no longer necessary due to new updates using the nasdaq api.
@@ -14,6 +26,7 @@ stocks/
 | |
 | +-stockData/
 | +-apikeys.key
+| +-latestTrades.json
 |
 +-stonkBot/ (this repo)
   |
