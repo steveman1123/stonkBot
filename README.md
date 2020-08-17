@@ -22,9 +22,9 @@ Please be aware that this is my first _real_ "software engineering" project, and
 ## API Keys and Folder Structure
 The apikeys file has the actual keys removed for the REST APIs - if you want to try it out, **you will need to get your own Alpaca keys** and populate the key file - The alphaVantage keys are no longer necessary due to new updates using the nasdaq api.
 
-The overall folder structure should look something like this:
+The overall folder structure should look something like this(1):
 ```
-stocks/
+*/
 |
 +-stockStuff/
 | |
@@ -36,6 +36,23 @@ stocks/
   |
   +-etc...
 ```
+
+(1) The root folder name does not matter. The apikeys and latestTrades files have been excluded from the repo due to containing personal info that should not be synced. The stockData folder contains .csv files regarding individual stock histories
+
+## File Description
+stonkBot.py - The main file to run - this was more useful when testing a number of functions all located in alpacaalgos.py, however it now serevrs as a clean/simple file to run everything
+
+alpacaalgos.py - Contains the logic and error checking for actually buying and selling stocks
+
+alpacafxns.py - Functions that require an Alpaca API query
+
+otherfxns.py - Other functions that do not require an Alpaca API query (i.e. functions that query the NASDAQ API, or provide the logic to determine which stocks to buy)
+
+apikeys.key - Contains the API keys used for Alpaca and AlphaVantage - the file in the repo should be moved to the location shown above and filled in with your information
+
+latestTrades.json - Contains the stock name and the latest trade date and type for the stock - the file in the repo should be moved to the location shown above
+
+Depreciated Functions, etc/ - Contains old functions and ideas for algorithms that are no longer in use (either tested to be not profitable, or determined to be too simplistic - in my opinion, good for research, and coming up with some ideas, and that's about it)
 
 ## External Resources
 [Alpaca](https://alpaca.markets/)

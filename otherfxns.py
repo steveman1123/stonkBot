@@ -228,3 +228,16 @@ def getGainers(symblist): #default to the getList - otherwise use what the user 
       gainers[e] = [b,(dt.datetime.strptime(b,"%m/%d/%Y")+dt.timedelta(days=(7*5))).strftime("%m/%d/%Y")]
       print(" - "+gainers[e][0]+" - "+gainers[e][1])
   return gainers
+
+
+#get the latest jump in a given timeframe (up till today) - around 260 trading days in a year
+def getLastJump(symb,maxDays=260):
+  #get stock history
+  #look for jump just like in getGainers
+  
+  
+  
+
+  #return date of the jump or "no jump found"
+  jumpDate = "no jump found"
+  return jumpDate

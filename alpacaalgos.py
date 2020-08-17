@@ -1,8 +1,6 @@
-#TODO: change save dirs so we don't write to the sd card a bajillion times and remove csv files when done to not suck up room
 import random, sys, threading
 import datetime as dt
 from workdays import networkdays as nwd
-#sys.path.append('./Sim/algo13sim')
 import alpacafxns as a
 import otherfxns as o
 
@@ -29,7 +27,7 @@ def algo13():
   '''
   global gainers, gainerDates, stocksUpdatedToday
   
-  maxBuyPow = 1000 #TODO: add logic that if the actual buying power is > this, then available buying power is (actual minus this)
+  #minBuyPow = 1000 #TODO: add logic that if the actual buying power is > this, then available buying power is (actual minus this)
   minPortVal = 50 #stop trading if portfolio reaches this amount
   reducedCash = 100 #enter reduced cash mode if portfolio reaches under this amount
   reducedBuy = 10 #buy this many unique stocks if in reduced cash mode
@@ -41,9 +39,10 @@ def algo13():
   sellDn = 1-.3 #limit loss
   sellUpDn = 1-.02 #sell if it triggers sellUp then drops sufficiently
   
+  #TODO: change save dirs so we don't write to the sd card a bajillion times and remove csv files when done to not suck up room
   #init the stock list if we rereun during the week
   if(dt.date.today().weekday()<5): #not saturday or sunday
-    f = open("../stockStuff/latestTrades13.json","r")
+    f = open("../stockStuff/latestTrades.json","r")
     latestTrades = a.json.loads(f.read())
     f.close()
 
@@ -54,7 +53,7 @@ def algo13():
     
     if(a.marketIsOpen()):
       print("\nMarket is open")
-      f = open("../stockStuff/latestTrades13.json","r")
+      f = open("../stockStuff/latestTrades.json","r")
       latestTrades = a.json.loads(f.read())
       f.close()
       
@@ -117,7 +116,7 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
           print("Lost it on "+e['symbol'])
           print(a.createOrder("sell",e['qty'],e['symbol']))
           latestTrades[e['symbol']] = [str(dt.date.today()), "sell"]
-          f = open("../stockStuff/latestTrades13.json","w")
+          f = open("../stockStuff/latestTrades.json","w")
           f.write(a.json.dumps(latestTrades, indent=2))
           f.close()
         elif(curPrice/buyPrice>=sellUp):
@@ -138,7 +137,7 @@ def triggeredUp(symbObj, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades):
   
   print(a.createOrder("sell",symbObj['qty'],symbObj['symbol']))
   latestTrades[symbObj['symbol']] = [str(dt.date.today()), "sell"]
-  f = open("../stockStuff/latestTrades13.json","w")
+  f = open("../stockStuff/latestTrades.json","w")
   f.write(a.json.dumps(latestTrades, indent=2))
   f.close()
 
@@ -178,7 +177,7 @@ def check2buy(latestTrades, minPortVal, reducedCash, reducedBuy, lowCash, lowBuy
           if(shares2buy>0 and (lastTradeDate<dt.date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
             print(a.createOrder("buy",shares2buy,e,"market","day"))
             latestTrades[e] = [str(dt.date.today()), "buy"]
-            f = open("../stockStuff/latestTrades13.json","w")
+            f = open("../stockStuff/latestTrades.json","w")
             f.write(a.json.dumps(latestTrades, indent=2))
             f.close()
   else:
@@ -200,7 +199,7 @@ def check2buy(latestTrades, minPortVal, reducedCash, reducedBuy, lowCash, lowBuy
             if(shares2buy>0 and (lastTradeDate<dt.date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
               print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
               latestTrades[gainers[i]] = [str(dt.date.today()), "buy"]
-              f = open("../stockStuff/latestTrades13.json","w")
+              f = open("../stockStuff/latestTrades.json","w")
               f.write(a.json.dumps(latestTrades, indent=2))
               f.close()
     else:
@@ -222,7 +221,7 @@ def check2buy(latestTrades, minPortVal, reducedCash, reducedBuy, lowCash, lowBuy
               if(shares2buy>0 and (lastTradeDate<dt.date.today() or lastTradeType=="NA" or lastTradeType=="buy")):
                 print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
                 latestTrades[gainers[i]] = [str(dt.date.today()), "buy"]
-                f = open("../stockStuff/latestTrades13.json","w")
+                f = open("../stockStuff/latestTrades.json","w")
                 f.write(a.json.dumps(latestTrades, indent=2))
                 f.close()
       else:
