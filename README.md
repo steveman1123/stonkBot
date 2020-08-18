@@ -13,10 +13,11 @@ Please be aware that this is my first _real_ "software engineering" project, and
 
 ### Setup
 1. Download the repo
-2. Create the folder structure as seen in the next section (move the apikeys-template and latestTrades-template files to the stockStuff folder)
+2. Create the folder structure as seen in the next section (move the apikeys and latestTrades files to the stockStuff folder)
 3. Install any missing python modules
 4. Run continuously (it works best if left alone completely)
-5. Profit
+5. ???
+6. Profit
 
 
 ## API Keys and Folder Structure
