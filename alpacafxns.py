@@ -2,7 +2,7 @@ import requests, json, re, time
 import otherfxns as o
 import datetime as dt
 
-isPaper = 0 #set up as paper trading (testing), or actual trading
+isPaper = 1 #set up as paper trading (testing), or actual trading
 
 keyFile = open("../stockStuff/apikeys.key","r")
 apiKeys = json.loads(keyFile.read())
@@ -240,13 +240,15 @@ def getPrice(symb):
 
 #make sure that we can trade it on alpaca too
 def isAlpacaTradable(symb):
-  tradable = False
   while True:
     try:
-      tradable = json.loads(requests.get(ASSETURL+"/"+symb, headers=HEADERS).content)['tradable']
+      tradeable = requests.get(ASSETURL+"/"+symb, headers=HEADERS).content
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
       time.sleep(3)
       continue
-  return tradable
+  try:
+    return json.loads(tradable)['tradable']
+  except Exception:
+    return False

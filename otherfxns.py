@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup as bs
 apiKeys = {}
 stockDir = ''
 
-def init(keyFilePath, settingsFilePath, stockDataDir):
+def init(keyFilePath, stockDataDir):
   global apiKeys, stockDir
   keyFile = open(keyFilePath,"r")
   apiKeys = json.loads(keyFile.read())
@@ -16,10 +16,20 @@ def init(keyFilePath, settingsFilePath, stockDataDir):
 
 def isTradable(symb):
   isTradable = False
+  while True:
+    try:
+      r = requests.request("GET","https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks".format(symb), headers={"user-agent":"-"}).content
+      break
+    except Exception:
+      print("No connection, or other error encountered, trying again...")
+      time.sleep(3)
+      continue
+
   try:
-    isTradable = bool(json.loads(requests.request("GET","https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks".format(symb), headers={"user-agent":"-"}).content)['data']['isNasdaqListed'])
+    isTradable = bool(json.loads(r)['data']['isNasdaqListed'])
   except Exception:
-    print("No connection, or other error encountered")
+    print("Error in isTradable")
+
   return isTradable
 
 #get list of stocks from stocksUnder1 and marketWatch lists

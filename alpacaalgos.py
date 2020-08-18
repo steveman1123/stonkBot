@@ -11,9 +11,9 @@ stocksUpdatedToday = False
 
 #generates list of potential gainers, trades based off amount of cash
 #TODO: add logic that if the portVal >20k, then keep 1k cash out on friday to be withdrawn
-#TODO: redo buy logic to x number of stocks if 10x buying power is held (max of length of gainers list)
+#***TODO: redo buy logic to x number of stocks if 10x buying power is held (max of length of gainers list)
 def algo13():
-  o.init('../stockStuff/apikeys.key','./Sim/algo13sim/algo13.json', '../stockStuff/stockData/') #init settings and API keys, and stock data directory
+  o.init('../stockStuff/apikeys.key', '../stockStuff/stockData/') #init settings and API keys, and stock data directory
   ''' buy/sell logic:
   - if cash<some amt (reduced cash mode) 
     - buy max of 10 unique from list
@@ -61,13 +61,13 @@ def algo13():
       print("Portfolio val is $"+str(portVal)+". Sell targets are "+str(sellUp)+" or "+str(sellDn))
       
       #update te stock list 20 minutes before close, if it's not already updated and if it's not currently updating
-      if(a.timeTillClose()<20*60 and (not stocksUpdatedToday) and ('listUpdate' not in [t.getName() for t in threading.enumerate()])):
+      if(a.timeTillClose()<500*60 and (not stocksUpdatedToday) and ('listUpdate' not in [t.getName() for t in threading.enumerate()])):
         updateThread = threading.Thread(target=updateStockList) #init the thread
         updateThread.setName('listUpdate') #set the name to the stock symb
         updateThread.start() #start the thread
       
       #check here if the time is close to close - in the function, check that the requested stock didn't peak today
-      if(a.timeTillClose()<=5*60): #must be within 5 minutes of close to start buying
+      if(a.timeTillClose()<=500*60): #must be within 5 minutes of close to start buying
         check2buy(latestTrades, minPortVal,reducedCash,reducedBuy,lowCash,lowBuy,minCash)
               
       
@@ -229,9 +229,10 @@ def check2buy(latestTrades, minPortVal, reducedCash, reducedBuy, lowCash, lowBuy
 
 #for algo13 - update the stock list - takes ~5 minutes to process 400 stocks
 def updateStockList():
-  global gainers, gainerDates
+  global gainers, gainerDates, stocksUpdatedToday
   print("Updating stock list")
   #list of stocks that may gain in the near future as well as currently held stocks and their last gain date
   gainerDates = o.getGainers(list(set(o.getList()+[e['symbol'] for e in a.getPos()]))) #combine nasdaq list & my stocks & remove duplicates - order doesn't matter
   gainers = list(gainerDates) #list of just the stock symbols
+  stocksUpdatedToday = True
   print("Done updating list")
