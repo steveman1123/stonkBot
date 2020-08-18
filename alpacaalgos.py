@@ -12,6 +12,7 @@ stocksUpdatedToday = False
 #generates list of potential gainers, trades based off amount of cash
 #TODO: add logic that if the portVal >20k, then keep 1k cash out on friday to be withdrawn
 #***TODO: redo buy logic to x number of stocks if 10x buying power is held (max of length of gainers list)
+#TODO: if len(positionsHeld)=0 then buy any time of the day
 def algo13():
   o.init('../stockStuff/apikeys.key', '../stockStuff/stockData/') #init settings and API keys, and stock data directory
   ''' buy/sell logic:
