@@ -28,7 +28,10 @@ def algo13():
   '''
   global gainers, gainerDates, stocksUpdatedToday
   
-  #minBuyPow = 1000 #TODO: add logic that if the actual buying power is > this, then available buying power is (actual minus this)
+  minBuyPow = 1000 #min buying power to hold onto if..
+  buyPowMargin = 1.5 # actual buy pow > this*minBuyPow
+  dolPerStock = 10 #$ to dedicate to an individual stock
+
   minPortVal = 50 #stop trading if portfolio reaches this amount
   reducedCash = 100 #enter reduced cash mode if portfolio reaches under this amount
   reducedBuy = 10 #buy this many unique stocks if in reduced cash mode
@@ -70,7 +73,7 @@ def algo13():
       #check here if the time is close to close - in the function, check that the requested stock didn't peak today
       if(a.timeTillClose()<=5*60): #must be within 5 minutes of close to start buying
         check2buy(latestTrades, minPortVal,reducedCash,reducedBuy,lowCash,lowBuy,minCash)
-              
+        #check2buy2(latestTrades, minBuyPow, buyPowMargin, dolPerStock):
       
       print("Tradable Stocks:")
       check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn)
@@ -227,6 +230,24 @@ def check2buy(latestTrades, minPortVal, reducedCash, reducedBuy, lowCash, lowBuy
                 f.close()
       else:
         print("Buying power is less than minCash - Holding")
+
+
+#buy int(buyPow/10) # of individual stocks. If buyPow>minBuyPow*1.5, then usablebuyPow=buyPow-minBuyPow
+check2buy2(latestTrades, minBuyPow, buyPowMargin, dolPerStock):
+  global gainers
+
+  usableBuyPow = a.getBuyPow() #this must be updated in the loop because it will change during every buy
+  if(usableBuyPow>=minBuyPow*buyPowMargin): #if we have more buying power than the min plus some leeway, then reduce it to hold onto that buy pow
+    print("Can withdrawl $"+round(minBuyPow,2)+" safely.")
+    usableBuyPow = max(usableBuyPow-minBuyPow,0) #use max just in case buyPowMargin is accidentally set to <1
+
+  i=0
+  while i<int(usableBuyPow/dolPerStock):
+    #TODO: check that the stock hasn't been traded yet today and that the createOrder doesn't return an error
+    shares2buy = int(dolPerStock/a.getPrice(gainers[i])) #shares of a stock to purchase
+    print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
+    i++
+
 
 #for algo13 - update the stock list - takes ~5 minutes to process 400 stocks
 def updateStockList():
