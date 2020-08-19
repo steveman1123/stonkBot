@@ -1,9 +1,9 @@
 # stonkBot
 The first go at a stock trading bot using Alpaca API
 
-This is my first _real_ software project, so the code is by no means pretty, organized well, optimized, etc. because I'm still learning a bunch of stuff (and git too)
+This is also my first proper software project, so the code is by no means pretty, organized well, optimized, etc. because I'm still learning a bunch of stuff (and git too)
 
-This is meant for non-day trading with stocks (i.e. having less than $25k to throw around). No options, mutual funds or anything more complicated than individual companies.
+This is meant for relatively low speed, non-day trading with stocks (i.e. having less than $25k to throw around). No options, mutual funds or anything more complicated than individual companies. If you've got some misgivings about throwing real money into it, there's a paper trading optioon where you can pretend you're rich and try it out anyways (maybe you don't have to pretend. Idk, I'm not here to judge).
 
 ## How To Run
 ### System Requirements
@@ -11,13 +11,13 @@ This is meant for non-day trading with stocks (i.e. having less than $25k to thr
 
 - [Linux OS](https://www.raspberrypi.org/) (mostly tested on Rasbian, had issues with Windows for some reason*)
 
-- [Internet connection](https://i.ytimg.com/vi/YLCIfDqgDIk/maxresdefault.jpg) (if the power goes out for a while while using this (like mine did), I'd suggest finding a way to sell everything before the portfolio value starts dropping (like mine did))
+- [Internet connection](https://2018.bloomca.me/en) (if the power goes out for a while while using this (like mine did), I'd suggest finding a way to sell everything before the portfolio value starts dropping (like mine did))
 
 *may potentially be issues with the time.sleep() function operating off the system clock which may change depending if the computer is active or not
 
 ### Setup
 1. Download the repo
-2. Move the stockStuff folder outside the repo to create the fodler structure as seen below
+2. Move the stockStuff folder outside the repo to create the folder structure as seen below
 3. Install any missing python modules
 4. Run continuously (it works best if left alone other than to check for errors and provide some masochism)
 5. ???
@@ -43,6 +43,8 @@ The overall folder structure should look something like this*:
 ```
 
 *The root folder name does not matter. The stockStuff folder should be moved from the repo to the location shown above
+
+Currently, the stockData folder will grow unbounded (but reaasonably slowly) over time, so it may be smart to clean it out ~1/week or month until that part of the code gets fixed
 
 ## File Description
 stonkBot.py - The main file to run - this was more useful when testing a number of functions all located in alpacaalgos.py, however it now serevrs as a clean/simple file to run everything
