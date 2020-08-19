@@ -3,23 +3,23 @@ The first go at a stock trading bot using Alpaca API
 
 This is my first _real_ software project, so the code is by no means pretty, organized well, optimized, etc. because I'm still learning a bunch of stuff (and git too)
 
-This is meant for non-day trading (i.e. having less than $25k to throw around).
+This is meant for non-day trading with stocks (i.e. having less than $25k to throw around). No options, mutual funds or anything more complicated than individual companies.
 
 ## How To Run
 ### System Requirements
-- Python 3.7 or greater
+- [Python 3.7](https://www.python.org/) or greater
 
-- Linux OS (mostly tested on Rasbian, had issues with Windows for some reason*)
+- [Linux OS](https://www.raspberrypi.org/) (mostly tested on Rasbian, had issues with Windows for some reason*)
 
-- Internet connection (if the power goes out for a while while using this (like mine did), I'd suggest finding a way to sell everything before the portfolio value starts dropping (like mine did))
+- [Internet connection](https://i.ytimg.com/vi/YLCIfDqgDIk/maxresdefault.jpg) (if the power goes out for a while while using this (like mine did), I'd suggest finding a way to sell everything before the portfolio value starts dropping (like mine did))
 
-*potentially issues with the time.sleep() function operating off the system clock which may change depending if the computer is active or not
+*may potentially be issues with the time.sleep() function operating off the system clock which may change depending if the computer is active or not
 
 ### Setup
 1. Download the repo
-2. Create the folder structure as seen in the next section (move the apikeys and latestTrades files to the stockStuff folder)
+2. Move the stockStuff folder outside the repo to create the fodler structure as seen below
 3. Install any missing python modules
-4. Run continuously (it works best if left alone other than to check for errors and cause some stress)
+4. Run continuously (it works best if left alone other than to check for errors and provide some masochism)
 5. ???
 6. Profit
 
