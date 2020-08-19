@@ -130,7 +130,8 @@ def getList():
 def getHistory(symb, startDate, endDate):
   #write to file after checking that the file doesn't already exist (we don't want to abuse the api)
   
-  if(not os.path.isfile(stockDir+symb+".csv")): #TODO: check if the date was modified recently
+  #TODO: check if the date was modified today - may also want to check the number of lines in the file (to see how many days it has - must be changed within the last 24hr and have at least as many lines as days to get)
+  if(not os.path.isfile(stockDir+symb+".csv")):
     url = f'https://www.nasdaq.com/api/v1/historical/{symb}/stocks/{startDate}/{endDate}/'
     while True:
       try:
@@ -146,7 +147,6 @@ def getHistory(symb, startDate, endDate):
 
   #read csv and convert to array
   #TODO: see if we can not have to save it to a file if possible due to high read/writes
-  #TODO: remove files at the end of the day
   with open(stockDir+symb+".csv") as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     out = [[ee.replace('$','').replace('N/A','0') for ee in e] for e in csv_reader][1::] #trim first line to get rid of headers, also replace $'s and N/A volumes to calculable values
