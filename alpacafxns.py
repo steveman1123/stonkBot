@@ -242,7 +242,7 @@ def getPrice(symb):
 def isAlpacaTradable(symb):
   while True:
     try:
-      tradeable = requests.get(ASSETURL+"/"+symb, headers=HEADERS).content
+      tradable = requests.get(ASSETURL+"/"+symb, headers=HEADERS).content
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")

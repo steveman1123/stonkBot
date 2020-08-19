@@ -1,4 +1,4 @@
-#This module has morphed into essentially any function that doesn't require alpaca or keys to use
+#This module should be any function that doesn't require alpaca or keys to use
 import json,requests,os,time,re,csv,math
 import datetime as dt
 from bs4 import BeautifulSoup as bs
@@ -24,7 +24,6 @@ def isTradable(symb):
       print("No connection, or other error encountered, trying again...")
       time.sleep(3)
       continue
-
   try:
     isTradable = bool(json.loads(r)['data']['isNasdaqListed'])
   except Exception:
@@ -35,7 +34,6 @@ def isTradable(symb):
 #get list of stocks from stocksUnder1 and marketWatch lists
 def getList():
   symbList = list()
- 
   
   url = 'https://www.marketwatch.com/tools/stockresearch/screener/results.asp'
   #many of the options listed are optional and can be removed from the get request
@@ -117,7 +115,7 @@ def getList():
 
   table = bs(html,'html.parser').find_all('table')[6] #6th table in the webpage - this may change depending on the webpage
   symList = list()
-  for e in table.find_all('tr')[1::]: #skip the first element as that's the header
+  for e in table.find_all('tr')[1::]: #skip the first element that's the header
     #print(re.sub(r'\W+','',e.find_all('td')[0].get_text().replace(' predictions','')))
     symList += re.sub(r'\W+','',e.find_all('td')[0].get_text().replace(' predictions',''))
   
@@ -163,7 +161,7 @@ def getHistory(symb, startDate, endDate):
 #TODO: check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still(this should only happen is there's a network error or during testing stuff)
 #TODO: keep gainers date and estimate days until jump for currently held stocks that may not appear as valid gainers in getGainers()
 #     ^ TODO: relates to above todo's, add switch to getGainers() to switch between stocks owned (keep looking back until a jump is found (up to 1 year)) and stocks not owned (only check in the last month or so)
-def goodBuy(symb):
+def goodBuy(symb,days2look=25): #days2look=how farback to look for a jump
   validBuy = "NA" #set to the jump date if it's valid
   if isTradable(symb):
     #calc price % diff over past 20 days (current price/price of day n) - current must be >= 80% for any
@@ -171,7 +169,6 @@ def goodBuy(symb):
     
     days2wait4fall = 3 #wait for stock price to fall for this many days
     startDate = days2wait4fall+1 #add 1 to account for the jump day itself
-    days2look = 25 #look back this far for a jump
     firstJumpAmt = 1.3 #stock first must jump by this amount (1.3=130% over 1 day)
     sellUp = 1.25 #% to sell up at
     sellDn = 0.5 #% to sell dn at
@@ -199,14 +196,14 @@ def goodBuy(symb):
         
         lastVol = int(dateData[startDate][2]) #the latest volume
         lastPrice = float(dateData[startDate][4]) #the latest highest price
-    
+
         if(lastVol/avgVol>volGain): #much larger than normal volume
           #volume had to have gained
           #if the next day's price has fallen significantly and the volume has also fallen
           if(float(dateData[startDate-days2wait4fall][4])/lastPrice-1<priceDrop and int(dateData[startDate-days2wait4fall][2])<=lastVol*volLoss):
             #the jump happened, the volume gained, the next day's price and volumes have fallen
             dayPrice = lastPrice
-            i = 1 #magic number? TODO: figure out exactly what this counter is doing
+            i = 1 #increment through days looking for a jump - start with 1 day before startDate
             # check within the the last few days, check the price has risen compared to the past some days, and we're within the valid timeframe
             while(i<=checkPriceDays and lastPrice/dayPrice<checkPriceAmt and startDate+i<len(dateData)):
               dayPrice = float(dateData[startDate+i][4])
@@ -214,15 +211,14 @@ def goodBuy(symb):
             
             if(lastPrice/dayPrice>=checkPriceAmt):
               #the price jumped compared to both the previous day and to the past few days, the volume gained, and the price and the volume both fell
-                
               #check to see if we missed the next jump (where we want to strike)
               missedJump = False
               for e in range(0,startDate):
                 diff = float(dateData[e][1])/float(dateData[e+1][1])
                 if(diff>=sellUp):
-                  missedJump = True
+	                  missedJump = True
               if(not missedJump):
-                validBuy = dateData[startDate][0] #return the stock and the date it initially jumped
+                validBuy = dateData[startDate][0] #return the date the stock initially jumped
     
   return validBuy #return a dict of valid stocks and the date of their latest jump
   
@@ -238,16 +234,3 @@ def getGainers(symblist): #default to the getList - otherwise use what the user 
       gainers[e] = [b,(dt.datetime.strptime(b,"%m/%d/%Y")+dt.timedelta(days=(7*5))).strftime("%m/%d/%Y")]
       print(" - "+gainers[e][0]+" - "+gainers[e][1])
   return gainers
-
-
-#get the latest jump in a given timeframe (up till today) - around 260 trading days in a year
-def getLastJump(symb,maxDays=260):
-  #get stock history
-  #look for jump just like in getGainers
-  
-  
-  
-
-  #return date of the jump or "no jump found"
-  jumpDate = "no jump found"
-  return jumpDate
