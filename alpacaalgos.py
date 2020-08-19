@@ -72,8 +72,8 @@ def algo13():
       
       #check here if the time is close to close - in the function, check that the requested stock didn't peak today
       if(a.timeTillClose()<=5*60): #must be within 5 minutes of close to start buying
-        check2buy(latestTrades, minPortVal,reducedCash,reducedBuy,lowCash,lowBuy,minCash)
-        #check2buy2(latestTrades, minBuyPow, buyPowMargin, dolPerStock):
+        #check2buy(latestTrades, minPortVal,reducedCash,reducedBuy,lowCash,lowBuy,minCash)
+        check2buy2(latestTrades, minBuyPow, buyPowMargin, dolPerStock)
       
       print("Tradable Stocks:")
       check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn)
@@ -233,8 +233,8 @@ def check2buy(latestTrades, minPortVal, reducedCash, reducedBuy, lowCash, lowBuy
 
 
 #buy int(buyPow/10) # of individual stocks. If buyPow>minBuyPow*1.5, then usablebuyPow=buyPow-minBuyPow
-check2buy2(latestTrades, minBuyPow, buyPowMargin, dolPerStock):
-  global gainers
+def check2buy2(latestTrades, minBuyPow, buyPowMargin, dolPerStock):
+  global gainers, gainerDates
 
   usableBuyPow = a.getBuyPow() #this must be updated in the loop because it will change during every buy
   if(usableBuyPow>=minBuyPow*buyPowMargin): #if we have more buying power than the min plus some leeway, then reduce it to hold onto that buy pow
@@ -242,11 +242,34 @@ check2buy2(latestTrades, minBuyPow, buyPowMargin, dolPerStock):
     usableBuyPow = max(usableBuyPow-minBuyPow,0) #use max just in case buyPowMargin is accidentally set to <1
 
   i=0
-  while i<int(usableBuyPow/dolPerStock):
-    #TODO: check that the stock hasn't been traded yet today and that the createOrder doesn't return an error
-    shares2buy = int(dolPerStock/a.getPrice(gainers[i])) #shares of a stock to purchase
-    print(a.createOrder("buy",shares2buy,gainers[i],"market","day"))
-    i++
+  stocksBought = 0
+  stocks2buy = int(usableBuyPow/dolPerStock)
+  while(stocksBought<stocks2buy and i<len(gainers)):
+    symb = gainers[i]
+    try:
+      lastTradeDate = dt.datetime.strptime(latestTrades[symb][0],'%Y-%m-%d').date()
+      lastTradeType = latestTrades[symb][1]
+    except Exception:
+      lastTradeDate = dt.datetime.today()-dt.timedelta(1)
+      lastTradeType = "NA"
+
+    if(lastTradeDate < dt.date.today() or lastTradeType != "sell"):
+      if(a.isAlpacaTradable(symb)): #first make sure we can actually buy it
+        curPrice = a.getPrice(symb)
+        if(curPrice>0):
+          shares2buy = int(dolPerStock/curPrice)
+          print(a.createOrder("buy",shares2buy,symb,"market","day"))
+          #TODO: make sure it actually executed the order, then increment
+          stocksBought += 1
+          i += 1
+        else:
+          i += 1
+      else:
+        i += 1
+    else:
+      i += 1
+
+
 
 
 #for algo13 - update the stock list - takes ~5 minutes to process 400 stocks
