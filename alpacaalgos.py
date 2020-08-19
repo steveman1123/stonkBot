@@ -62,14 +62,14 @@ def mainAlgo():
       print("Portfolio val is $"+str(portVal)+". Sell targets are "+str(sellUp)+" or "+str(sellDn))
       
       #update te stock list 20 minutes before close, if it's not already updated and if it's not currently updating
-      if(a.timeTillClose()<20*60 and (not stocksUpdatedToday) and ('listUpdate' not in [t.getName() for t in threading.enumerate()])):
+      if(a.timeTillClose()<=20*60 and (not stocksUpdatedToday) and ('listUpdate' not in [t.getName() for t in threading.enumerate()])):
         updateThread = threading.Thread(target=updateStockList) #init the thread
         updateThread.setName('listUpdate') #set the name to the stock symb
         updateThread.start() #start the thread
       
 
       #check here if the time is close to close - in the function, check that the requested stock didn't peak today
-      if(a.timeTillClose()<=5*60): #must be within 5 minutes of close to start buying
+      if(a.timeTillClose()<=10*60): #must be within 10 minutes of close to start buying
         #check2buy(latestTrades, minPortVal,reducedCash,reducedBuy,lowCash,lowBuy,minCash)
         #TODO: may want to make this its own thread
         check2buy2(latestTrades, minBuyPow, buyPowMargin, dolPerStock)
