@@ -9,6 +9,7 @@ gainers = [] #global list of potential gaining stocks
 gainerDates = {} #global list of gainers plus their initial jump date and predicted next jump date
 stocksUpdatedToday = False
 
+#TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
 #generates list of potential gainers, trades based off amount of cash
 def mainAlgo():
   o.init('../stockStuff/apikeys.key', '../stockStuff/stockData/') #init settings and API keys, and stock data directory
@@ -249,14 +250,14 @@ def check2buy(latestTrades, minPortVal, reducedCash, reducedBuy, lowCash, lowBuy
 def check2buy2(latestTrades, minBuyPow, buyPowMargin, dolPerStock):
   global gainers, gainerDates
 
-  usableBuyPow = float(a.getAcct()['buying_power']) #this must be updated in the loop because it will change during every buy
+  usableBuyPow = float(a.getAcct()['buying_power']) #init as the current buying power
   if(usableBuyPow>=minBuyPow*buyPowMargin): #if we have more buying power than the min plus some leeway, then reduce it to hold onto that buy pow
     print("Can withdrawl $"+str(round(minBuyPow,2))+" safely.")
     usableBuyPow = max(usableBuyPow-minBuyPow,0) #use max just in case buyPowMargin is accidentally set to <1
 
-  i=0
-  stocksBought = 0
-  stocks2buy = int(usableBuyPow/dolPerStock)
+  i=0 #index of gainers
+  stocksBought = 0 #number of stocks bought
+  stocks2buy = int(usableBuyPow/dolPerStock) #number of stocks to buy
   while(stocksBought<stocks2buy and i<len(gainers)):
     symb = gainers[i]
     if(symb not in [t.getName() for t in threading.enumerate()]): #make sure the stock isn't trying to be sold already

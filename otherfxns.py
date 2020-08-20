@@ -128,10 +128,13 @@ def getList():
 #get the history of a stock from the nasdaq api (date format is yyyy-mm-dd)
 #returns as 2d array order of Date, Close/Last, Volume, Open, High, Low sorted by dates newest to oldest
 def getHistory(symb, startDate, endDate):
-  #write to file after checking that the file doesn't already exist (we don't want to abuse the api)
-  
-  #TODO: check if the date was modified today - may also want to check the number of lines in the file (to see how many days it has - must be changed within the last 24hr and have at least as many lines as days to get)
-  if(not os.path.isfile(stockDir+symb+".csv")):
+  #try checking the modified date of the file, if it throws an error, just set it to yesterday
+  try:
+    modDate = dt.datetime.strptime(time.strftime("%Y-%m-%d",time.localtime(os.stat(stockDir+symb+'.csv').st_mtime)),"%Y-%m-%d").date() #if ANYONE knows of a better way to get the mod date into a date format, for the love of god please let me know
+  except Exception:
+    modDate = dt.date.today()-dt.timedelta(1)
+  #write to file after checking that the file doesn't already exist (we don't want to abuse the api) or that it was edited more than a day ago
+  if(not os.path.isfile(stockDir+symb+".csv") or modDate<dt.date.today()):
     url = f'https://www.nasdaq.com/api/v1/historical/{symb}/stocks/{startDate}/{endDate}/'
     while True:
       try:
@@ -146,7 +149,7 @@ def getHistory(symb, startDate, endDate):
     out.close()
 
   #read csv and convert to array
-  #TODO: see if we can not have to save it to a file if possible due to high read/writes
+  #TODO: see if we can not have to save it to a file if possible due to high read/writes - can also eliminate csv library
   with open(stockDir+symb+".csv") as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     out = [[ee.replace('$','').replace('N/A','0') for ee in e] for e in csv_reader][1::] #trim first line to get rid of headers, also replace $'s and N/A volumes to calculable values
@@ -159,8 +162,6 @@ def getHistory(symb, startDate, endDate):
 #this is where the magic really happens
 
 #TODO: check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still(this should only happen is there's a network error or during testing stuff)
-#TODO: keep gainers date and estimate days until jump for currently held stocks that may not appear as valid gainers in getGainers()
-#     ^ TODO: relates to above todo's, add switch to getGainers() to switch between stocks owned (keep looking back until a jump is found (up to 1 year)) and stocks not owned (only check in the last month or so)
 def goodBuy(symb,days2look=25): #days2look=how farback to look for a jump
   validBuy = "NA" #set to the jump date if it's valid
   if isTradable(symb):
