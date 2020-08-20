@@ -256,7 +256,10 @@ def check2buy2(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
     print("Can withdrawl $"+str(round(minBuyPow,2))+" safely.")
     usableBuyPow = max(usableBuyPow-minBuyPow,0) #use max just in case buyPowMargin is accidentally set to <1
   
-  dolPerStock = max(minDolPerStock, usableBuyPow/len(gainers)) #if buyPow>(minDolPerStock*len(gainers)) then divvy up buyPow over gainers
+  try:
+    dolPerStock = max(minDolPerStock, usableBuyPow/len(gainers)) #if buyPow>(minDolPerStock*len(gainers)) then divvy up buyPow over gainers
+  except Exception:
+    dolPerStock = minDolPerStock
     
   i=0 #index of gainers
   stocksBought = 0 #number of stocks bought
