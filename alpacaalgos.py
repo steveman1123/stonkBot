@@ -75,20 +75,20 @@ def mainAlgo():
       
       #only update the stock list and buy stocks if the gainers list is done being populated/updated
       if('listUpdate' not in [t.getName() for t in threading.enumerate()]):
-        #update te stock list 20 minutes before close, if it's not already updated
+        #update the stock list 20 minutes before close, if it's not already updated
         if((not stocksUpdatedToday) and a.timeTillClose()<=20*60):
           updateThread = threading.Thread(target=updateStockList) #init the thread
           updateThread.setName('listUpdate') #set the name to the stock symb
           updateThread.start() #start the thread
       
         #check here if the time is close to close - in the function, check that the requested stock didn't peak today
-        if(a.timeTillClose()<=10*60 and 'buying' not in [t.getName() for t in threading.enumerate()]): #must be within 10 minutes of close to start buying and buying thread cannot be running already
+        if('buying' not in [t.getName() for t in threading.enumerate()] and a.timeTillClose()<=10*60): #must be within 10 minutes of close to start buying and buying thread cannot be running already
           #Use this for the non-threading option
-          #check2buy2(latestTrades, minBuyPow, buyPowMargin, dolPerStock)
+          check2buy2(latestTrades, minBuyPow, buyPowMargin, dolPerStock)
           #use this for the threading option
-          buyThread = threading.Thread(target=check2buy, args=(latestTrades, minBuyPow, buyPowMargin, dolPerStock)) #init the thread
-          buyThread.setName('buying') #set the name to the stock symb
-          buyThread.start() #start the thread
+          #buyThread = threading.Thread(target=check2buy, args=(latestTrades, minBuyPow, buyPowMargin, dolPerStock)) #init the thread
+          #buyThread.setName('buying') #set the name to the stock symb
+          #o.buyThread.start() #start the thread
           
       
       print("Tradable Stocks:")
@@ -110,39 +110,39 @@ def mainAlgo():
       a.time.sleep(tto)
       
 
-#check to sell a list of stocks
+#check to sell a list of stocks - symlist is the output of a.getPos()
 def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
   global gainerDates
   for e in symList:
-    if(a.isAlpacaTradable(e['symbol'])): #just skip it if it can't be traded
-      try:
-        lastTradeDate = dt.datetime.strptime(latestTrades[e['symbol']][0],'%Y-%m-%d').date()
-        lastTradeType = latestTrades[e['symbol']][1]
-      except Exception:
-        lastTradeDate = dt.date.today()-dt.timedelta(1)
-        lastTradeType = "NA"
+    #if(a.isAlpacaTradable(e['symbol'])): #just skip it if it can't be traded - skipping this for slower connections & to save a query
+    try:
+      lastTradeDate = dt.datetime.strptime(latestTrades[e['symbol']][0],'%Y-%m-%d').date()
+      lastTradeType = latestTrades[e['symbol']][1]
+    except Exception:
+      lastTradeDate = dt.date.today()-dt.timedelta(1)
+      lastTradeType = "NA"
+    
+    #TODO: check for change from day's open - not from the buyPrice (in case the stock falls a bunch since we bought it, then if it jumps the x%, it might not reach the x% gain from when we bought it, but that's the risk of the market
+    if(lastTradeDate<dt.date.today() or lastTradeType=="sell" or float(e['current_price'])/float(e['avg_entry_price'])>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
+      #openPrice = o.getOpen(e['symbol']
+      buyPrice = float(e['avg_entry_price'])
+      curPrice = float(e['current_price'])
+      maxPrice = 0
+      print(e['symbol']+"\t-\tLast Jump Date: "+o.goodBuy(e['symbol'],260)+"\t-\tchange: "+str(round(curPrice/buyPrice,2))) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
       
-      #TODO: check for change from day's open - not from the buyPrice (in case the stock falls a bunch since we bought it, then if it jumps the x%, it might not reach the x% gain from when we bought it, but that's the risk of the market
-      if(lastTradeDate<dt.date.today() or lastTradeType=="sell" or float(e['current_price'])/float(e['avg_entry_price'])>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
-        #openPrice = o.getOpen(e['symbol']
-        buyPrice = float(e['avg_entry_price'])
-        curPrice = float(e['current_price'])
-        maxPrice = 0
-        print(e['symbol']+"\t-\tAppx Jump Date: "+o.goodBuy(e['symbol'],260)+"\t-\tchange: "+str(round(curPrice/buyPrice,2))) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
-        
-        if(curPrice/buyPrice<=sellDn):
-          print("Lost it on "+e['symbol'])
-          print(a.createOrder("sell",e['qty'],e['symbol']))
-          latestTrades[e['symbol']] = [str(dt.date.today()), "sell"]
-          f = open("../stockStuff/latestTrades.json","w")
-          f.write(a.json.dumps(latestTrades, indent=2))
-          f.close()
-        elif(curPrice/buyPrice>=sellUp):
-          print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
-          if(not e['symbol'] in [t.getName() for t in threading.enumerate()]): #if the thread is not found in names of the running threads, then start it (this stops multiple instances of the same stock thread)
-            triggerThread = threading.Thread(target=triggeredUp, args=(e, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades)) #init the thread
-            triggerThread.setName(e['symbol']) #set the name to the stock symb
-            triggerThread.start() #start the thread
+      if(curPrice/buyPrice<=sellDn):
+        print("Lost it on "+e['symbol'])
+        print(a.createOrder("sell",e['qty'],e['symbol']))
+        latestTrades[e['symbol']] = [str(dt.date.today()), "sell"]
+        f = open("../stockStuff/latestTrades.json","w")
+        f.write(a.json.dumps(latestTrades, indent=2))
+        f.close()
+      elif(curPrice/buyPrice>=sellUp):
+        print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
+        if(not e['symbol'] in [t.getName() for t in threading.enumerate()]): #if the thread is not found in names of the running threads, then start it (this stops multiple instances of the same stock thread)
+          triggerThread = threading.Thread(target=triggeredUp, args=(e, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades)) #init the thread
+          triggerThread.setName(e['symbol']) #set the name to the stock symb
+          triggerThread.start() #start the thread
 
 #triggered selling-up - this is the one that gets multithreaded
 def triggeredUp(symbObj, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades):
