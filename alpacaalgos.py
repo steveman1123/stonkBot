@@ -250,13 +250,14 @@ def check2buy(latestTrades, minPortVal, reducedCash, reducedBuy, lowCash, lowBuy
 def check2buy2(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
   global gainers, gainerDates
 
-  dolPerStock = max(minDolPerStock, usableBuyPow/len(gainers)) #if buyPow>(minDolPerStock*len(gainers)) then divvy up buyPow over gainers
   
   usableBuyPow = float(a.getAcct()['buying_power']) #init as the current buying power
   if(usableBuyPow>=minBuyPow*buyPowMargin): #if we have more buying power than the min plus some leeway, then reduce it to hold onto that buy pow
     print("Can withdrawl $"+str(round(minBuyPow,2))+" safely.")
     usableBuyPow = max(usableBuyPow-minBuyPow,0) #use max just in case buyPowMargin is accidentally set to <1
-
+  
+  dolPerStock = max(minDolPerStock, usableBuyPow/len(gainers)) #if buyPow>(minDolPerStock*len(gainers)) then divvy up buyPow over gainers
+    
   i=0 #index of gainers
   stocksBought = 0 #number of stocks bought
   stocks2buy = int(usableBuyPow/dolPerStock) #number of stocks to buy
