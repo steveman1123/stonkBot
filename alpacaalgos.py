@@ -271,10 +271,10 @@ def check2buy2(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
         lastTradeDate = dt.datetime.strptime(latestTrades[symb][0],'%Y-%m-%d').date()
         lastTradeType = latestTrades[symb][1]
       except Exception:
-        lastTradeDate = dt.datetime.today()-dt.timedelta(1)
+        lastTradeDate = dt.datetime.today().date()-dt.timedelta(1)
         lastTradeType = "NA"
 
-      if(lastTradeDate < dt.datetime.today() or lastTradeType != "sell"):
+      if(lastTradeDate < dt.datetime.today().date() or lastTradeType != "sell"):
         if(a.isAlpacaTradable(symb)): #first make sure we can actually buy it
           curPrice = a.getPrice(symb)
           if(curPrice>0):

@@ -2,7 +2,7 @@ import requests, json, re, time
 import otherfxns as o
 import datetime as dt
 
-isPaper = 1 #set up as paper trading (testing), or actual trading
+isPaper = 0 #set up as paper trading (testing), or actual trading
 
 keyFile = open("../stockStuff/apikeys.key","r")
 apiKeys = json.loads(keyFile.read())
