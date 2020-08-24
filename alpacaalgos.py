@@ -10,6 +10,11 @@ gainerDates = {} #global list of gainers plus their initial jump date and predic
 stocksUpdatedToday = False
 
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
+#TODO: add logic to make sure we have sufficient buying power to actualy buy things before checking to buy
+#TODO: add logic to make sure get requests actually return what they're supposed to (and not random html data)
+#TODO: display all stocks statuses when grabbing them in getList
+#TODO: say which stock threw an error in isTradable
+
 #generates list of potential gainers, trades based off amount of cash
 def mainAlgo():
   o.init('../stockStuff/apikeys.key', '../stockStuff/stockData/') #init settings and API keys, and stock data directory
@@ -36,7 +41,7 @@ def mainAlgo():
   
   minBuyPow = 1000 #min buying power to hold onto if..
   buyPowMargin = 1.5 # actual buy pow > this*minBuyPow
-  minDolPerStock = 10 #min $ to dedicate to an individual stock
+  minDolPerStock = 5 #min $ to dedicate to an individual stock
 
   minPortVal = 50 #stop trading if portfolio reaches this amount
 
@@ -175,7 +180,7 @@ def check2buy(latestTrades, minPortVal, reducedCash, reducedBuy, lowCash, lowBuy
   where maxPortVal is ~20k and cash2Hold is ~1k
   '''
   
-  #TODO: check here for the day's high to see if it reached the threshold for each stock - remove ones that it did from the gainers list
+  #***TODO: check here for the day's high to see if it reached the threshold for each stock - remove ones that it did from the gainers list
   if(buyPow>reducedCash): #in normal operating mode
     print("Normal Operation Mode. Available Buying Power: $"+str(buyPow))
     #div cash over all gainers
