@@ -27,7 +27,7 @@ def isTradable(symb):
   try:
     isTradable = bool(json.loads(r)['data']['isNasdaqListed'])
   except Exception:
-    print("Error in isTradable")
+    print(symb+" - Error in isTradable")
 
   return isTradable
 
@@ -90,16 +90,17 @@ def getList():
     while True:
       try:
         r = requests.get(url, params=params).text
+        
         break
       except Exception:
         print("No connection or other error encountered. Trying again...")
         time.sleep(3)
         continue
+
     table = bs(r,'html.parser').find_all('table')[0]
     for e in table.find_all('tr')[1::]:
       symbList.append(e.find_all('td')[0].get_text())
 
-  
   
   #now that we have the marketWatch list, let's get the stocksunder1 list - essentially the getPennies() fxn from other files
   url = 'https://stocksunder1.org/nasdaq-penny-stocks/'
@@ -120,7 +121,8 @@ def getList():
     symList += re.sub(r'\W+','',e.find_all('td')[0].get_text().replace(' predictions',''))
   
   print("Removing Duplicates...")
-  symbList = list(set(symbList+symList)) #combine and remove duplicates
+  
+  symbList = list(dict.fromkeys(symbList)) #combine and remove duplicates
   
   print("Done getting stock lists")
   return symbList
@@ -217,7 +219,7 @@ def goodBuy(symb,days2look=25): #days2look=how farback to look for a jump
               for e in range(0,startDate):
                 diff = float(dateData[e][1])/float(dateData[e+1][1])
                 if(diff>=sellUp):
-	                  missedJump = True
+	                missedJump = True
               if(not missedJump):
                 validBuy = dateData[startDate][0] #return the date the stock initially jumped
     
@@ -225,13 +227,13 @@ def goodBuy(symb,days2look=25): #days2look=how farback to look for a jump
   
   
 #the new version of the getGainers function - uses the new functions getList, getHistory, and goodBuy
-def getGainers(symblist): #default to the getList - otherwise use what the user provides
+def getGainers(symblist):
   gainers = {}
   
   for i,e in enumerate(symblist):
     b = goodBuy(e)
     if(b!="NA"):
-      print(f"({i+1}/{len(symblist)}) {e}",end='')
-      gainers[e] = [b,(dt.datetime.strptime(b,"%m/%d/%Y")+dt.timedelta(days=(7*5))).strftime("%m/%d/%Y")]
-      print(" - "+gainers[e][0]+" - "+gainers[e][1])
+      gainers[e] = [b, (dt.datetime.strptime(b,"%m/%d/%Y")+dt.timedelta(days=(7*5))).strftime("%m/%d/%Y")]
+      print(f"({i+1}/{len(symblist)}) {e} - {b} - {gainers[e][1]}")
+
   return gainers
