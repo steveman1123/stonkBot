@@ -175,7 +175,7 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
             shares2buy = int(dolPerStock/curPrice)
             orderText = a.createOrder("buy",shares2buy,symb,"market","day")
             #make sure it actually executed the order, then increment
-            if(orderText.endswith('accepted'):
+            if(orderText.endswith('accepted')):
               print(orderText)
               stocksBought += 1
             i += 1
