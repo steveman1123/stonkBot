@@ -115,13 +115,11 @@ def getList():
       continue
 
   table = bs(html,'html.parser').find_all('table')[6] #6th table in the webpage - this may change depending on the webpage
-  symList = list()
   for e in table.find_all('tr')[1::]: #skip the first element that's the header
     #print(re.sub(r'\W+','',e.find_all('td')[0].get_text().replace(' predictions','')))
-    symList += re.sub(r'\W+','',e.find_all('td')[0].get_text().replace(' predictions',''))
+    symbList.append(re.sub(r'\W+','',e.find_all('td')[0].get_text().replace(' predictions','')))
   
   print("Removing Duplicates...")
-  
   symbList = list(dict.fromkeys(symbList)) #combine and remove duplicates
   
   print("Done getting stock lists")
@@ -164,7 +162,7 @@ def getHistory(symb, startDate, endDate):
 #this is where the magic really happens
 
 #TODO: check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still(this should only happen is there's a network error or during testing stuff)
-def goodBuy(symb,days2look=25): #days2look=how farback to look for a jump
+def goodBuy(symb,days2look=25): #days2look=how far back to look for a jump
   validBuy = "NA" #set to the jump date if it's valid
   if isTradable(symb):
     #calc price % diff over past 20 days (current price/price of day n) - current must be >= 80% for any
@@ -176,7 +174,7 @@ def goodBuy(symb,days2look=25): #days2look=how farback to look for a jump
     sellUp = 1.25 #% to sell up at
     sellDn = 0.5 #% to sell dn at
     
-    #make sure that the jump happened in the time frame rather than too long ago
+    #make sure that the jump happened in the  frame rather than too long ago
     volAvgDays = 60 #arbitrary number to avg volumes over
     checkPriceDays = 30 #check if the price jumped substantially over the last __ trade days
     checkPriceAmt = 1.7 #check if the price jumped by this amount in the above days (% - i.e 1.5 = 150%)
@@ -212,7 +210,7 @@ def goodBuy(symb,days2look=25): #days2look=how farback to look for a jump
               dayPrice = float(dateData[startDate+i][4])
               i += 1
             
-            if(lastPrice/dayPrice>=checkPriceAmt):
+            if(lastPrice/dayPrice>=checkPriceAmt): #TODO: read through this logic some more to determine where exactly to put sellDn
               #the price jumped compared to both the previous day and to the past few days, the volume gained, and the price and the volume both fell
               #check to see if we missed the next jump (where we want to strike)
               missedJump = False

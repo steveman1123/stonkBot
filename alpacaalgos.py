@@ -30,7 +30,6 @@ def mainAlgo():
   sellDn = 1-.3 #limit loss
   sellUpDn = 1-.02 #sell if it triggers sellUp then drops sufficiently
   
-  #TODO: change save dirs so we don't write to the sd card a bajillion times and remove csv files when done to not suck up room
   #init the stock list if we rereun during the week
   if(a.o.dt.date.today().weekday()<5): #not saturday or sunday
     f = open("../stockStuff/latestTrades.json","r")
@@ -174,9 +173,11 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
           curPrice = a.getPrice(symb)
           if(curPrice>0):
             shares2buy = int(dolPerStock/curPrice)
-            print(a.createOrder("buy",shares2buy,symb,"market","day"))
-            #TODO: make sure it actually executed the order, then increment
-            stocksBought += 1
+            orderText = a.createOrder("buy",shares2buy,symb,"market","day")
+            #make sure it actually executed the order, then increment
+            if(orderText.endswith('accepted'):
+              print(orderText)
+              stocksBought += 1
             i += 1
           else:
             i += 1
