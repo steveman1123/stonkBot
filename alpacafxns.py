@@ -49,7 +49,6 @@ def getPos():
       print("No connection, or other error encountered. Trying again...")
       o.time.sleep(3)
       continue
-  print(html)
   return o.json.loads(html)
 
 # return currently held positions/stocks/whatever

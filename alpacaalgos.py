@@ -73,7 +73,7 @@ def mainAlgo():
       print("Tradable Stocks:")
       check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn)
 
-      f = open("../stockStuff/webData.o.json",'w')
+      f = open("../stockStuff/webData.json",'w')
       f.write(a.o.json.dumps({"portVal":round(portVal,2),"updated":a.o.dt.datetime.now().strftime("%Y-%m-%d, %H:%M")+" CST"}))
       f.close()
       a.o.time.sleep(60)
