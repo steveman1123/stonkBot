@@ -21,13 +21,14 @@ If you've got some misgivings about throwing real money into it, there's a paper
 1. Download the repo
 2. Move the stockStuff folder outside the repo to create the folder structure as seen below
 3. Install any missing python modules
+4. Create Alpaca account, populate keys in apikeys.txt, and set the desired isPaper value in alpacafxns.py (isPaper=0 is live trading, isPaper=1 is paper trading)
 4. Run continuously (it works best if left alone other than to check for errors and provide some masochism)
 5. ???
 6. Profit
 
 
 ## API Keys and Folder Structure
-The apikeys file has the actual keys removed for the REST APIs - if you want to try it out, **you will need to get your own Alpaca keys** and populate the key file - The alphaVantage keys are no longer necessary due to updates to use the nasdaq api.
+The apikeys file has the actual keys removed for the REST APIs - if you want to try it out, **you will need to get your own Alpaca keys** and populate the key file - The alphaVantage keys are no longer necessary due to updates to use the nasdaq api (however, if you decide to poke through the Depreciated Functions, you will need it there).
 
 The overall folder structure should look something like this*:
 ```
@@ -36,7 +37,7 @@ The overall folder structure should look something like this*:
 +-stockStuff/
 | |
 | +-stockData/
-| +-apikeys.key
+| +-apikeys.txt
 | +-latestTrades.json
 |
 +-stonkBot/ (this repo)
@@ -59,7 +60,7 @@ otherfxns.py - Other functions that do not require an Alpaca API query (i.e. fun
 
 stockStuff/ - contains data that won't be synced with the repo (api keys, latest trades, and stock histories) - **the folder and its contents should be moved to the location shown above for the program to work**
 
-apikeys.key - Contains the API keys used for Alpaca and AlphaVantage - the file in the repo should be filled in with your information
+apikeys.txt - Contains the API keys used for Alpaca and AlphaVantage - the file in the repo should be filled in with your information
 
 latestTrades.json - Contains the stock name and the latest trade date and type for the stock
 
@@ -78,6 +79,18 @@ Depreciated Functions, etc/ - Contains old functions and ideas for algorithms th
 
 [MarketWatch Stock Screener](https://www.marketwatch.com/tools/stockresearch/screener/)
 
+## Issues
+### Shortterm resolutions (next few weeks):
+* Change some selling logic (to account for some market conditions)
+
+### Midterm resolutions (next few months):
+* Change some more selling logic (for stocks we may have missed or didn't quite make the initial cut)
+* Add master/slave relationship to allow it to run on multiple computers in the event of the primary program going down (add redundancy)
+* Create config file(s) and move settings to those rather than being set in the scripts
+
+### Longterm resolutions (next few years):
+* Record trade history and give performance analytics
+* Add some basic machine learning to improve trades over time
 
 ## Disclaimer
 I do not claim to be a financial expert and cannot be held accountable for any losses you may incur as a result of using this software
