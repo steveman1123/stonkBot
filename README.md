@@ -1,3 +1,4 @@
+
 # stonkBot
 The first go at a stock trading bot using Alpaca API
 
@@ -65,6 +66,19 @@ apikeys.txt - Contains the API keys used for Alpaca and AlphaVantage - the file 
 latestTrades.json - Contains the stock name and the latest trade date and type for the stock
 
 Depreciated Functions, etc/ - Contains old functions and ideas for algorithms that are no longer in use (either tested to be not profitable, or determined to be too simplistic - in my opinion, good for research, and coming up with some ideas, and that's about it)
+
+## Running and Output Interpretation
+
+The output should look something akin to this:
+![Sample Output](https://github.com/steveman1123/stonkBot/blob/master/sampleOutput.jpg?raw=true)
+
+On the first day, there will be no tradable stocks, 20 minutes before market close, a thread to start getting stocks to buy will run (if you have sufficient buying power), then 10 minutes before market close, it will start to buy stocks
+
+After the first day, assuming you have stocks held, it will show something similar to above, and will check to sell the listed stocks throughout the day if they reach one of the trigger points.
+
+Generally it seems that it takes about 5 weeks (+/- 3 weeks) after the initial jump to jump a second time.
+
+From testing between 2020-07-14 to 2020-08-27, I have gotten an average growth rate of 0.75%/day with a standard deviation 3.8%; however more data is required to draw better judgements.
 
 ## External Resources
 [Alpaca](https://alpaca.markets/)
