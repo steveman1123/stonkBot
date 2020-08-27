@@ -107,7 +107,8 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
       buyPrice = float(e['avg_entry_price'])
       curPrice = float(e['current_price'])
       maxPrice = 0
-      print(e['symbol']+"\t-\tLast Jump Date: "+a.o.goodBuy(e['symbol'],260)+"\t-\tchange: "+str(round(curPrice/buyPrice,2))) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
+      lastJump = a.o.dt.datetime.strptime(a.o.goodBuy(e['symbol'],260),"%Y-%m-%d").date()
+      print(e['symbol']+"\t-\tInitial Jump Date: "+str(lastJump)+", predicted jump: "+str(lastJump+a.o.dt.timedelta(5*7))+" +/- 3wks\t-\tchange: "+str(round(curPrice/buyPrice,2))) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
       
       if(curPrice/buyPrice<=sellDn):
         print("Lost it on "+e['symbol'])

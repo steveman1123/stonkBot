@@ -69,6 +69,8 @@ Depreciated Functions, etc/ - Contains old functions and ideas for algorithms th
 
 ## Running and Output Interpretation
 
+Depending on how you have your file permissions set, this may need to run as sudo in order to read/write the stockStuff files
+
 The output should look something akin to this:
 
 ![Sample Output](https://github.com/steveman1123/stonkBot/blob/master/sampleOutput.JPG?raw=true)
@@ -79,7 +81,7 @@ After the first day, assuming you have stocks held, it will show something simil
 
 Generally it seems that it takes about 5 weeks (+/- 3 weeks) after the initial jump to jump a second time.
 
-From testing between 2020-07-14 to 2020-08-27, I have gotten an average growth rate of 0.75%/day with a standard deviation 3.8%; however more data is required to draw better judgements.
+From testing between 2020-07-14 to 2020-08-26, I have gotten an average growth rate of 0.73%/day with a standard deviation of 3.9%; however more data is required to draw better judgements.
 
 ## External Resources
 [Alpaca](https://alpaca.markets/)
