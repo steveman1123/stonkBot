@@ -70,7 +70,7 @@ Depreciated Functions, etc/ - Contains old functions and ideas for algorithms th
 ## Running and Output Interpretation
 
 The output should look something akin to this:
-![Sample Output](https://github.com/steveman1123/stonkBot/blob/master/sampleOutput.jpg?raw=true)
+![Sample Output](https://github.com/steveman1123/stonkBot/blob/master/sampleOutput.JPG?raw=true)
 
 On the first day, there will be no tradable stocks, 20 minutes before market close, a thread to start getting stocks to buy will run (if you have sufficient buying power), then 10 minutes before market close, it will start to buy stocks
 
