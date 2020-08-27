@@ -178,6 +178,8 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
             if(orderText.endswith('accepted')):
               print(orderText)
               stocksBought += 1
+              latestTrades[symb][0] = str(a.o.dt.date.today())
+              latestTrades[symb][1] = "buy"
             i += 1
           else:
             i += 1
