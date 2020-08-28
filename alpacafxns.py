@@ -211,7 +211,7 @@ def openCloseTimes(checkDate): #checkdate of format yyyy-mm-dd
   #subtract 1 from hours to convert from EST (NYSE time), to CST (my time)
   d["open"] = str(int(d["open"].split(":")[0])-1)+":"+d["open"].split(":")[1]
   d["close"] = str(int(d["close"].split(":")[0])-1)+":"+d["close"].split(":")[1]
-  return [o.dt.date.time.strptime(d["date"]+d["open"],"%Y-%m-%d%H:%M"), o.dt.date.time.strptime(d["date"]+d["close"],"%Y-%m-%d%H:%M")]
+  return [o.dt.datetime.strptime(d["date"]+d["open"],"%Y-%m-%d%H:%M"), o.dt.datetime.strptime(d["date"]+d["close"],"%Y-%m-%d%H:%M")]
 
 # return the current price of the indicated stock
 def getPrice(symb):

@@ -107,8 +107,8 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
       buyPrice = float(e['avg_entry_price'])
       curPrice = float(e['current_price'])
       maxPrice = 0
-      lastJump = a.o.dt.datetime.strptime(a.o.goodBuy(e['symbol'],260),"%Y-%m-%d").date()
-      print(e['symbol']+"\t-\tInitial Jump Date: "+str(lastJump)+", predicted jump: "+str(lastJump+a.o.dt.timedelta(5*7))+" +/- 3wks\t-\tchange: "+str(round(curPrice/buyPrice,2))) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
+      lastJump = a.o.dt.datetime.strptime(a.o.goodBuy(e['symbol'],260),"%m/%d/%Y").date()
+      print(e['symbol']+"\t-\tInitial jump: "+str(lastJump)+" - predicted jump: "+str(lastJump+a.o.dt.timedelta(5*7))+" +/- 3wks\t-\tchange: "+str(round(curPrice/buyPrice,2))) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
       
       if(curPrice/buyPrice<=sellDn):
         print("Lost it on "+e['symbol'])
@@ -179,8 +179,7 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
             if(orderText.endswith('accepted')):
               print(orderText)
               stocksBought += 1
-              latestTrades[symb][0] = str(a.o.dt.date.today())
-              latestTrades[symb][1] = "buy"
+              latestTrades[symb] = [str(a.o.dt.date.today()),"buy"]
             i += 1
           else:
             i += 1
@@ -203,4 +202,4 @@ def updateStockList():
   gainerDates = a.o.getGainers(list(dict.fromkeys(a.o.getList()+[e['symbol'] for e in a.getPos()]))) #combine nasdaq list & my stocks & remove duplicates - order doesn't matter
   gainers = list(gainerDates) #list of just the stock symbols
   stocksUpdatedToday = True
-  print("Done updating list")
+  print(f"Done updating list - {len(gainers)} possible gainers")
