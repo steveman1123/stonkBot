@@ -249,3 +249,27 @@ def isAlpacaTradable(symb):
     return o.json.loads(tradable)['tradable']
   except Exception:
     return False
+
+
+def checkValidKeys():
+  while True:
+    try:
+      test = getAcct()
+      break
+    except Exception:
+      print("No connection, or other error encountered. Trying again...")
+      o.time.sleep(3)
+      continue
+  try:
+    test = test["status"]
+    if(test=="ACTIVE"):
+      print("Valid keys - active account")
+    else:
+      print("Valid keys - inactive account")
+  except Exception:
+    try:
+      test = test['message']
+      print("Invalid keys")
+    except Exception:
+      print("Unknown issue encountered.")
+    o.sys.exit()

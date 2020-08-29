@@ -4,6 +4,7 @@ import alpacaalgos as algos
 
 def main():
   print("\nStarting up...\n")
+  algos.a.checkValidKeys()
   isMaster = 1
   if(isMaster):
     algos.mainAlgo() #used to easily switch between the different algos in the algo file

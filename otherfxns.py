@@ -1,5 +1,5 @@
 #This module should be any function that doesn't require alpaca or keys to use
-import json,requests,os,time,re,csv,math
+import json,requests,os,time,re,csv,math,sys
 import datetime as dt
 from bs4 import BeautifulSoup as bs
 
