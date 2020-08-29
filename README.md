@@ -21,7 +21,7 @@ If you've got some misgivings about throwing real money into it, there's a paper
 ### Setup
 1. Download the repo
 2. Move the stockStuff folder outside the repo to create the folder structure as seen below
-3. Install any missing python modules
+3. Install any missing python modules (suggest also installing "screen" or "tmux" package if running on raspberry pi)
 4. Create Alpaca account, populate keys in apikeys.txt, and set the desired isPaper value in alpacafxns.py (isPaper=0 is live trading, isPaper=1 is paper trading)
 4. Run continuously (it works best if left alone other than to check for errors and provide some masochism)
 5. ???
