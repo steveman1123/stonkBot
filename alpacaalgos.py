@@ -74,7 +74,7 @@ def mainAlgo():
       check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn)
 
       f = open("../stockStuff/webData.json",'w')
-      f.write(a.o.json.dumps({"portVal":round(portVal,2),"updated":a.o.dt.datetime.now().strftime("%Y-%m-%d, %H:%M")+" CST"}))
+      f.write(a.o.json.dumps({"portVal":round(portVal,2),"updated":a.o.dt.datetime.utcnow().strftime("%Y-%m-%d, %H:%M")+" UTC"}))
       f.close()
       a.o.time.sleep(60)
       
@@ -101,7 +101,6 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
       lastTradeDate = a.o.dt.date.today()-a.o.dt.timedelta(1)
       lastTradeType = "NA"
     
-    #TODO: check for change from day's open - not from the buyPrice (in case the stock falls a bunch since we bought it, then if it jumps the x%, it might not reach the x% gain from when we bought it, but that's the risk of the market
     if(lastTradeDate<a.o.dt.date.today() or lastTradeType=="sell" or float(e['current_price'])/float(e['avg_entry_price'])>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
       #openPrice = a.o.getOpen(e['symbol']
       buyPrice = float(e['avg_entry_price'])
@@ -117,6 +116,8 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
         f = open("../stockStuff/latestTrades.json","w")
         f.write(a.o.json.dumps(latestTrades, indent=2))
         f.close()
+      
+      #use e['lastday_price'] to get previous close amount ... or curPrice/float(e['lastday_price'])>=sellUpFromYesterday, where sellUpFromYesterday ~= 5% more than sellUp
       elif(curPrice/buyPrice>=sellUp):
         print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
         if(not e['symbol'] in [t.getName() for t in threading.enumerate()]): #if the thread is not found in names of the running threads, then start it (this stops multiple instances of the same stock thread)
