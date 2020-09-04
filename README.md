@@ -99,11 +99,14 @@ From testing between 2020-07-14 to 2020-08-31, I have gotten an average growth r
 [MarketWatch Stock Screener](https://www.marketwatch.com/tools/stockresearch/screener/)
 
 ## Issues
+
+If you are encountering some issues, make sure to pull the latest version, it is under active delopment, so things change quickly.
+
 ### Shortterm resolutions (next few weeks):
-* Change some selling logic (to account for some market conditions)
+* Change some selling logic (to add a time limit)
+* automatically remove saved history files after 1 week
 
 ### Midterm resolutions (next few months):
-* Change some more selling logic (for stocks we may have missed or didn't quite make the initial cut)
 * Add master/slave relationship to allow it to run on multiple computers in the event of the primary program going down (add redundancy)
 * Create config file(s) and move settings to those rather than being set in the scripts
 

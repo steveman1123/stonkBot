@@ -263,7 +263,11 @@ def checkValidKeys():
   try:
     test = test["status"]
     if(test=="ACTIVE"):
-      print("Valid keys - active account")
+      print("Valid keys - active account",end="")
+      if(isPaper):
+        print(" - paper trading")
+      else:
+        print(" - live trading")
     else:
       print("Valid keys - inactive account")
   except Exception:

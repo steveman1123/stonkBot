@@ -8,6 +8,9 @@ gainerDates = {} #global list of gainers plus their initial jump date and predic
 stocksUpdatedToday = False
 
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
+#TODO: remove saved csv files on saturdays
+#TODO: add time limit - squeeze to net 0 by 5% every week after predicted jump (e.g. if sell points were 1.2 and 0.7, then 1 week after would be 1.15 and 0.75, then 2 weeks would be 1.1 and 0.8, then 1.05/0.85, 1/0.9, 1/0.95, then sell regardless - max of 6 weeks after predicted jump
+#TODO: possibly adjust o.goodBuy() to see if the jump happened (but not as big of a jump? Maybe look for the big jump, and a little jump too - give a confidence level rather than yes/no
 
 #generates list of potential gainers, trades based off amount of cash
 def mainAlgo():
@@ -26,9 +29,10 @@ def mainAlgo():
 
   minPortVal = 50 #stop trading if portfolio reaches this amount
 
-  sellUp = 1+.2 #trigger point. Additional logic to see if it goes higher
+  sellUp = 1+.2 #trigger point. Compare to when it was bought, additional logic to see if it goes higher
+  sellUpFromClose = 1+.25 #secondary trigger point. Compare to previous day's close
   sellDn = 1-.3 #limit loss
-  sellUpDn = 1-.02 #sell if it triggers sellUp then drops sufficiently
+  sellUpDn = 1-.02 #sell if it triggers sellUp or sellUpFromClose then drops sufficiently
   
   #init the stock list if we rereun during the week
   if(a.o.dt.date.today().weekday()<5): #not saturday or sunday
@@ -71,7 +75,7 @@ def mainAlgo():
           
       
       print("Tradable Stocks:")
-      check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn)
+      check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpFromClose, sellUpDn)
 
       f = open("../stockStuff/webData.json",'w')
       f.write(a.o.json.dumps({"portVal":round(portVal,2),"updated":a.o.dt.datetime.utcnow().strftime("%Y-%m-%d, %H:%M")+" UTC"}))
@@ -90,7 +94,7 @@ def mainAlgo():
       
 
 #check to sell a list of stocks - symlist is the output of a.getPos()
-def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
+def check2sell(symList, latestTrades, sellDn, sellUp, sellUpFromClose, sellUpDn):
   global gainerDates
   for e in symList:
     #if(a.isAlpacaTradable(e['symbol'])): #just skip it if it can't be traded - skipping this for slower connections & to save a query
@@ -104,10 +108,11 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
     if(lastTradeDate<a.o.dt.date.today() or lastTradeType=="sell" or float(e['current_price'])/float(e['avg_entry_price'])>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
       #openPrice = a.o.getOpen(e['symbol']
       buyPrice = float(e['avg_entry_price'])
+      closePrice = float(e['lastday_price'])
       curPrice = float(e['current_price'])
       maxPrice = 0
       lastJump = a.o.dt.datetime.strptime(a.o.goodBuy(e['symbol'],260),"%m/%d/%Y").date()
-      print(e['symbol']+"\t-\tInitial jump: "+str(lastJump)+" - predicted jump: "+str(lastJump+a.o.dt.timedelta(5*7))+" +/- 3wks\t-\tchange: "+str(round(curPrice/buyPrice,2))) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
+      print(e['symbol']+"\t- Initial jump: "+str(lastJump)+" - predicted jump: "+str(lastJump+a.o.dt.timedelta(5*7))+" +/- 3wks - from buy: "+str(round(curPrice/buyPrice,2))+"\t- from close: "+str(round(curPrice/closePrice,2))) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
       
       if(curPrice/buyPrice<=sellDn):
         print("Lost it on "+e['symbol'])
@@ -118,20 +123,20 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpDn):
         f.close()
       
       #use e['lastday_price'] to get previous close amount ... or curPrice/float(e['lastday_price'])>=sellUpFromYesterday, where sellUpFromYesterday ~= 5% more than sellUp
-      elif(curPrice/buyPrice>=sellUp):
+      elif(curPrice/buyPrice>=sellUp or curPrice/closePrice>=sellUpFromClose):
         print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
         if(not e['symbol'] in [t.getName() for t in threading.enumerate()]): #if the thread is not found in names of the running threads, then start it (this stops multiple instances of the same stock thread)
-          triggerThread = threading.Thread(target=triggeredUp, args=(e, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades)) #init the thread
+          triggerThread = threading.Thread(target=triggeredUp, args=(e, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, latestTrades)) #init the thread
           triggerThread.setName(e['symbol']) #set the name to the stock symb
           triggerThread.start() #start the thread
 
 #triggered selling-up - this is the one that gets multithreaded
-def triggeredUp(symbObj, curPrice, buyPrice, maxPrice, sellUpDn, latestTrades):
+def triggeredUp(symbObj, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, latestTrades):
   print("Starting thread for "+symbObj['symbol'])
-  while(curPrice/buyPrice>=maxPrice/buyPrice*sellUpDn and a.timeTillClose()>=30):
+  while((curPrice/buyPrice>=maxPrice/buyPrice*sellUpDn or curPrice/closePrice>=maxPrice/closePrice*sellUpDn) and a.timeTillClose()>=30):
     curPrice = a.getPrice(symbObj['symbol'])
     maxPrice = max(maxPrice, curPrice)
-    print(symbObj['symbol']+" - "+str(round(curPrice/buyPrice,2))+" - "+str(round(maxPrice/buyPrice*sellUpDn,2)))
+    print(symbObj['symbol']+" - "+str(round(curPrice/buyPrice,2))+":"+str(round(maxPrice/buyPrice*sellUpDn,2))+" - "+str(round(curPrice/closePrice,2))+":"+str(round(maxPrice/closePrice,2)))
     a.o.time.sleep(3)
   
   print(a.createOrder("sell",symbObj['qty'],symbObj['symbol']))
@@ -161,17 +166,17 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
   stocksBought = 0 #number of stocks bought
   stocks2buy = int(usableBuyPow/dolPerStock) #number of stocks to buy
   while(stocksBought<stocks2buy and i<len(gainers)):
-    symb = gainers[i]
+    symb = gainers[i] #candidate stock to buy
     if(symb not in [t.getName() for t in threading.enumerate()]): #make sure the stock isn't trying to be sold already
-      try:
+      try: #check when it was traded last
         lastTradeDate = a.o.dt.datetime.strptime(latestTrades[symb][0],'%Y-%m-%d').date()
         lastTradeType = latestTrades[symb][1]
       except Exception:
         lastTradeDate = a.o.dt.datetime.today().date()-a.o.dt.timedelta(1)
         lastTradeType = "NA"
 
-      if(lastTradeDate < a.o.dt.datetime.today().date() or lastTradeType != "sell"):
-        if(a.isAlpacaTradable(symb)): #first make sure we can actually buy it
+      if(lastTradeDate < a.o.dt.datetime.today().date() or lastTradeType != "sell"): #make sure we didn't sell it today already
+        if(a.isAlpacaTradable(symb)): #make sure it's tradable on the market
           curPrice = a.getPrice(symb)
           if(curPrice>0):
             shares2buy = int(dolPerStock/curPrice)
@@ -181,15 +186,15 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
               print(orderText)
               stocksBought += 1
               latestTrades[symb] = [str(a.o.dt.date.today()),"buy"]
-            i += 1
+            i += 1 #try the next stock
           else:
-            i += 1
+            i += 1 #try the next stock
         else:
-          i += 1
+          i += 1 #try the next stock
       else:
-        i += 1
+        i += 1 #try the next stock
     else:
-      i += 1
+      i += 1 #try the next stock
 
   print("Done buying")
 
