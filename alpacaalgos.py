@@ -187,11 +187,11 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
             #make sure it actually executed the order, then increment
             if(orderText.endswith('accepted')):
               print(orderText)
-              stocksBought += 1
               latestTrades[symb] = [str(a.o.dt.date.today()),"buy"]
               f = open(a.o.c['latestTradesFile'],"w")
               f.write(a.o.json.dumps(latestTrades, indent=2))
               f.close()
+              stocksBought += 1
             i += 1 #try the next stock
           else:
             i += 1 #try the next stock

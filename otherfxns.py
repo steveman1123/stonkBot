@@ -155,7 +155,7 @@ def getHistory(symb, startDate, endDate):
   return out
 
 
-#checks whether something is a good buy or not (if not, return why - no initial jump or second jump already missed).
+#checks whether something is a good buy or not (TODO: if not, return why - no initial jump or second jump already missed).
 #if it is a good buy, return initial jump date
 #this is where the magic really happens
 
