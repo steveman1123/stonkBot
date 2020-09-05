@@ -8,13 +8,15 @@ This is meant for relatively low speed, non-day trading with stocks (i.e. having
 
 If you've got some misgivings about throwing real money into it, there's a paper trading option in Alpaca where you can pretend you're rich and try it out anyways (maybe you don't have to pretend. Idk, I'm not here to judge) - this option can be set in the alpacafxns.py file.
 
+Don't be afraid to change things around: nothing you do can break it so bad that a new pull can't fix it.
+
 ## How To Run
 ### System Requirements
 - [Python 3.7](https://www.python.org/) or greater
 
 - [Linux OS](https://www.raspberrypi.org/) (mostly tested on Rasbian, had issues with Windows for some reason*)
 
-- [Internet connection](https://2018.bloomca.me/en) (if the power goes out for a while while using this (like mine did), I'd suggest finding a way to sell everything before the portfolio value starts dropping (like mine did))
+- [Internet connection](https://2018.bloomca.me/en)
 
 *may potentially be issues with the time.sleep() function operating off the system clock which may change depending if the computer is active or not
 
@@ -59,6 +61,8 @@ alpacafxns.py - Functions that require an Alpaca API query
 
 otherfxns.py - Other functions that do not require an Alpaca API query (i.e. functions that query the NASDAQ API, or provide the logic to determine which stocks to buy)
 
+stonkBot.config - config file for settings in the files listed above. Formatted as json, double spaces indicate which file it's mostly used in in the heirarchy (order specific to the files listed above)
+
 stockStuff/ - contains data that won't be synced with the repo (api keys, latest trades, and stock histories) - **the folder and its contents should be moved to the location shown above for the program to work**
 
 apikeys.txt - Contains the API keys used for Alpaca and AlphaVantage - the file in the repo should be filled in with your information
@@ -98,17 +102,18 @@ From testing between 2020-07-14 to 2020-08-31, I have gotten an average growth r
 
 [MarketWatch Stock Screener](https://www.marketwatch.com/tools/stockresearch/screener/)
 
-## Issues
+## Issues & Enhancements
 
 If you are encountering some issues, make sure to pull the latest version, it is under active delopment, so things change quickly.
 
+if the power goes out for a while while using this (like mine did), I'd suggest finding a way to sell everything before the portfolio value starts dropping (like mine did)
+
 ### Shortterm resolutions (next few weeks):
 * Change some selling logic (to add a time limit)
-* automatically remove saved history files after 1 week
 
 ### Midterm resolutions (next few months):
 * Add master/slave relationship to allow it to run on multiple computers in the event of the primary program going down (add redundancy)
-* Create config file(s) and move settings to those rather than being set in the scripts
+* Make config file more readable (not json)
 
 ### Longterm resolutions (next few years):
 * Record trade history and give performance analytics

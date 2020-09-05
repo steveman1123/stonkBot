@@ -1,11 +1,10 @@
 import otherfxns as o
 
-isPaper = 0 #set up as paper trading (testing), or actual trading
-
-keyFile = open("../stockStuff/apikeys.txt","r")
+isPaper = bool(o.c['isPaper']) #set up as paper trading (testing), or actual trading
+keyFile = open(o.c['keyFile'],"r")
 apiKeys = o.json.loads(keyFile.read())
 keyFile.close()
-
+  
 if(isPaper):
   APIKEY = apiKeys["ALPACAPAPERKEY"]
   SECRETKEY = apiKeys["ALPACAPAPERSECRETKEY"]
@@ -175,7 +174,7 @@ def timeTillClose():
   cl = o.dt.datetime(int(cl[0]),int(cl[1]),int(cl[2]),int(cl[3]),int(cl[4]))
   now = marketTime()
   now = o.dt.datetime(int(now[0]),int(now[1]),int(now[2]),int(now[3]/3600),int(now[3]%3600/60),int(now[3]%60))
-  return (cl - now).seconds
+  return (cl - now).total_seconds()
 
 #time until next market open - in seconds
 def timeTillOpen():
@@ -192,7 +191,7 @@ def timeTillOpen():
   op = o.dt.datetime(int(op[0]),int(op[1]),int(op[2]),int(op[3]),int(op[4]))
   now = marketTime()
   now = o.dt.datetime(int(now[0]),int(now[1]),int(now[2]),int(now[3]/3600),int(now[3]%3600/60),int(now[3]%60))
-  return (op - now).seconds
+  return (op - now).total_seconds()
 
 #return the open and close times of a given day (EST)
 def openCloseTimes(checkDate): #checkdate of format yyyy-mm-dd
@@ -277,3 +276,9 @@ def checkValidKeys():
     except Exception:
       print("Unknown issue encountered.")
     o.sys.exit()
+
+#TODO: add this function - see https://alpaca.markets/docs/api-documentation/api-v2/account-activities/
+#get the trades made on a specified date  
+def getTrades(date):
+  print("Not done")
+  return "return something in the same format as latestTrades {symb:[date,type]}"

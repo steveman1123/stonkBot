@@ -1,18 +1,15 @@
 #This module should be any function that doesn't require alpaca or keys to use
-import json,requests,os,time,re,csv,math,sys
+import json,requests,os,time,re,csv
 import datetime as dt
 from bs4 import BeautifulSoup as bs
+from math import ceil
 
-apiKeys = {}
-stockDir = ''
+settingsFile = './stonkBot.config'
 
-def init(keyFilePath, stockDataDir):
-  global apiKeys, stockDir
-  keyFile = open(keyFilePath,"r")
-  apiKeys = json.loads(keyFile.read())
-  keyFile.close()
-  
-  stockDir = stockDataDir
+f = open(settingsFile,"r")
+c = json.loads(f.read())
+f.close()
+stockDir = c['stockDataDir']
 
 def isTradable(symb):
   isTradable = False
@@ -39,13 +36,13 @@ def getList():
   #many of the options listed are optional and can be removed from the get request
   params = {
     "TradesShareEnable" : "True", 
-    "TradesShareMin" : "0.8",
-    "TradesShareMax" : "5",
+    "TradesShareMin" : str(c['simMinPrice']),
+    "TradesShareMax" : str(c['simMaxPrice']),
     "PriceDirEnable" : "False",
     "PriceDir" : "Up",
     "LastYearEnable" : "False",
     "TradeVolEnable" : "true",
-    "TradeVolMin" : "300000",
+    "TradeVolMin" : str(c['simMinVol']),
     "TradeVolMax" : "",
     "BlockEnable" : "False",
     "PERatioEnable" : "False",
@@ -85,7 +82,7 @@ def getList():
       
   print("Getting MarketWatch data...")
   for i in range(0,totalStocks,100): #loop through the pages (100 because ResultsPerPage is OneHundred)
-    print(f"page {int(i/100)+1} of {math.ceil(totalStocks/100)}")
+    print(f"page {int(i/100)+1} of {ceil(totalStocks/100)}")
     params['PagingIndex'] = i
     while True:
       try:
@@ -150,6 +147,7 @@ def getHistory(symb, startDate, endDate):
 
   #read csv and convert to array
   #TODO: see if we can not have to save it to a file if possible due to high read/writes - can also eliminate csv library
+  #     ^ or at least research where it should be saved to avoid writing to sdcard
   with open(stockDir+symb+".csv") as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     out = [[ee.replace('$','').replace('N/A','0') for ee in e] for e in csv_reader][1::] #trim first line to get rid of headers, also replace $'s and N/A volumes to calculable values
@@ -162,25 +160,25 @@ def getHistory(symb, startDate, endDate):
 #this is where the magic really happens
 
 #TODO: check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still(this should only happen is there's a network error or during testing stuff)
-def goodBuy(symb,days2look=25): #days2look=how far back to look for a jump
+def goodBuy(symb,days2look=c['simDays2look']): #days2look=how far back to look for a jump
   validBuy = "NA" #set to the jump date if it's valid
   if isTradable(symb):
     #calc price % diff over past 20 days (current price/price of day n) - current must be >= 80% for any
     #calc volume % diff over average past some days (~60 days?) - must be sufficiently higher (~300% higher?)
     
-    days2wait4fall = 3 #wait for stock price to fall for this many days
-    startDate = days2wait4fall+1 #add 1 to account for the jump day itself
-    firstJumpAmt = 1.3 #stock first must jump by this amount (1.3=130% over 1 day)
-    sellUp = 1.25 #% to sell up at
-    sellDn = 0.5 #% to sell dn at
+    days2wait4fall = c['simWait4fall'] #wait for stock price to fall for this many days
+    startDate = days2wait4fall+c['simStartDateDiff'] #add 1 to account for the jump day itself
+    firstJumpAmt = c['simFirstJumpAmt'] #stock first must jump by this amount (1.3=130% over 1 day)
+    sellUp = c['simSellUp'] #% to sell up at
+    sellDn = c['simSellDn'] #% to sell dn at
     
     #make sure that the jump happened in the  frame rather than too long ago
-    volAvgDays = 60 #arbitrary number to avg volumes over
-    checkPriceDays = 30 #check if the price jumped substantially over the last __ trade days
-    checkPriceAmt = 1.7 #check if the price jumped by this amount in the above days (% - i.e 1.5 = 150%)
-    volGain = 3 #check if the volume increased by this amount during the jump (i.e. 3 = 300% or 3x, 0.5 = 50% or 0.5x)
-    volLoss = .5 #check if the volume decreases by this amount during the price drop
-    priceDrop = .4 #price should drop this far when the volume drops
+    volAvgDays = c['simVolAvgDays'] #arbitrary number to avg volumes over
+    checkPriceDays = c['simChkPriceDays'] #check if the price jumped substantially over the last __ trade days
+    checkPriceAmt = c['simChkPriceAmt'] #check if the price jumped by this amount in the above days (% - i.e 1.5 = 150%)
+    volGain = c['simVolGain'] #check if the volume increased by this amount during the jump (i.e. 3 = 300% or 3x, 0.5 = 50% or 0.5x)
+    volLoss = c['simVolLoss'] #check if the volume decreases by this amount during the price drop
+    priceDrop = c['simPriceDrop'] #price should drop this far when the volume drops
     
     dateData = getHistory(symb, str(dt.date.today()-dt.timedelta(days=(volAvgDays+days2look))), str(dt.date.today()))
     
@@ -235,3 +233,24 @@ def getGainers(symblist):
       print(f"({i+1}/{len(symblist)}) {e} - {b} - {gainers[e][1]}")
 
   return gainers
+
+#TODO: add slave functionality
+#check if the master is alive
+def masterLives():
+  '''
+  i=0
+  while i<3: #try reaching the master 3 times
+    try:
+      r = requests.request(url=c['masterAddress])
+      if(r is something good): #if it does reach the master and returns good signal
+        return True
+      else: #if it does reach the master but returns bad signal (computer is on, but script isn't running)
+        break
+    except Exception:
+      i+=1
+  return False
+  '''
+  
+  #TODO: may have to install flask or something to get it online seperately from the web server
+  print("No slave functionality yet")
+  return True
