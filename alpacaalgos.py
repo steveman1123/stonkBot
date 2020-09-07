@@ -10,8 +10,6 @@ stocksUpdatedToday = False
 
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
 #TODO: make list of wins & loses and analyze why (improve algo as it goes)
-#TODO: add time limit - squeeze to net 0 by 5% every week after predicted jump (e.g. if sell points were 1.2 and 0.7, then 1 week after would be 1.15 and 0.75, then 2 weeks would be 1.1 and 0.8, then 1.05/0.85, 1/0.9, 1/0.95, then sell regardless - max of 6 weeks after predicted jump
-#TODO: possibly adjust o.goodBuy() to see if the jump happened (but not as big of a jump? Maybe look for the big jump, and a little jump too - give a confidence level rather than yes/no
 
 #generates list of potential gainers, trades based off amount of cash
 def mainAlgo():
@@ -99,7 +97,8 @@ def mainAlgo():
         print("Opening in "+str(round(tto/3600,2))+" hours")
         a.o.time.sleep(tto)
         
-
+#TODO: add time limit - squeeze to net 0 by 5% every week after predicted jump (e.g. if sell points were 1.2 and 0.7, then 1 week after would be 1.15 and 0.75, then 2 weeks would be 1.1 and 0.8, then 1.05/0.85, 1/0.9, 1/0.95, then sell regardless - max of 6 weeks after predicted jump
+# ^ check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still(this should only happen if there's a network error or during testing stuff or improper sim parameters are set)
 #check to sell a list of stocks - symlist is the output of a.getPos()
 def check2sell(symList, latestTrades, sellDn, sellUp, sellUpFromClose, sellUpDn):
   for e in symList:
@@ -117,10 +116,16 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpFromClose, sellUpDn)
       closePrice = float(e['lastday_price'])
       curPrice = float(e['current_price'])
       maxPrice = 0
-      lastJump = a.o.dt.datetime.strptime(a.o.goodBuy(e['symbol'],260),"%m/%d/%Y").date()
-      print(e['symbol']+"\t- Initial jump: "+str(lastJump)+" - predicted jump: "+str(lastJump+a.o.dt.timedelta(5*7))+" +/- 3wks - from buy: "+str(round(curPrice/buyPrice,2))+"\t- from close: "+str(round(curPrice/closePrice,2))) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
+      buyInfo = a.o.goodBye(e['symbol'],260)
       
-      if(curPrice/buyPrice<=sellDn):
+      try:
+        lastJump = a.o.dt.datetime.strptime(buyInfo,"%m/%d/%Y").date()
+        print(e['symbol']+"\t- Initial jump: "+str(lastJump)+" - predicted jump: "+str(lastJump+a.o.dt.timedelta(5*7))+" +/- 3wks - from buy: "+str(round(curPrice/buyPrice,2))+"\t- from close: "+str(round(curPrice/closePrice,2))) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
+      except Exception:
+        print(symb+" - "+buyInfo)
+
+      #cut the losses if we missed the jump or if the price dropped too much
+      if(curPrice/buyPrice<=sellDn or buyInfo=="Missed jump"):
         print("Lost it on "+e['symbol'])
         print(a.createOrder("sell",e['qty'],e['symbol']))
         latestTrades[e['symbol']] = [str(a.o.dt.date.today()), "sell"]

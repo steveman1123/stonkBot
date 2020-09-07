@@ -155,11 +155,10 @@ def getHistory(symb, startDate, endDate):
   return out
 
 
-#checks whether something is a good buy or not (TODO: if not, return why - no initial jump or second jump already missed).
+#checks whether something is a good buy or not (if not, return why - no initial jump or second jump already missed).
 #if it is a good buy, return initial jump date
 #this is where the magic really happens
 
-#TODO: check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still(this should only happen is there's a network error or during testing stuff)
 def goodBuy(symb,days2look=c['simDays2look']): #days2look=how far back to look for a jump
   validBuy = "NA" #set to the jump date if it's valid
   if isTradable(symb):
@@ -183,41 +182,43 @@ def goodBuy(symb,days2look=c['simDays2look']): #days2look=how far back to look f
     dateData = getHistory(symb, str(dt.date.today()-dt.timedelta(days=(volAvgDays+days2look))), str(dt.date.today()))
     
     if(startDate>=len(dateData)): #if a stock returns nothing or very few data pts
-      return validBuy
-    
-    while(float(dateData[startDate][1])/float(dateData[startDate+1][1])<firstJumpAmt and startDate<min(days2look,len(dateData)-2)):
-      startDate += 1
-      #we know the date of the initial jump (startDate)
-      
-      if(float(dateData[startDate][1])/float(dateData[startDate+1][1])>=firstJumpAmt):
+      validBuy = "Few data points available"
+    else:
+      validBuy = "initial jump not found"
+      while(float(dateData[startDate][1])/float(dateData[startDate+1][1])<firstJumpAmt and startDate<min(days2look,len(dateData)-2)):
+        startDate += 1
         
-        avgVol = sum([int(dateData[i][2]) for i in range(startDate,min(startDate+volAvgDays,len(dateData)))])/volAvgDays #avg of volumes over a few days
-        
-        lastVol = int(dateData[startDate][2]) #the latest volume
-        lastPrice = float(dateData[startDate][4]) #the latest highest price
-
-        if(lastVol/avgVol>volGain): #much larger than normal volume
-          #volume had to have gained
-          #if the next day's price has fallen significantly and the volume has also fallen
-          if(float(dateData[startDate-days2wait4fall][4])/lastPrice-1<priceDrop and int(dateData[startDate-days2wait4fall][2])<=lastVol*volLoss):
-            #the jump happened, the volume gained, the next day's price and volumes have fallen
-            dayPrice = lastPrice
-            i = 1 #increment through days looking for a jump - start with 1 day before startDate
-            # check within the the last few days, check the price has risen compared to the past some days, and we're within the valid timeframe
-            while(i<=checkPriceDays and lastPrice/dayPrice<checkPriceAmt and startDate+i<len(dateData)):
-              dayPrice = float(dateData[startDate+i][4])
-              i += 1
-            
-            if(lastPrice/dayPrice>=checkPriceAmt): #TODO: read through this logic some more to determine where exactly to put sellDn
-              #the price jumped compared to both the previous day and to the past few days, the volume gained, and the price and the volume both fell
-              #check to see if we missed the next jump (where we want to strike)
-              missedJump = False
-              for e in range(0,startDate):
-                diff = float(dateData[e][1])/float(dateData[e+1][1])
-                if(diff>=sellUp):
-	                missedJump = True
-              if(not missedJump):
-                validBuy = dateData[startDate][0] #return the date the stock initially jumped
+        #if the price has jumped sufficiently for the first time
+        if(float(dateData[startDate][1])/float(dateData[startDate+1][1])>=firstJumpAmt):
+          
+          avgVol = sum([int(dateData[i][2]) for i in range(startDate,min(startDate+volAvgDays,len(dateData)))])/volAvgDays #avg of volumes over a few days
+          
+          lastVol = int(dateData[startDate][2]) #the latest volume
+          lastPrice = float(dateData[startDate][4]) #the latest highest price
+  
+          if(lastVol/avgVol>volGain): #much larger than normal volume
+            #volume had to have gained
+            #if the next day's price has fallen significantly and the volume has also fallen
+            if(float(dateData[startDate-days2wait4fall][4])/lastPrice-1<priceDrop and int(dateData[startDate-days2wait4fall][2])<=lastVol*volLoss):
+              #the jump happened, the volume gained, the next day's price and volumes have fallen
+              dayPrice = lastPrice
+              i = 1 #increment through days looking for a jump - start with 1 day before startDate
+              # check within the the last few days, check the price has risen compared to the past some days, and we're within the valid timeframe
+              while(i<=checkPriceDays and lastPrice/dayPrice<checkPriceAmt and startDate+i<len(dateData)):
+                dayPrice = float(dateData[startDate+i][4])
+                i += 1
+              
+              if(lastPrice/dayPrice>=checkPriceAmt): #TODO: read through this logic some more to determine where exactly to put sellDn
+                #the price jumped compared to both the previous day and to the past few days, the volume gained, and the price and the volume both fell
+                #check to see if we missed the next jump (where we want to strike)
+                missedJump = False
+                validBuy = "Missed jump"
+                for e in range(0,startDate):
+                  # print(str(dateData[e])+" - "+str(float(dateData[e][4])/float(dateData[e+1][1])) +" - "+ str(sellUp))
+                  if(float(dateData[e][4])/float(dateData[e+1][1]) >= sellUp): #compare the high vs previous close
+                    missedJump = True
+                if(not missedJump):
+                  validBuy = dateData[startDate][0] #return the date the stock initially jumped
     
   return validBuy #return a dict of valid stocks and the date of their latest jump
   
@@ -228,10 +229,12 @@ def getGainers(symblist):
   
   for i,e in enumerate(symblist):
     b = goodBuy(e)
-    if(b!="NA"):
+    try:
       gainers[e] = [b, (dt.datetime.strptime(b,"%m/%d/%Y")+dt.timedelta(days=(7*5))).strftime("%m/%d/%Y")]
       print(f"({i+1}/{len(symblist)}) {e} - {b} - {gainers[e][1]}")
-
+    except Exception:
+      pass
+    # print(f"({i+1}/{len(symblist)}) {e} - {b}")
   return gainers
 
 #TODO: add slave functionality
