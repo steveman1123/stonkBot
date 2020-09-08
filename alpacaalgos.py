@@ -6,7 +6,7 @@ import alpacafxns as a
 
 gainers = [] #global list of potential gaining stocks
 gainerDates = {} #global list of gainers plus their initial jump date and predicted next jump date
-stocksUpdatedToday = False
+gStocksUpdated = False
 
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
 #TODO: make list of wins & loses and analyze why (improve algo as it goes)
@@ -20,6 +20,7 @@ def mainAlgo():
    - stop loss at ~70%
   '''
   
+  global gStocksUpdated #this only gets set once in this function - after market is closed
   isMaster = a.o.c['isMaster'] #is the master or a slave program - a slave will relinquish control to a master if the master is running, but will take over if the master dies
   
   minBuyPow = a.o.c['minBuyPow'] #min buying power to hold onto if..
@@ -33,7 +34,7 @@ def mainAlgo():
   sellDn = a.o.c['sellDn'] #limit loss
   sellUpDn = a.o.c['sellUpDn'] #sell if it triggers sellUp or sellUpFromClose then drops sufficiently
   
-  stocksUpdatedToday = False
+  
   #init the stock list if we rereun during the week
   if(a.o.dt.date.today().weekday()<5): #not saturday or sunday
     f = open(a.o.c['latestTradesFile'],"r")
@@ -44,6 +45,7 @@ def mainAlgo():
 
   while portVal>minPortVal:
     random.shuffle(gainers) #randomize list so when buying new ones, they won't always choose the top of the original list
+
     
     #TODO: if slave, check here to see if master is back online
     if(not isMaster and a.o.masterLives()):
@@ -57,14 +59,14 @@ def mainAlgo():
         f.close()
         
         acctInfo = a.getAcct()
-        
+        stocksUpdated = gStocksUpdated #set the local value to the global value        
         portVal = float(acctInfo['portfolio_value'])
         print("Portfolio val is $"+str(portVal)+". Sell targets are "+str(sellUp)+" or "+str(sellDn))
         
         #only update the stock list and buy stocks if the gainers list is done being populated/updated and that we actually have enough money to buy things
         if('listUpdate' not in [t.getName() for t in threading.enumerate()] and float(acctInfo['buying_power'])>=minDolPerStock):
           #update the stock list 20 minutes before close, if it's not already updated
-          if((not stocksUpdatedToday) and a.timeTillClose()<=a.o.c['updateListTime']*60):
+          if((not stocksUpdated) and a.timeTillClose()<=a.o.c['updateListTime']*60):
             updateThread = threading.Thread(target=updateStockList) #init the thread
             updateThread.setName('listUpdate') #set the name to the stock symb
             updateThread.start() #start the thread
@@ -89,7 +91,7 @@ def mainAlgo():
         
       else:
         print("Market closed.")
-        stocksUpdatedToday = False
+        gStocksUpdated = False
         if(a.o.dt.date.today().weekday()==4): #if it's friday
           print("Removing saved csv files") #delete all csv files in stockDataDir
           for f in glob(a.o.c['stockDataDir']+"*.csv"):
@@ -214,10 +216,10 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
 
 #update the stock list - takes ~5 minutes to process 400 stocks
 def updateStockList():
-  global gainers, gainerDates, stocksUpdatedToday
+  global gainers, gainerDates, gStocksUpdated
   print("Updating stock list")
   #list of stocks that may gain in the near future as well as currently held stocks and their last gain date
   gainerDates = a.o.getGainers(list(dict.fromkeys(a.o.getList()+[e['symbol'] for e in a.getPos()]))) #combine nasdaq list & my stocks & remove duplicates - order doesn't matter
   gainers = list(gainerDates) #list of just the stock symbols
-  stocksUpdatedToday = True
-  print(f"Done updating list - {len(gainers)} possible gainers")
+  print(f"Done updating list - {len(gainers)} potential gainers")
+  gStocksUpdated = True
