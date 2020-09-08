@@ -8,6 +8,7 @@ gainers = [] #global list of potential gaining stocks
 gainerDates = {} #global list of gainers plus their initial jump date and predicted next jump date
 stocksUpdatedToday = False
 
+#TODO: add timeout of 5s to all requests
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
 #TODO: make list of wins & loses and analyze why (improve algo as it goes)
 
@@ -33,6 +34,7 @@ def mainAlgo():
   sellDn = a.o.c['sellDn'] #limit loss
   sellUpDn = a.o.c['sellUpDn'] #sell if it triggers sellUp or sellUpFromClose then drops sufficiently
   
+  stocksUpdatedToday = False
   #init the stock list if we rereun during the week
   if(a.o.dt.date.today().weekday()<5): #not saturday or sunday
     f = open(a.o.c['latestTradesFile'],"r")
@@ -116,13 +118,13 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpFromClose, sellUpDn)
       closePrice = float(e['lastday_price'])
       curPrice = float(e['current_price'])
       maxPrice = 0
-      buyInfo = a.o.goodBye(e['symbol'],260)
+      buyInfo = a.o.goodBuy(e['symbol'],260)
       
       try:
         lastJump = a.o.dt.datetime.strptime(buyInfo,"%m/%d/%Y").date()
         print(e['symbol']+"\t- Initial jump: "+str(lastJump)+" - predicted jump: "+str(lastJump+a.o.dt.timedelta(5*7))+" +/- 3wks - from buy: "+str(round(curPrice/buyPrice,2))+"\t- from close: "+str(round(curPrice/closePrice,2))) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
       except Exception:
-        print(symb+" - "+buyInfo)
+        print(e['symbol']+" - "+buyInfo)
 
       #cut the losses if we missed the jump or if the price dropped too much
       if(curPrice/buyPrice<=sellDn or buyInfo=="Missed jump"):
