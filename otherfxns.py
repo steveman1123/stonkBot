@@ -15,7 +15,7 @@ def isTradable(symb):
   isTradable = False
   while True:
     try:
-      r = requests.request("GET","https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks".format(symb), headers={"user-agent":"-"}).content
+      r = requests.request("GET","https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks".format(symb), headers={"user-agent":"-"}, timeout=5).content
       break
     except Exception:
       print("No connection, or other error encountered, trying again...")
@@ -71,7 +71,7 @@ def getList():
   
   while True:
     try:
-      r = requests.get(url, params=params).text
+      r = requests.get(url, params=params, timeout=5).text
       totalStocks = int(r.split("matches")[0].split("floatleft results")[1].split("of ")[1]) #get the total number of stocks in the list - important because they're spread over multiple pages
       break
     except Exception:
@@ -86,8 +86,7 @@ def getList():
     params['PagingIndex'] = i
     while True:
       try:
-        r = requests.get(url, params=params).text
-        
+        r = requests.get(url, params=params, timeout=5).text
         break
       except Exception:
         print("No connection or other error encountered. Trying again...")
@@ -104,7 +103,7 @@ def getList():
   print("Getting stocksunder1 data...")
   while True:
     try:
-      html = requests.post(url, params={"price":5,"volume":0,"updown":"up"}).content
+      html = requests.post(url, params={"price":5,"volume":0,"updown":"up"}, timeout=5).content
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
@@ -135,7 +134,7 @@ def getHistory(symb, startDate, endDate):
     url = f'https://www.nasdaq.com/api/v1/historical/{symb}/stocks/{startDate}/{endDate}/'
     while True:
       try:
-        r = requests.get(url, headers={"user-agent":"-"}).text #send request and store response - cannot have empty user-agent
+        r = requests.get(url, headers={"user-agent":"-"}, timeout=5).text #send request and store response - cannot have empty user-agent
         break
       except Exception:
         print("No connection, or other error encountered. Trying again...")

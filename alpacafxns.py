@@ -29,7 +29,7 @@ ASSETURL = "{}/v2/assets".format(ENDPOINTURL) #asset url
 def getAcct():
   while True:
     try:
-      html = o.requests.get(ACCTURL, headers=HEADERS).content
+      html = o.requests.get(ACCTURL, headers=HEADERS, timeout=5).content
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
@@ -42,7 +42,7 @@ def getAcct():
 def getPos():
   while True:
     try:
-      html = o.requests.get(POSURL, headers=HEADERS).content
+      html = o.requests.get(POSURL, headers=HEADERS, timeout=5).content
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
@@ -54,7 +54,7 @@ def getPos():
 def getOrders():
   while True:
     try:
-      html = o.requests.get(ORDERSURL, headers=HEADERS).content
+      html = o.requests.get(ORDERSURL, headers=HEADERS, timeout=5).content
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
@@ -78,7 +78,7 @@ def sellAll(isManual=1):
       print("Removing Orders...")
       while True:
         try:
-          r = o.requests.delete(ORDERSURL, headers=HEADERS)
+          r = o.requests.delete(ORDERSURL, headers=HEADERS, timeout=5)
           break
         except Exception:
           print("No connection, or other error encountered. Trying again...")
@@ -116,7 +116,7 @@ def createOrder(side, qty, sym, orderType="market", time_in_force="day", limPric
       order['take_profit'] = {'limit_price':str(limPrice)}
     while True:
       try:
-        r = o.requests.post(ORDERSURL, json=order, headers=HEADERS)
+        r = o.requests.post(ORDERSURL, json=order, headers=HEADERS, timeout=5)
         break
       except Exception:
         print("No connection, or other error encountered. Trying again...")
@@ -136,7 +136,7 @@ def createOrder(side, qty, sym, orderType="market", time_in_force="day", limPric
 def marketIsOpen():
   while True:
     try:
-      r = o.json.loads(o.requests.get(CLKURL, headers=HEADERS).content)
+      r = o.json.loads(o.requests.get(CLKURL, headers=HEADERS, timeout=5).content)
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
@@ -148,7 +148,7 @@ def marketIsOpen():
 def marketTime():
   while True:
     try:
-      ts = o.json.loads(o.requests.get(CLKURL, headers=HEADERS).content)["timestamp"]
+      ts = o.json.loads(o.requests.get(CLKURL, headers=HEADERS, timeout=5).content)["timestamp"]
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
@@ -163,7 +163,7 @@ def marketTime():
 def timeTillClose():
   while True:
     try:
-      cl = o.json.loads(o.requests.get(CLKURL, headers=HEADERS).content)["next_close"]
+      cl = o.json.loads(o.requests.get(CLKURL, headers=HEADERS, timeout=5).content)["next_close"]
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
@@ -180,7 +180,7 @@ def timeTillClose():
 def timeTillOpen():
   while True:
     try:
-      op = o.json.loads(o.requests.get(CLKURL, headers=HEADERS).content)["next_open"]
+      op = o.json.loads(o.requests.get(CLKURL, headers=HEADERS, timeout=5).content)["next_open"]
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
@@ -200,7 +200,7 @@ def openCloseTimes(checkDate): #checkdate of format yyyy-mm-dd
   calParams["end"] = checkDate
   while True:
     try:
-      d = o.json.loads(o.requests.get(CALURL, headers=HEADERS, params=calParams).content)[0]
+      d = o.json.loads(o.requests.get(CALURL, headers=HEADERS, params=calParams, timeout=5).content)[0]
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
@@ -218,8 +218,8 @@ def getPrice(symb):
   url = 'https://data.alpaca.markets/v1/last/stocks/{}'.format(symb)
   while True:
     try:
-      response = o.requests.get(url,headers=HEADERS).text #send request and store response
-      # response = o.requests.get(url,headers={"User-Agent": "-"}).text #nasdaq url requires a non-empty user-agent string
+      response = o.requests.get(url,headers=HEADERS, timeout=5).text #send request and store response
+      # response = o.requests.get(url,headers={"User-Agent": "-"}, timeout=5).text #nasdaq url requires a non-empty user-agent string
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
@@ -238,7 +238,7 @@ def getPrice(symb):
 def isAlpacaTradable(symb):
   while True:
     try:
-      tradable = o.requests.get(ASSETURL+"/"+symb, headers=HEADERS).content
+      tradable = o.requests.get(ASSETURL+"/"+symb, headers=HEADERS, timeout=5).content
       break
     except Exception:
       print("No connection, or other error encountered. Trying again...")
