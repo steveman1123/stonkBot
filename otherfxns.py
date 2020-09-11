@@ -135,6 +135,8 @@ def getHistory(symb, startDate, endDate):
     while True:
       try:
         r = requests.get(url, headers={"user-agent":"-"}, timeout=5).text #send request and store response - cannot have empty user-agent
+        if('html' in r):
+          raise Exception('Returned invalid data') #sometimes the page will return html data that cannot be successfully parsed
         break
       except Exception:
         print("No connection, or other error encountered. Trying again...")

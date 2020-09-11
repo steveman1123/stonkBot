@@ -104,6 +104,8 @@ def mainAlgo():
 # ^ check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still(this should only happen if there's a network error or during testing stuff or improper sim parameters are set)
 #check to sell a list of stocks - symlist is the output of a.getPos()
 def check2sell(symList, latestTrades, sellDn, sellUp, sellUpFromClose, sellUpDn):
+  print("symb\tinitial jump\tpredicted jump (+/- 3wks)\tchange from buy\tchange from close")
+  print("----\t------------\t-------------------------\t---------------\t-----------------")
   for e in symList:
     #if(a.isAlpacaTradable(e['symbol'])): #just skip it if it can't be traded - skipping this for slower connections & to save a query
     try:
@@ -123,7 +125,7 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpFromClose, sellUpDn)
       
       try:
         lastJump = a.o.dt.datetime.strptime(buyInfo,"%m/%d/%Y").date()
-        print(e['symbol']+"\t- Initial jump: "+str(lastJump)+" - predicted jump: "+str(lastJump+a.o.dt.timedelta(5*7))+" +/- 3wks - from buy: "+str(round(curPrice/buyPrice,2))+"\t- from close: "+str(round(curPrice/closePrice,2))) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
+        print(e['symbol']+"\t"+str(lastJump)+"\t"+str(lastJump+a.o.dt.timedelta(5*7))+"\t\t\t"+str(round(curPrice/buyPrice,2))+"\t\t"+str(round(curPrice/closePrice,2))) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
       except Exception:
         print(e['symbol']+" - "+buyInfo)
 
