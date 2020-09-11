@@ -7,6 +7,7 @@ def main():
   algos.a.checkValidKeys()
   
   if(len(algos.a.getPos())==0):
+    print("Will generate the stock list "+str(algos.a.o.c['updateListTime'])+" minutes before next close")
     print("Will start buying "+str(algos.a.o.c['buyTime'])+" minutes before next close")
   
   algos.mainAlgo() #used to easily switch between the different algos in the algo file
