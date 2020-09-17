@@ -50,8 +50,6 @@ The overall folder structure should look something like this*:
 
 *The root folder name does not matter. The stockStuff folder should be moved from the repo to the location shown above
 
-Currently, the stockData folder will grow unbounded (but reaasonably slowly) over time, so it may be smart to clean it out ~1/week or month until that part of the code gets fixed
-
 ## File Description
 stonkBot.py - The main file to run - this was more useful when testing a number of functions all located in alpacaalgos.py, however it now serevrs as a clean/simple file to run everything
 
@@ -63,7 +61,7 @@ otherfxns.py - Other functions that do not require an Alpaca API query (i.e. fun
 
 stonkBot.config - config file for settings in the files listed above. Formatted as json, double spaces indicate which file it's mostly used in in the heirarchy (order specific to the files listed above)
 
-stockStuff/ - contains data that won't be synced with the repo (api keys, latest trades, and stock histories) - **the folder and its contents should be moved to the location shown above for the program to work**
+stockStuff/ - contains data that won't be synced with the repo (api keys, latest trades, and stock histories (these are cleared every Friday evening)) - **the folder and its contents should be moved to the location shown above for the program to work**
 
 apikeys.txt - Contains the API keys used for Alpaca and AlphaVantage - the file in the repo should be filled in with your information
 
