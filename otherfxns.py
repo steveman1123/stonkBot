@@ -182,7 +182,7 @@ def goodBuy(symb,days2look=c['simDays2look']): #days2look=how far back to look f
     
     dateData = getHistory(symb, str(dt.date.today()-dt.timedelta(days=(volAvgDays+days2look))), str(dt.date.today()))
     
-    if(startDate>=len(dateData)): #if a stock returns nothing or very few data pts
+    if(startDate>=len(dateData)-2): #if a stock returns nothing or very few data pts
       validBuy = "Few data points available"
     else:
       validBuy = "initial jump not found"
