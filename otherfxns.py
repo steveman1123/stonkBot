@@ -186,7 +186,7 @@ def goodBuy(symb,days2look=c['simDays2look']): #days2look=how far back to look f
       validBuy = "Few data points available"
     else:
       validBuy = "initial jump not found"
-      while(startDate<min(days2look, len(dateData)-2) and float(dateData[startDate][1])/float(dateData[startDate+1][1])<firstJumpAmt)):
+      while(startDate<min(days2look, len(dateData)-2) and float(dateData[startDate][1])/float(dateData[startDate+1][1])<firstJumpAmt):
         startDate += 1
         
         #if the price has jumped sufficiently for the first time
