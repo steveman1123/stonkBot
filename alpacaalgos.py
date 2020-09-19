@@ -100,8 +100,6 @@ def mainAlgo():
         print("Opening in "+str(round(tto/3600,2))+" hours")
         a.o.time.sleep(tto)
         
-#TODO: add time limit - squeeze to net 0 by 5% every week after predicted jump (e.g. if sell points were 1.2 and 0.7, then 1 week after would be 1.15 and 0.75, then 2 weeks would be 1.1 and 0.8, then 1.05/0.85, 1/0.9, 1/0.95, then sell regardless - max of 6 weeks after predicted jump
-# ^ check if currently held stock already peaked (i.e. we missed it while holding it) - if it did then lower expectations and try to sell at a profit still(this should only happen if there's a network error or during testing stuff or improper sim parameters are set)
 #check to sell a list of stocks - symlist is the output of a.getPos()
 def check2sell(symList, latestTrades, sellDn, sellUp, sellUpFromClose, sellUpDn):
   print("symb\tinitial jump\tpredicted jump (+/- 3wks)\tchange from buy\tchange from close")
@@ -114,9 +112,9 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpFromClose, sellUpDn)
     except Exception:
       lastTradeDate = a.o.dt.date.today()-a.o.dt.timedelta(1)
       lastTradeType = "NA"
+
     
     if(lastTradeDate<a.o.dt.date.today() or lastTradeType=="sell" or float(e['current_price'])/float(e['avg_entry_price'])>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
-      #openPrice = a.o.getOpen(e['symbol']
       buyPrice = float(e['avg_entry_price'])
       closePrice = float(e['lastday_price'])
       curPrice = float(e['current_price'])
@@ -125,6 +123,14 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpFromClose, sellUpDn)
       
       try:
         lastJump = a.o.dt.datetime.strptime(buyInfo,"%m/%d/%Y").date()
+        #adjust selling targets based on date to add a time limit
+
+        
+        #sellUp change of 0 if <=5 weeks after initial jump, -.05 for every week after 5 weeks for a min of 1
+        sellUp = max(1,sellUp-.05*max(0,int((a.o.dt.date.today()-(lastJump+a.o.dt.timedelta(5*7))).days/7)))
+        #sellDn change of 0 if <=5 weeks after initial jump, +0.05 for every week after 5 weeks for a max of 1
+        sellDn = min(1,sellDn+.05*max(0,int((a.o.dt.date.today()-(lastJump+a.o.dt.timedelta(5*7))).days/7)))
+
         print(e['symbol']+"\t"+str(lastJump)+"\t"+str(lastJump+a.o.dt.timedelta(5*7))+"\t\t\t"+str(round(curPrice/buyPrice,2))+"\t\t"+str(round(curPrice/closePrice,2))) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
       except Exception:
         print(e['symbol']+" - "+buyInfo)
@@ -138,7 +144,7 @@ def check2sell(symList, latestTrades, sellDn, sellUp, sellUpFromClose, sellUpDn)
         f.write(a.o.json.dumps(latestTrades, indent=2))
         f.close()
       
-      #use e['lastday_price'] to get previous close amount ... or curPrice/float(e['lastday_price'])>=sellUpFromYesterday, where sellUpFromYesterday ~= 5% more than sellUp
+      #use e['lastday_price'] to get previous close amount ... or curPrice/float(e['lastday_price'])>=sellUpFromYesterday
       elif(curPrice/buyPrice>=sellUp or curPrice/closePrice>=sellUpFromClose):
         print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
         if(not e['symbol'] in [t.getName() for t in threading.enumerate()]): #if the thread is not found in names of the running threads, then start it (this stops multiple instances of the same stock thread)

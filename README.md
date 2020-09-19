@@ -110,7 +110,7 @@ From testing between 2020-07-14 to 2020-09-16, I have gotten an average growth r
 if the power goes out for a while while using this (like mine did), I'd suggest finding a way to sell everything before the portfolio value starts dropping (like mine did)
 
 ### Shortterm resolutions (next few weeks):
-* Change some selling logic (to add a time limit)
+* Change some selling logic (to add a time limit) - **implemented, not tested**
 
 ### Midterm resolutions (next few months):
 * Add master/slave relationship to allow it to run on multiple computers in the event of the primary program going down (add redundancy)
