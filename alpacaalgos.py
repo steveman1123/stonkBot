@@ -133,6 +133,8 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpFromClose, s
         print(e['symbol']+"\t"+str(lastJump)+"\t"+str(lastJump+a.o.dt.timedelta(5*7))+"\t\t\t"+str(round(curPrice/buyPrice,2))+"\t\t"+str(round(curPrice/closePrice,2))+"\t\t\t"+str(sellUp)+" & "+str(sellDn)) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
       except Exception:
         print(e['symbol']+" - "+buyInfo)
+        sellUp = mainSellUp
+        sellDn = mainSellDn
 
       #cut the losses if we missed the jump or if the price dropped too much
       if(curPrice/buyPrice<=sellDn or buyInfo=="Missed jump"):
