@@ -30,9 +30,8 @@ def mainAlgo():
   minPortVal = a.o.c['minPortVal'] #stop trading if portfolio reaches this amount
 
   sellUp = a.o.c['sellUp'] #trigger point. Compare to when it was bought, additional logic to see if it goes higher
-  sellUpFromClose = a.o.c['sellUpFromClose'] #secondary trigger point. Compare to previous day's close
   sellDn = a.o.c['sellDn'] #limit loss
-  sellUpDn = a.o.c['sellUpDn'] #sell if it triggers sellUp or sellUpFromClose then drops sufficiently
+  sellUpDn = a.o.c['sellUpDn'] #sell if it triggers sellUp then drops sufficiently
   
   
   #init the stock list if we rereun during the week
@@ -82,7 +81,7 @@ def mainAlgo():
             
         
         print("Tradable Stocks:")
-        check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpFromClose, sellUpDn)
+        check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn)
   
         f = open(a.o.c['webDataFile'],'w')
         f.write(a.o.json.dumps({"portVal":round(portVal,2),"updated":a.o.dt.datetime.utcnow().strftime("%Y-%m-%d, %H:%M")+" UTC"}))
@@ -101,7 +100,7 @@ def mainAlgo():
         a.o.time.sleep(tto)
         
 #check to sell a list of stocks - symlist is the output of a.getPos()
-def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpFromClose, sellUpDn):
+def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
   print("symb\tinitial jump\tpredicted jump (+/- 3wks)\tchange from buy\tchange from close\tsell points")
   print("----\t------------\t-------------------------\t---------------\t-----------------\t-----------")
   for e in symList:
@@ -146,7 +145,7 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpFromClose, s
         f.close()
       
       #use e['lastday_price'] to get previous close amount ... or curPrice/float(e['lastday_price'])>=sellUpFromYesterday
-      elif(curPrice/buyPrice>=sellUp or curPrice/closePrice>=sellUpFromClose):
+      elif(curPrice/buyPrice>=sellUp or curPrice/closePrice>=sellUp):
         print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
         if(not e['symbol'] in [t.getName() for t in threading.enumerate()]): #if the thread is not found in names of the running threads, then start it (this stops multiple instances of the same stock thread)
           triggerThread = threading.Thread(target=triggeredUp, args=(e, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, latestTrades)) #init the thread
