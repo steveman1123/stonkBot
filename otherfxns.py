@@ -1,4 +1,8 @@
 #This module should be any function that doesn't require alpaca or keys to use
+
+#TODO: add more stock lists from stocksUnder1 (tech, energy, marijuana, healthcare, biotech)
+
+
 import json,requests,os,time,re,csv
 import datetime as dt
 from bs4 import BeautifulSoup as bs
@@ -101,6 +105,7 @@ def getList():
   #now that we have the marketWatch list, let's get the stocksunder1 list - essentially the getPennies() fxn from other files
   url = 'https://stocksunder1.org/nasdaq-penny-stocks/'
   print("Getting stocksunder1 data...")
+  print("Main list")
   while True:
     try:
       html = requests.post(url, params={"price":5,"volume":0,"updown":"up"}, timeout=5).content
@@ -115,6 +120,9 @@ def getList():
     #print(re.sub(r'\W+','',e.find_all('td')[0].get_text().replace(' predictions','')))
     symbList.append(re.sub(r'\W+','',e.find_all('td')[0].get_text().replace(' predictions','')))
   
+
+
+
   print("Removing Duplicates...")
   symbList = list(dict.fromkeys(symbList)) #combine and remove duplicates
   
