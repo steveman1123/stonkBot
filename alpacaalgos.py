@@ -11,7 +11,7 @@ gStocksUpdated = False
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
 #TODO: make list of wins & loses and analyze why (improve algo as it goes)
 #TODO: adjust sell %'s if > 1+(sellUp-1)/2 (e.g. if >1.1 if sellUp=1.2), then have a larger sellUpDn (e.g. 5%), then decrease if it reaches sellUp
-
+#TODO: scrape news of held positions looking for a reverse stock split
 #generates list of potential gainers, trades based off amount of cash
 def mainAlgo():
   '''
