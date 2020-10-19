@@ -135,7 +135,7 @@ def getHistory(symb, startDate, endDate):
     modDate = dt.date.today()-dt.timedelta(1)
   #write to file after checking that the file doesn't already exist (we don't want to abuse the api) or that it was edited more than a day ago
   if(not os.path.isfile(stockDir+symb+".csv") or modDate<dt.date.today()):
-    url = f'https://www.nasdaq.com/api/v1/historical/{symb}/stocks/{startDate}/{endDate}/'
+    url = f'https://www.nasdaq.com/api/v1/historical/{symb}/stocks/{startDate}/{endDate}'
     while True:
       try:
         r = requests.get(url, headers={"user-agent":"-"}, timeout=5).text #send request and store response - cannot have empty user-agent
@@ -146,19 +146,19 @@ def getHistory(symb, startDate, endDate):
         print("No connection, or other error encountered. Trying again...")
         time.sleep(3)
         continue
+    
     out = open(stockDir+symb+'.csv','w') #write to file for later usage
     out.write(r)
     out.close()
-
+  
   #read csv and convert to array
   #TODO: see if we can not have to save it to a file if possible due to high read/writes - can also eliminate csv library
   #     ^ or at least research where it should be saved to avoid writing to sdcard
   with open(stockDir+symb+".csv") as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     out = [[ee.replace('$','').replace('N/A','0') for ee in e] for e in csv_reader][1::] #trim first line to get rid of headers, also replace $'s and N/A volumes to calculable values
-
+  
   return out
-
 
 #checks whether something is a good buy or not (if not, return why - no initial jump or second jump already missed).
 #if it is a good buy, return initial jump date
@@ -227,7 +227,13 @@ def goodBuy(symb,days2look=c['simDays2look']): #days2look=how far back to look f
     
   return validBuy #return a dict of valid stocks and the date of their latest jump
   
+
+#get list of stocks pending FDA approvals
+def getDrugList():
   
+  return []
+
+
 #the new version of the getGainers function - uses the new functions getList, getHistory, and goodBuy
 def getGainers(symblist):
   gainers = {}
