@@ -139,7 +139,7 @@ def getHistory(symb, startDate, endDate):
     while True:
       try:
         r = requests.get(url, headers={"user-agent":"-"}, timeout=5).text #send request and store response - cannot have empty user-agent
-        if('html' in r):
+        if('html' in r or len(r)<10): #sometimes response returns invalid data. This ensures that it's correct (not html error or blank data)
           raise Exception('Returned invalid data') #sometimes the page will return html data that cannot be successfully parsed
         break
       except Exception:
@@ -184,7 +184,9 @@ def goodBuy(symb,days2look=c['simDays2look']): #days2look=how far back to look f
     volLoss = c['simVolLoss'] #check if the volume decreases by this amount during the price drop
     priceDrop = c['simPriceDrop'] #price should drop this far when the volume drops
     
-    dateData = getHistory(symb, str(dt.date.today()-dt.timedelta(days=(volAvgDays+days2look))), str(dt.date.today()))
+    start = str(dt.date.today()-dt.timedelta(days=(volAvgDays+days2look)))
+    end = str(dt.date.today())
+    dateData = getHistory(symb, start, end)
     
     if(startDate>=len(dateData)-2): #if a stock returns nothing or very few data pts
       validBuy = "Few data points available"
@@ -228,10 +230,51 @@ def goodBuy(symb,days2look=c['simDays2look']): #days2look=how far back to look f
   return validBuy #return a dict of valid stocks and the date of their latest jump
   
 
+#get the ticker symbol and exchange of a company or return "-" if not found
+def getSymb(company):
+  url = "https://www.marketwatch.com/tools/quotes/lookup.asp" #this one is a little slow, it'd be nice to find a faster site
+  while True: #get the html page with the symbol
+    try:
+      r = requests.get(url, params={"Lookup":company}, timeout=5).text
+      break
+    except Exception:
+      print("Connection Error. Trying again...")
+      time.sleep(3)
+      continue
+  
+  try: #parse throgh html to find the table, symbol data, symbol, and exchange for it
+    table = bs(r,'html.parser').find_all('table')[0]
+    symbData = table.find_all('tr')[1].find_all('td')
+    symb = str(symbData[0]).split('">')[2].split("<")[0]
+    exch = str(symbData[2]).split('">')[1].split("<")[0]
+  except Exception: #return blanks if invalid
+    [symb, exch] = ["-","-"]
+  return [symb, exch]
+
+
 #get list of stocks pending FDA approvals
 def getDrugList():
+  while True: #get page of pending stocks
+    try:
+      r = requests.get("https://www.drugs.com/new-drug-applications.html", timeout=5).text
+      break
+    except Exception:
+      print("Connection error, trying again...")
+      time.sleep(3)
+      continue
   
-  return []
+  try:
+    arr = r.split("Company:</b>") #go down to stock list
+    arr = [e.split("<br>")[0].strip() for e in arr][1::] #get list of companies
+    arr = [getSymb(e) for e in arr] #get the symbols and exchanges of the companies
+    arr = [e[0] for e in arr if e[1]=="NAS"] #get the nasdaq only ones
+  except Exception:
+    print("Bad data")
+    arr = []
+    
+  #TODO: like in stonk2, set max price, but also check for price changes in the past few days/weeks to see if it's worth investing in
+
+  return arr
 
 
 #the new version of the getGainers function - uses the new functions getList, getHistory, and goodBuy
@@ -245,7 +288,7 @@ def getGainers(symblist):
       print(f"({i+1}/{len(symblist)}) {e} - {b} - {gainers[e][1]}")
     except Exception:
       pass
-    # print(f"({i+1}/{len(symblist)}) {e} - {b}")
+  #TODO: once getDrugList() is finished, append the returned list to gainers
   return gainers
 
 #TODO: add slave functionality
