@@ -32,7 +32,7 @@ def getAcct():
       html = o.requests.get(ACCTURL, headers=HEADERS, timeout=5).content
       break
     except Exception:
-      print("No connection, or other error encountered. Trying again...")
+      print("No connection, or other error encountered in getAcct. Trying again...")
       o.time.sleep(3)
       continue
 
@@ -45,7 +45,7 @@ def getPos():
       html = o.requests.get(POSURL, headers=HEADERS, timeout=5).content
       break
     except Exception:
-      print("No connection, or other error encountered. Trying again...")
+      print("No connection, or other error encountered in getPos. Trying again...")
       o.time.sleep(3)
       continue
   return o.json.loads(html)
@@ -57,7 +57,7 @@ def getOrders():
       html = o.requests.get(ORDERSURL, headers=HEADERS, timeout=5).content
       break
     except Exception:
-      print("No connection, or other error encountered. Trying again...")
+      print("No connection, or other error encountered in getOrders. Trying again...")
       o.time.sleep(3)
       continue
 
@@ -81,7 +81,7 @@ def sellAll(isManual=1):
           r = o.requests.delete(ORDERSURL, headers=HEADERS, timeout=5)
           break
         except Exception:
-          print("No connection, or other error encountered. Trying again...")
+          print("No connection, or other error encountered in sellAll. Trying again...")
           o.time.sleep(3)
           continue
       r = o.json.loads(r.content.decode("utf-8"))
@@ -119,7 +119,7 @@ def createOrder(side, qty, sym, orderType="market", time_in_force="day", limPric
         r = o.requests.post(ORDERSURL, json=order, headers=HEADERS, timeout=5)
         break
       except Exception:
-        print("No connection, or other error encountered. Trying again...")
+        print("No connection, or other error encountered in createOrder. Trying again...")
         o.time.sleep(3)
         continue
   
@@ -139,7 +139,7 @@ def marketIsOpen():
       r = o.json.loads(o.requests.get(CLKURL, headers=HEADERS, timeout=5).content)
       break
     except Exception:
-      print("No connection, or other error encountered. Trying again...")
+      print("No connection, or other error encountered in marketIsOpen. Trying again...")
       o.time.sleep(3)
       continue
   return r["is_open"]
@@ -151,7 +151,7 @@ def marketTime():
       ts = o.json.loads(o.requests.get(CLKURL, headers=HEADERS, timeout=5).content)["timestamp"]
       break
     except Exception:
-      print("No connection, or other error encountered. Trying again...")
+      print("No connection, or other error encountered in marketTime. Trying again...")
       o.time.sleep(3)
       continue
 
@@ -166,7 +166,7 @@ def timeTillClose():
       cl = o.json.loads(o.requests.get(CLKURL, headers=HEADERS, timeout=5).content)["next_close"]
       break
     except Exception:
-      print("No connection, or other error encountered. Trying again...")
+      print("No connection, or other error encountered in timeTillClose. Trying again...")
       o.time.sleep(3)
       continue
 
@@ -183,7 +183,7 @@ def timeTillOpen():
       op = o.json.loads(o.requests.get(CLKURL, headers=HEADERS, timeout=5).content)["next_open"]
       break
     except Exception:
-      print("No connection, or other error encountered. Trying again...")
+      print("No connection, or other error encountered in timeTillOpen. Trying again...")
       o.time.sleep(3)
       continue
 
@@ -203,7 +203,7 @@ def openCloseTimes(checkDate): #checkdate of format yyyy-mm-dd
       d = o.json.loads(o.requests.get(CALURL, headers=HEADERS, params=calParams, timeout=5).content)[0]
       break
     except Exception:
-      print("No connection, or other error encountered. Trying again...")
+      print("No connection, or other error encountered in openCloseTimes. Trying again...")
       o.time.sleep(3)
       continue
   
@@ -222,7 +222,7 @@ def getPrice(symb):
       # response = o.requests.get(url,headers={"User-Agent": "-"}, timeout=5).text #nasdaq url requires a non-empty user-agent string
       break
     except Exception:
-      print("No connection, or other error encountered. Trying again...")
+      print("No connection, or other error encountered in getPrice. Trying again...")
       o.time.sleep(3)
       continue
 
@@ -241,7 +241,7 @@ def isAlpacaTradable(symb):
       tradable = o.requests.get(ASSETURL+"/"+symb, headers=HEADERS, timeout=5).content
       break
     except Exception:
-      print("No connection, or other error encountered. Trying again...")
+      print("No connection, or other error encountered in isAlpacaTradable. Trying again...")
       o.time.sleep(3)
       continue
   try:
@@ -256,7 +256,7 @@ def checkValidKeys():
       test = getAcct()
       break
     except Exception:
-      print("No connection, or other error encountered. Trying again...")
+      print("No connection, or other error encountered in checkValidKeys. Trying again...")
       o.time.sleep(3)
       continue
   try:
@@ -281,4 +281,4 @@ def checkValidKeys():
 #get the trades made on a specified date  
 def getTrades(date):
   print("Not done")
-  return "return something in the same format as latestTrades {symb:[date,type]}"
+  return "return something in the same format as latestTrades {symb:[date,type,amount,price]}"

@@ -19,7 +19,7 @@ def isTradable(symb):
       r = requests.request("GET","https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks".format(symb), headers={"user-agent":"-"}, timeout=5).content
       break
     except Exception:
-      print("No connection, or other error encountered, trying again...")
+      print("No connection, or other error encountered in isTradable, trying again...")
       time.sleep(3)
       continue
   try:
@@ -76,7 +76,7 @@ def getList():
       totalStocks = int(r.split("matches")[0].split("floatleft results")[1].split("of ")[1]) #get the total number of stocks in the list - important because they're spread over multiple pages
       break
     except Exception:
-      print("No connection or other error encountered. Trying again...")
+      print("No connection or other error encountered in getList (MW). Trying again...")
       time.sleep(3)
       continue
       
@@ -90,7 +90,7 @@ def getList():
         r = requests.get(url, params=params, timeout=5).text
         break
       except Exception:
-        print("No connection or other error encountered. Trying again...")
+        print("No connection or other error encountered in getList (MW). Trying again...")
         time.sleep(3)
         continue
 
@@ -110,7 +110,7 @@ def getList():
         html = requests.post(url, params={"price":5,"volume":0,"updown":"up"}, timeout=5).content
         break
       except Exception:
-        print("No connection, or other error encountered. Trying again...")
+        print("No connection, or other error encountered (SU1). Trying again...")
         time.sleep(3)
         continue
     table = bs(html,'html.parser').find_all('table')[6] #6th table in the webpage - this may change depending on the webpage
@@ -143,7 +143,7 @@ def getHistory(symb, startDate, endDate):
           raise Exception('Returned invalid data') #sometimes the page will return html data that cannot be successfully parsed
         break
       except Exception:
-        print("No connection, or other error encountered. Trying again...")
+        print("No connection, or other error encountered in getHistory. Trying again...")
         time.sleep(3)
         continue
     
@@ -238,7 +238,7 @@ def getSymb(company):
       r = requests.get(url, params={"Lookup":company}, timeout=5).text
       break
     except Exception:
-      print("Connection Error. Trying again...")
+      print("No connection, or other error encountered in getSymb. Trying again...")
       time.sleep(3)
       continue
   
@@ -259,7 +259,7 @@ def getDrugList():
       r = requests.get("https://www.drugs.com/new-drug-applications.html", timeout=5).text
       break
     except Exception:
-      print("Connection error, trying again...")
+      print("No connection, or other error encountered in getDrugList. trying again...")
       time.sleep(3)
       continue
   
