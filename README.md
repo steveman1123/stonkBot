@@ -86,22 +86,37 @@ After the first day, assuming you have stocks held, it will show something simil
 
 Generally it seems that it takes about 5 weeks (+/- 3 weeks) after the initial jump to jump a second time.
 
-From testing between 2020-07-14 to 2020-09-30, I have gotten an average growth rate of 0.48%/day with a standard deviation of 3.58% (including 1 week of no trading due to a power outage)
+From testing between 2020-07-14 to 2020-11-02, I have gotten an average growth rate of 0.56%/day with a standard deviation of 3.75% (including 1 week of no trading due to a power outage)
 
 ![Daily Returns](https://github.com/steveman1123/stonkBot/blob/master/dailyReturns.jpg?raw=true)
 
 ## External Resources
 [Alpaca](https://alpaca.markets/)
 
-[AlphaVantage](https://www.alphavantage.co/)
-
-[Stocks Under $1](https://stocksunder1.org/)
-
 [NASDAQ Quote API](https://api.nasdaq.com/api/quote/MSFT/info?assetclass=stocks)
 
 [NASDAQ Historical API](https://www.nasdaq.com/api/v1/historical/MSFT/stocks/2019-04-20/2020-04-20/)
 
 [MarketWatch Stock Screener](https://www.marketwatch.com/tools/stockresearch/screener/)
+
+[Stocks Under $1](https://stocksunder1.org/)
+
+[AlphaVantage](https://www.alphavantage.co/)
+
+[NASDAQ Financials](https://api.nasdaq.com/api/company/MSFT/financials?frequency=1)
+
+[NASDAQ Upcoming Events](https://api.nasdaq.com/api/calendar/upcoming)
+
+[NASDAQ Chart Data](https://api.nasdaq.com/api/quote/MSFT/chart?assetclass=stocks)
+
+[NASDAQ Quote Summary](https://api.nasdaq.com/api/quote/MSFT/summary?assetclass=stocks)
+
+[NASDAQ Market Info](https://api.nasdaq.com/api/market-info)
+
+[NASDAQ Company Profile](https://api.nasdaq.com/api/company/MSFT/company-profile)
+
+[NASDAQ Quote News](https://www.nasdaq.com/api/v1/quote-news/31867/7)
+
 
 ## Issues & Enhancements
 

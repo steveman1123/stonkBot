@@ -135,10 +135,14 @@ def getHistory(symb, startDate, endDate):
     modDate = dt.date.today()-dt.timedelta(1)
   #write to file after checking that the file doesn't already exist (we don't want to abuse the api) or that it was edited more than a day ago
   if(not os.path.isfile(stockDir+symb+".csv") or modDate<dt.date.today()):
-    url = f'https://www.nasdaq.com/api/v1/historical/{symb}/stocks/{startDate}/{endDate}'
+    #url = f'https://api.nasdaq.com/api/quote/{symb}/historical?assetclass=stocks&fromdate={startDate}&todate={enddate}' #currently only returns 14 days
+    
     while True:
       try:
+        url = f'https://www.nasdaq.com/api/v1/historical/{symb}/stocks/{startDate}/{endDate}' #old api url (depreciated?)
         r = requests.get(url, headers={"user-agent":"-"}, timeout=5).text #send request and store response - cannot have empty user-agent
+        if(len(r)<10):
+          startDate = str(dt.datetime.strptime(startDate,"%Y-%m-%d").date()-dt.timedelta(1)) #try scooting back a day if at first we don't succeed (sometimes it returns nothing for some reason?)
         if('html' in r or len(r)<10): #sometimes response returns invalid data. This ensures that it's correct (not html error or blank data)
           raise Exception('Returned invalid data') #sometimes the page will return html data that cannot be successfully parsed
         break
@@ -147,7 +151,8 @@ def getHistory(symb, startDate, endDate):
         time.sleep(3)
         continue
     
-    out = open(stockDir+symb+'.csv','w') #write to file for later usage
+    out = open(stockDir+symb+'.csv','w') #write to file for later usage - old api used csv format
+#    out = open(stckDir+symb+".json",'w') #new api uses json
     out.write(r)
     out.close()
   
