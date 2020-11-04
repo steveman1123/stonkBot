@@ -93,31 +93,13 @@ From testing between 2020-07-14 to 2020-11-02, I have gotten an average growth r
 ## External Resources
 [Alpaca](https://alpaca.markets/)
 
-[NASDAQ Quote API](https://api.nasdaq.com/api/quote/MSFT/info?assetclass=stocks)
-
-[NASDAQ Historical API](https://www.nasdaq.com/api/v1/historical/MSFT/stocks/2019-04-20/2020-04-20/)
-
 [MarketWatch Stock Screener](https://www.marketwatch.com/tools/stockresearch/screener/)
 
 [Stocks Under $1](https://stocksunder1.org/)
 
 [AlphaVantage](https://www.alphavantage.co/)
 
-[NASDAQ Financials](https://api.nasdaq.com/api/company/MSFT/financials?frequency=1)
-
-[NASDAQ Upcoming Events](https://api.nasdaq.com/api/calendar/upcoming)
-
-[NASDAQ Chart Data](https://api.nasdaq.com/api/quote/MSFT/chart?assetclass=stocks)
-
-[NASDAQ Quote Summary](https://api.nasdaq.com/api/quote/MSFT/summary?assetclass=stocks)
-
-[NASDAQ Market Info](https://api.nasdaq.com/api/market-info)
-
-[NASDAQ Company Profile](https://api.nasdaq.com/api/company/MSFT/company-profile)
-
-[NASDAQ Quote News](https://www.nasdaq.com/api/v1/quote-news/31867/7)
-
-[NASDAQ Historical API 2](https://api.nasdaq.com/api/quote/MSFT/historical?assetclass=stocks&fromdate=2020-10-18&todate=2020-11-02)
+[NASDAQ API Documentation](https://github.com/steveman1123/stonkBot/blob/master/NASDAQ_API_DOC.md)
 
 ## Issues & Enhancements
 
