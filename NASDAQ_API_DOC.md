@@ -15,21 +15,19 @@ endpoint urls:
 ## api.nasdaq.com/api
 
 1. ```/quote/{1}/{summary|info|historical|chart}``` where {1} is the symbol followed by the data to return  
-### Additional parameters:  
-```?assetclass={stocks|mutualfunds}``` (**required for all**)  
-```&fromdate={yyyy-mm-dd}``` (**required for historical**)  
-```&todate={yyyy-mm-dd}``` (optional for historical)  
-I believe there are other parameters that would allow seeing more data in historical, this setup returns a max of 14 days worth
+    #### Additional parameters:  
+    ```?assetclass={stocks|mutualfunds}``` (**required for all**)  
+    ```&fromdate={yyyy-mm-dd}``` (**required for historical**)  
+    ```&todate={yyyy-mm-dd}``` (optional for historical)  
+    I believe there are other parameters that would allow seeing more data in historical, this setup returns a max of 14 days worth
 
 2. ```/company/{1}/{financials|company-profile}``` where {1} is the symbol  
-### Additional parameters:  
-```?frequency={2}``` where {2} is 1 for period endings, and 2 for quarterly endings (optional for financials)
+    #### Additional parameters:  
+    ```?frequency={2}``` where {2} is 1 for period endings, and 2 for quarterly endings (optional for financials)
 
 3. ```/market-info```
 
 4. ```/calendar/{upcoming|splits|earnings|dividends}```
-
-
 
 
 ## ww<span>w.</span>nasdaq.com/api/v1
@@ -38,25 +36,24 @@ I believe there are other parameters that would allow seeing more data in histor
 
 6. ```/historical/{1}/{2}/{3}/{4}``` where {1} is the symbol, {2} is the assetclass, and {3} and {4} are the start and end dates in yyyy-mm-dd format. Returns a csv document.
 
-
-
+---
 
 **All requests must not have an empty user-agent header**
 
 Examples:  
-1.quote
-    a) [chart](api.nasdaq.com/api/quote/MSFT/chart?assetclass=stocks)
-    b) [historical](api.nasdaq.com/api/quote/MSFT/historical?assetclass=stocks&fromdate=2020-10-15&todate=2020-10-30)
-    c) [info](api.nasdaq.com/api/quote/MSFT/info?assetclass=stocks)
-    d) [summary](api.nasdaq.com/api/quote/MSFT?assetclass=stocks)
-2.company
-    a) [company profile](api.nasdaq.com/api/company/MSFT/company-profile)
-    b) [financials](api.nasdaq.com/api/company/MSFT/financials?frequency=1)
-3. [market info](api.nasdaq.com/api/market-info)
-4. calendar
-    a) [dividends](api.nasdaq.com/api/calendar/dividends)
-    b) [earnings](api.nasdaq.com/api/calendar/earnings)
-    c) [splits](api.nasdaq.com/api/calendar/splits)
-    d) [upcoming](api.nasdaq.com/api/calendar/upcoming)
-5. [quote news](www.nasdaq.com/api/v1/quote-news/1/5)
-6. [historical](www.nasdaq.com/api/v1/MSFT/stocks/2020-10-15/2020-10-30)
+1.quote  
+    a. [chart](api.nasdaq.com/api/quote/MSFT/chart?assetclass=stocks)  
+    b. [historical](api.nasdaq.com/api/quote/MSFT/historical?assetclass=stocks&fromdate=2020-10-15&todate=2020-10-30)  
+    c. [info](api.nasdaq.com/api/quote/MSFT/info?assetclass=stocks)  
+    d. [summary](api.nasdaq.com/api/quote/MSFT?assetclass=stocks)  
+2.company  
+    a. [company profile](api.nasdaq.com/api/company/MSFT/company-profile)  
+    b. [financials](api.nasdaq.com/api/company/MSFT/financials?frequency=1)  
+3. [market info](api.nasdaq.com/api/market-info)  
+4. calendar  
+    a. [dividends](api.nasdaq.com/api/calendar/dividends)  
+    b. [earnings](api.nasdaq.com/api/calendar/earnings)  
+    c. [splits](api.nasdaq.com/api/calendar/splits)  
+    d. [upcoming](api.nasdaq.com/api/calendar/upcoming)  
+5. [quote news](www.nasdaq.com/api/v1/quote-news/1/5)  
+6. [historical](www.nasdaq.com/api/v1/MSFT/stocks/2020-10-15/2020-10-30)  
