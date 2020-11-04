@@ -114,10 +114,11 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
       lastTradeType = "NA"
 
     
-    if(lastTradeDate<a.o.dt.date.today() or lastTradeType=="sell" or float(e['current_price'])/float(e['avg_entry_price'])>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
+    if(lastTradeDate<a.o.dt.date.today() or lastTradeType=="sell" or float(a.getPrice(e['symbol']))/float(e['avg_entry_price'])>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
       buyPrice = float(e['avg_entry_price'])
       closePrice = float(e['lastday_price'])
-      curPrice = float(e['current_price'])
+      #curPrice = float(e['current_price'])
+      curPrice = a.getPrice(e['symbol'])
       maxPrice = 0
       buyInfo = a.o.goodBuy(e['symbol'],260)
       

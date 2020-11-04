@@ -214,12 +214,14 @@ def openCloseTimes(checkDate): #checkdate of format yyyy-mm-dd
 
 # return the current price of the indicated stock
 def getPrice(symb):
-  #url = 'https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks'.format(symb) #use this URL to avoid alpaca
-  url = 'https://data.alpaca.markets/v1/last/stocks/{}'.format(symb)
+  symb = symb.upper() #make sure it's uppercase, otherwise it may error out
+  #using the alpaca link is faster, but the nasdaq link updates the prices more frequently
+  url = 'https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks'.format(symb) #use this URL to avoid alpaca
+  #url = 'https://data.alpaca.markets/v1/last/stocks/{}'.format(symb)
   while True:
     try:
-      response = o.requests.get(url,headers=HEADERS, timeout=5).text #send request and store response
-      # response = o.requests.get(url,headers={"User-Agent": "-"}, timeout=5).text #nasdaq url requires a non-empty user-agent string
+      #response = o.requests.get(url,headers=HEADERS, timeout=5).text #send request and store response
+      response = o.requests.get(url,headers={"User-Agent": "-"}, timeout=5).text #nasdaq url requires a non-empty user-agent string
       break
     except Exception:
       print("No connection, or other error encountered in getPrice. Trying again...")
@@ -227,8 +229,8 @@ def getPrice(symb):
       continue
 
   try:
-    #latestPrice = float(o.json.loads(response)["data"]["primaryData"]["lastSalePrice"][1:]) #use this line for the alt. URL
-    latestPrice = float(o.json.loads(response)['last']['price'])
+    latestPrice = float(o.json.loads(response)["data"]["primaryData"]["lastSalePrice"][1:]) #use this line for the alt. URL
+    #latestPrice = float(o.json.loads(response)['last']['price'])
     return latestPrice
   except Exception:
     print("Invalid Stock - "+symb)

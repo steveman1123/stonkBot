@@ -117,6 +117,7 @@ From testing between 2020-07-14 to 2020-11-02, I have gotten an average growth r
 
 [NASDAQ Quote News](https://www.nasdaq.com/api/v1/quote-news/31867/7)
 
+[NASDAQ Historical API 2](https://api.nasdaq.com/api/quote/MSFT/historical?assetclass=stocks&fromdate=2020-10-18&todate=2020-11-02)
 
 ## Issues & Enhancements
 
