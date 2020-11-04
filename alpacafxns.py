@@ -126,6 +126,7 @@ def createOrder(side, qty, sym, orderType="market", time_in_force="day", limPric
     r = o.json.loads(r.content.decode("utf-8"))
     # print(r)
     try:
+      #TODO: add trade info here?
       return "Order to "+r["side"]+" "+r["qty"]+" share(s) of "+r["symbol"]+" at "+r["updated_at"]+" - "+r["status"]
     except Exception:
       return "Error: "+o.json.dumps(r)

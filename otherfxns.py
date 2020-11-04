@@ -7,6 +7,7 @@ from math import ceil
 
 settingsFile = './stonkBot.config'
 
+#TODO: make this a with statement
 f = open(settingsFile,"r")
 c = json.loads(f.read())
 f.close()
@@ -316,3 +317,23 @@ def masterLives():
   #TODO: may have to install flask or something to get it online seperately from the web server
   print("No slave functionality yet")
   return True
+
+#get the average price the stock was bought at since the last sell
+def getBuyPrice(symb):
+  #TODO: make this a with statement
+  #make sure the file exists
+  f = open(c['latestTradesFile'],'r')
+  t = json.loads(f.read())
+  f.close()
+  if(len(t[symb])<3): #return the buyprice val if in the list, else return 0
+    return 0
+  else:
+    return t[symb][2]
+
+  '''
+on a stock buy: if>0, set this value to the avg of this value and the latest buy value, else set to the latest buy value
+on a stock sell: set this value to 0
+  '''
+
+
+
