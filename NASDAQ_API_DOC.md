@@ -40,20 +40,20 @@ endpoint urls:
 
 ## Examples:
 1. quote  
-    1. [chart](api.nasdaq.com/api/quote/MSFT/chart?assetclass=stocks)  
-    2. [historical](api.nasdaq.com/api/quote/MSFT/historical?assetclass=stocks&fromdate=2020-10-15&todate=2020-10-30)  
-    3. [info](api.nasdaq.com/api/quote/MSFT/info?assetclass=stocks)  
-    4. [summary](api.nasdaq.com/api/quote/MSFT?assetclass=stocks)  
+    1. [chart](https://api.nasdaq.com/api/quote/MSFT/chart?assetclass=stocks)  
+    2. [historical](https://api.nasdaq.com/api/quote/MSFT/historical?assetclass=stocks&fromdate=2020-10-15&todate=2020-10-30)  
+    3. [info](https://api.nasdaq.com/api/quote/MSFT/info?assetclass=stocks)  
+    4. [summary](https://api.nasdaq.com/api/quote/MSFT?assetclass=stocks)  
 2. company  
-    1. [company profile](api.nasdaq.com/api/company/MSFT/company-profile)  
-    2. [financials](api.nasdaq.com/api/company/MSFT/financials?frequency=1)  
-3. [market info](api.nasdaq.com/api/market-info)  
+    1. [company profile](https://api.nasdaq.com/api/company/MSFT/company-profile)  
+    2. [financials](https://api.nasdaq.com/api/company/MSFT/financials?frequency=1)  
+3. [market info](https://api.nasdaq.com/api/market-info)  
 4. calendar  
-    1. [dividends](api.nasdaq.com/api/calendar/dividends)  
-    2. [earnings](api.nasdaq.com/api/calendar/earnings)  
-    3. [splits](api.nasdaq.com/api/calendar/splits)  
-    4. [upcoming](api.nasdaq.com/api/calendar/upcoming)  
-5. [quote news](www.nasdaq.com/api/v1/quote-news/1/5)  
-6. [historical](www.nasdaq.com/api/v1/MSFT/stocks/2020-10-15/2020-10-30)  
+    1. [dividends](https://api.nasdaq.com/api/calendar/dividends)  
+    2. [earnings](https://api.nasdaq.com/api/calendar/earnings)  
+    3. [splits](https://api.nasdaq.com/api/calendar/splits)  
+    4. [upcoming](https://api.nasdaq.com/api/calendar/upcoming)  
+5. [quote news](https://www.nasdaq.com/api/v1/quote-news/1/5)  
+6. [historical](https://www.nasdaq.com/api/v1/MSFT/stocks/2020-10-15/2020-10-30)  
 
 **All requests must not have an empty user-agent header**
