@@ -43,7 +43,7 @@ endpoint urls:
     1. [chart](https://api.nasdaq.com/api/quote/MSFT/chart?assetclass=stocks)  
     2. [historical](https://api.nasdaq.com/api/quote/MSFT/historical?assetclass=stocks&fromdate=2020-10-15&todate=2020-10-30)  
     3. [info](https://api.nasdaq.com/api/quote/MSFT/info?assetclass=stocks)  
-    4. [summary](https://api.nasdaq.com/api/quote/MSFT?assetclass=stocks)  
+    4. [summary](https://api.nasdaq.com/api/quote/MSFT/summary?assetclass=stocks)  
 2. company  
     1. [company profile](https://api.nasdaq.com/api/company/MSFT/company-profile)  
     2. [financials](https://api.nasdaq.com/api/company/MSFT/financials?frequency=1)  
@@ -54,6 +54,6 @@ endpoint urls:
     3. [splits](https://api.nasdaq.com/api/calendar/splits)  
     4. [upcoming](https://api.nasdaq.com/api/calendar/upcoming)  
 5. [quote news](https://www.nasdaq.com/api/v1/quote-news/1/5)  
-6. [historical](https://www.nasdaq.com/api/v1/MSFT/stocks/2020-10-15/2020-10-30)  
+6. [historical](https://www.nasdaq.com/api/v1/historical/MSFT/stocks/2020-10-15/2020-10-30)  
 
 **All requests must not have an empty user-agent header**
