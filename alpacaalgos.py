@@ -110,10 +110,12 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
     try:
       lastTradeDate = a.o.dt.datetime.strptime(latestTrades[e['symbol']][0],'%Y-%m-%d').date()
       lastTradeType = latestTrades[e['symbol']][1]
+      '''
       try:
         avgBuyPrice = latestTrades[e['symbol']][2] #if this exists in the list (should only be an issue in the transition, not applicable for fresh use cases)
       except Exception:
-        avgBuyPrice = float(e['avg_entry_price']) #if it doesn't exist, default to the avg buy price over all time - it's important to keep a separate record to reset after a sell rather than over all time
+      '''
+      avgBuyPrice = float(e['avg_entry_price']) #if it doesn't exist, default to the avg buy price over all time - it's important to keep a separate record to reset after a sell rather than over all time
     except Exception:
       lastTradeDate = a.o.dt.date.today()-a.o.dt.timedelta(1)
       lastTradeType = "NA"
@@ -144,10 +146,10 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
         sellDn = mainSellDn
 
       #cut the losses if we missed the jump or if the price dropped too much
-      if(curPrice/buyPrice<=sellDn or buyInfo=="Missed jump"):
+      if(buyPrice==0 or curPrice/buyPrice<=sellDn or buyInfo=="Missed jump"):
         print("Lost it on "+e['symbol'])
         print(a.createOrder("sell",e['qty'],e['symbol']))
-        latestTrades[e['symbol']] = [str(a.o.dt.date.today()), "sell"]
+        latestTrades[e['symbol']] = [str(a.o.dt.date.today()), "sell", 0]
         f = open(a.o.c['latestTradesFile'],"w")
         f.write(a.o.json.dumps(latestTrades, indent=2))
         f.close()
