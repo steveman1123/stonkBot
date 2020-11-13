@@ -2,7 +2,7 @@ import random, threading
 from workdays import networkdays as nwd
 from glob import glob
 import alpacafxns as a
-
+import newsScrape as ns
 
 gainers = [] #global list of potential gaining stocks
 gainerDates = {} #global list of gainers plus their initial jump date and predicted next jump date
@@ -91,8 +91,17 @@ def mainAlgo():
         a.o.time.sleep(60)
         
       else:
+        #TODO: scrape news at end of day and look for reverse stock splits. Mark for sale BEFORE the split
         print("Market closed.")
         gStocksUpdated = False
+        '''
+        p = a.getPos()
+        for e in p:
+          news = str(ns.scrape(e['symbol'])).lower()
+          if("reverse stock split" in news or "reverse-stock-split" in news):
+            #TODO: add field in latestTrades to mark stock for deletion
+       '''
+
         if(a.o.dt.date.today().weekday()==4): #if it's friday
           print("Removing saved csv files") #delete all csv files in stockDataDir
           for f in glob(a.o.c['stockDataDir']+"*.csv"):
@@ -121,7 +130,7 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
       lastTradeType = "NA"
       avgBuyPrice = float(e['avg_entry_price'])
 
-    
+    #TODO: add field from latestTrades to sell regardless of price if marked for selling there
     if(lastTradeDate<a.o.dt.date.today() or lastTradeType=="sell" or float(a.getPrice(e['symbol']))/avgBuyPrice>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
       buyPrice = avgBuyPrice
       closePrice = float(e['lastday_price'])
@@ -165,6 +174,7 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
 #triggered selling-up - this is the one that gets multithreaded
 def triggeredUp(symbObj, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, latestTrades):
   print("Starting thread for "+symbObj['symbol'])
+  
   while((curPrice/buyPrice>=maxPrice/buyPrice*sellUpDn or curPrice/closePrice>=maxPrice/closePrice*sellUpDn) and a.timeTillClose()>=30):
     curPrice = a.getPrice(symbObj['symbol'])
     maxPrice = max(maxPrice, curPrice)
