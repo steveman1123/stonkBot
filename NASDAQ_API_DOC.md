@@ -34,7 +34,7 @@ endpoint urls:
 
 5. ```/quote-news/{1}/{2}``` where I don't know what {1} is, and {2} is number of headlines per request
 
-6. ```/historical/{1}/{2}/{3}/{4}``` where {1} is the symbol, {2} is the assetclass, and {3} and {4} are the start and end dates in yyyy-mm-dd format. Returns a csv document.
+6. ```/historical/{1}/{2}/{3}/{4}``` where {1} is the symbol, {2} is the assetclass, and {3} and {4} are the start and end dates in yyyy-mm-dd format. **Returns a csv document.**
 
 ---
 
@@ -55,5 +55,28 @@ endpoint urls:
     4. [upcoming](https://api.nasdaq.com/api/calendar/upcoming)  
 5. [quote news](https://www.nasdaq.com/api/v1/quote-news/1/5)  
 6. [historical](https://www.nasdaq.com/api/v1/historical/MSFT/stocks/2020-10-15/2020-10-30)  
+
+
+Python example:
+```
+import requests, json
+
+url1 = "https://api.nasdaq.com/api/"
+url2 = "https://www.nasdaq.com/api/v1/"
+
+symb = "msft".upper()
+
+infourl = f"{url1}quote/{symb}/info?assetclass=stocks"
+newsurl = f"{url2}quote-news/1/2"
+
+info = json.loads(requests.get(infourl,headers={'user-agent':"-"},timeout=5).text)
+news = json.loads(requests.get(newsurl,headers={'user-agent':"-"},timeout=5).text)
+
+print(f"{symb} INFO:")
+print(json.dumps(info, indent=2))
+
+print("\nSTOCK NEWS:")
+print(json.dumps(news, indent=2))
+```
 
 **All requests must not have an empty user-agent header**

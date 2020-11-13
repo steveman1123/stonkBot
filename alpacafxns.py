@@ -24,7 +24,6 @@ CLKURL = "{}/v2/clock".format(ENDPOINTURL) #clock url
 CALURL = "{}/v2/calendar".format(ENDPOINTURL) #calendar url
 ASSETURL = "{}/v2/assets".format(ENDPOINTURL) #asset url
 
-
 # return string of account info
 def getAcct():
   while True:
@@ -283,5 +282,70 @@ def checkValidKeys():
 #TODO: add this function - see https://alpaca.markets/docs/api-documentation/api-v2/account-activities/
 #get the trades made on a specified date  
 def getTrades(date):
-  print("Not done")
-  return "return something in the same format as latestTrades {symb:[date,type,amount,price]}"
+  while True:
+    try:
+      d = o.json.loads(o.requests.get(ACCTURL+"/activities/FILL", headers=HEADERS, params={"date":date}, timeout=5).content)
+      break
+    except Exception:
+      print("No connection, or other error encountered in getTrades. Trying again...")
+      o.time.sleep(3)
+      continue
+  return d
+
+#get all trades for a given stock from a given start date to today
+def getStockTrades(symb,startDate=str(o.dt.date.today())):
+  r = []
+  while True:
+    try:
+      d = o.json.loads(o.requests.get(ACCTURL+"/activities/FILL", headers=HEADERS, params={"after":startDate}, timeout=5).content)
+      while(len(d)==100 or len(r)==100):
+        r = o.json.loads(o.requests.get(ACCTURL+"/activities/FILL", headers=HEADERS, params={"after":startDate,"page_token":d[-1]['id']}, timeout=5).content)
+        d += r
+      break
+    except Exception:
+      print("No connection, or other error encountered in getStockTrades. Trying again...")
+      o.time.sleep(3)
+      continue
+  
+  out = [e for e in d if e['symbol']==symb.upper()]
+  
+  return out
+
+
+#get the avg price a stock was bought at since the last sell
+def getBuyPrice(symb):
+  '''
+  average the stock's buy prices from the minimum of the jump date or when the last sell was
+  '''
+  #get the latest jump date
+  jumpDate = o.goodBuy(symb,200)
+  
+  try: #make sure that the jump date is valid, if not, try getting the average price paid overall, otherwise just return 0
+    jumpDate = str(o.dt.datetime.strptime(jumpDate, "%m/%d/%Y")) #convert to standard yyyy-mm-dd format
+  except Exception:
+    print("error finding recent jump date")
+    try:
+      p = getPos()
+      avg = float([e for e in p if e['symbol']==symb.upper()][0]['avg_entry_price'])
+      print("returning overall average price")
+      return avg
+    except Exception:
+      print("error finding overall average")
+      return 0
+
+  t = getStockTrades(symb, jumpDate) #get all trades for the stock
+  
+  #find the latest sell date
+  i=0
+  while i<len(t) and t[i]['side']=="buy":
+    i += 1
+  
+  #return the avg, or if no data found (or latest trade was a sell), return 0
+  if(i>0):
+    totalSpent = sum([float(e['price'])*float(e['qty']) for e in t[:i]])
+    totalQty = sum([float(e['qty']) for e in t[:i]])
+    return totalSpent/totalQty
+  else:
+    return 0
+
+

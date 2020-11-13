@@ -11,7 +11,9 @@ gStocksUpdated = False
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
 #TODO: make list of wins & loses and analyze why (improve algo as it goes)
 #TODO: adjust sell %'s if > 1+(sellUp-1)/2 (e.g. if >1.1 if sellUp=1.2), then have a larger sellUpDn (e.g. 5%), then decrease if it reaches sellUp
-#TODO: scrape news of held positions looking for a reverse stock split
+#TODO: scrape news of held positions looking for a reverse stock split (should be done, but not tested)
+#TODO: redo latestTrades file to be a dict of dicts instead of a dict of lists
+
 #generates list of potential gainers, trades based off amount of cash
 def mainAlgo():
   '''
@@ -84,23 +86,35 @@ def mainAlgo():
         
         print("Tradable Stocks:")
         check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn)
-  
+        '''
         f = open(a.o.c['webDataFile'],'w')
         f.write(a.o.json.dumps({"portVal":round(portVal,2),"updated":a.o.dt.datetime.utcnow().strftime("%Y-%m-%d, %H:%M")+" UTC"}))
         f.close()
+        '''
         a.o.time.sleep(60)
         
       else:
         #TODO: scrape news at end of day and look for reverse stock splits. Mark for sale BEFORE the split
         print("Market closed.")
         gStocksUpdated = False
-        '''
+        
         p = a.getPos()
         for e in p:
           news = str(ns.scrape(e['symbol'])).lower()
-          if("reverse stock split" in news or "reverse-stock-split" in news):
-            #TODO: add field in latestTrades to mark stock for deletion
-       '''
+          #add field to latest trades if it's marked to be sold
+          
+          toBeSold = "reverse stock split" in news or "reverse-stock-split" in news #sell before a reverse stock split
+          f = open(a.o.c['latestTradesFile'],"r")
+          latestTrades = a.o.json.loads(f.read())
+          f.close()
+          try:
+            latestTrades[e['symbol'][4]] = toBeSold
+          except Exception:
+            latestTrades[e['symbol']] += [toBeSold]
+          f = open(a.o.c['latestTradesFile'],"w")
+          f.write(latestTrades)
+          f.close()
+       
 
         if(a.o.dt.date.today().weekday()==4): #if it's friday
           print("Removing saved csv files") #delete all csv files in stockDataDir
@@ -125,11 +139,20 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
       except Exception:
       '''
       avgBuyPrice = float(e['avg_entry_price']) #if it doesn't exist, default to the avg buy price over all time - it's important to keep a separate record to reset after a sell rather than over all time
+      try:
+        marked2sell = latestTrades[e['symbol']][3] #sell if marked 2 sell regardless of price 
+      except Exception: #in the event it doesn't exist, don't worry about it
+        marked2sell = False
     except Exception:
       lastTradeDate = a.o.dt.date.today()-a.o.dt.timedelta(1)
       lastTradeType = "NA"
       avgBuyPrice = float(e['avg_entry_price'])
-
+      marked2sell = False
+      
+    #if marked to sell, sell regardless of price immediately
+    if(marked2sell):
+      a.createOrder("sell",e['qty'],e['symbol'])
+      
     #TODO: add field from latestTrades to sell regardless of price if marked for selling there
     if(lastTradeDate<a.o.dt.date.today() or lastTradeType=="sell" or float(a.getPrice(e['symbol']))/avgBuyPrice>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
       buyPrice = avgBuyPrice
@@ -158,7 +181,7 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
       if(buyPrice==0 or curPrice/buyPrice<=sellDn or buyInfo=="Missed jump"):
         print("Lost it on "+e['symbol'])
         print(a.createOrder("sell",e['qty'],e['symbol']))
-        latestTrades[e['symbol']] = [str(a.o.dt.date.today()), "sell", 0]
+        latestTrades[e['symbol']] = [str(a.o.dt.date2.today()), "sell", 0, False]
         f = open(a.o.c['latestTradesFile'],"w")
         f.write(a.o.json.dumps(latestTrades, indent=2))
         f.close()
@@ -220,7 +243,7 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
         lastTradeType = "NA"
         avgBuyPrice = 0
 
-      if(lastTradeDate < a.o.dt.datetime.today().date() or lastTradeType != "sell"): #make sure we didn't sell it today already
+      if(lastTradeType != "sell" or lastTradeDate < a.o.dt.datetime.today().date()): #make sure we didn't sell it today already
         if(a.isAlpacaTradable(symb)): #make sure it's tradable on the market
           curPrice = a.getPrice(symb)
           if(curPrice>0):

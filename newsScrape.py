@@ -104,5 +104,6 @@ def scrapeMW(symb):
 
 #combine all different news sources
 def scrape(symb):
+  print(symb+":")
   return scrapeYF(symb)+scrapeCNBC(symb)
 
