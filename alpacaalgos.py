@@ -11,8 +11,7 @@ gStocksUpdated = False
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
 #TODO: make list of wins & loses and analyze why (improve algo as it goes)
 #TODO: adjust sell %'s if > 1+(sellUp-1)/2 (e.g. if >1.1 if sellUp=1.2), then have a larger sellUpDn (e.g. 5%), then decrease if it reaches sellUp
-#TODO: scrape news of held positions looking for a reverse stock split (should be done, but not tested)
-#TODO: redo latestTrades file to be a dict of dicts instead of a dict of lists
+
 
 #generates list of potential gainers, trades based off amount of cash
 def mainAlgo():
@@ -39,13 +38,12 @@ def mainAlgo():
   
   #init the stock list if we rereun during the week
   if(a.o.dt.date.today().weekday()<5): #not saturday or sunday
-    f = open(a.o.c['latestTradesFile'],"r")
-    latestTrades = a.o.json.loads(f.read())
-    f.close()
+    with open(a.o.c['latestTradesFile'],"r") as f:
+      latestTrades = a.o.json.loads(f.read())
 
   portVal = float(a.getAcct()['portfolio_value'])
 
-  while portVal>minPortVal:
+  while portVal>minPortVal: #TODO: adjust minPortVal to be some % of max port val
     random.shuffle(gainers) #randomize list so when buying new ones, they won't always choose the top of the original list
 
     
@@ -56,10 +54,8 @@ def mainAlgo():
       
       if(a.marketIsOpen()):
         print("\nMarket is open")
-        #TODO: make this a with statement
-        f = open(a.o.c['latestTradesFile'],"r")
-        latestTrades = a.o.json.loads(f.read())
-        f.close()
+        with open(a.o.c['latestTradesFile'],"r") as f:
+          latestTrades = a.o.json.loads(f.read())
         
         acctInfo = a.getAcct()
         stocksUpdated = gStocksUpdated #set the local value to the global value
@@ -74,27 +70,29 @@ def mainAlgo():
             updateThread.setName('listUpdate') #set the name to the stock symb
             updateThread.start() #start the thread
         
+        
           #check here if the time is close to close - in the function, check that the requested stock didn't peak today
-          if('buying' not in [t.getName() for t in threading.enumerate()] and a.timeTillClose()<=a.o.c['buyTime']*60): #must be within 10 minutes of close to start buying and buying thread cannot be running already
-            #Use this for the non-threading option
+          
+          if(a.timeTillClose()<=a.o.c['buyTime']*60): #must be within some time before close to start buying and buying thread cannot be running already
+            #Use this for non-threading:
             check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock)
-            #use this for the threading option
-            #buyThread = threading.Thread(target=check2buy, args=(latestTrades, minBuyPow, buyPowMargin, dolPerStock)) #init the thread
-            #buyThread.setName('buying') #set the name to the stock symb
-            #a.o.buyThread.start() #start the thread
-            
+            '''
+            #use this for threading:
+            if('buying' not in [t.getName() for t in threading.enumerate()] and a.timeTillClose()<=a.o.c['buyTime']*60): #must be within some time before close to start buying and buying thread cannot be running already
+              buyThread = threading.Thread(target=check2buy, args=(latestTrades, minBuyPow, buyPowMargin, dolPerStock)) #init the thread
+              buyThread.setName('buying') #set the name to the stock symb
+              a.o.buyThread.start() #start the thread
+            '''
         
         print("Tradable Stocks:")
         check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn)
         '''
-        f = open(a.o.c['webDataFile'],'w')
-        f.write(a.o.json.dumps({"portVal":round(portVal,2),"updated":a.o.dt.datetime.utcnow().strftime("%Y-%m-%d, %H:%M")+" UTC"}))
-        f.close()
+        with open(a.o.c['webDataFile'],'w') as f:
+          f.write(a.o.json.dumps({"portVal":round(portVal,2),"updated":a.o.dt.datetime.utcnow().strftime("%Y-%m-%d, %H:%M")+" UTC"}))
         '''
         a.o.time.sleep(60)
         
       else:
-        #TODO: scrape news at end of day and look for reverse stock splits. Mark for sale BEFORE the split
         print("Market closed.")
         gStocksUpdated = False
         
@@ -103,17 +101,15 @@ def mainAlgo():
           news = str(ns.scrape(e['symbol'])).lower()
           #add field to latest trades if it's marked to be sold
           
-          toBeSold = "reverse stock split" in news or "reverse-stock-split" in news #sell before a reverse stock split
-          f = open(a.o.c['latestTradesFile'],"r")
-          latestTrades = a.o.json.loads(f.read())
-          f.close()
-          try:
-            latestTrades[e['symbol'][4]] = toBeSold
+          shouldSell = "reverse stock split" in news or "reverse-stock-split" in news #sell before a reverse stock split
+          with open(a.o.c['latestTradesFile'],"r") as f:
+            latestTrades = a.o.json.loads(f.read())
+          try:  
+            latestTrades[e['symbol']]['shouldSell'] = shouldSell
           except Exception:
-            latestTrades[e['symbol']] += [toBeSold]
-          f = open(a.o.c['latestTradesFile'],"w")
-          f.write(latestTrades)
-          f.close()
+            latestTrades[e['symbol']] = {'shouldSell' : shouldSell}
+          with open(a.o.c['latestTradesFile'],"w") as f:
+            f.write(a.o.json.dumps(latestTrades, indent=2))
        
 
         if(a.o.dt.date.today().weekday()==4): #if it's friday
@@ -131,30 +127,33 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
   for e in symList:
     #if(a.isAlpacaTradable(e['symbol'])): #just skip it if it can't be traded - skipping this for slower connections & to save a query
     try:
-      lastTradeDate = a.o.dt.datetime.strptime(latestTrades[e['symbol']][0],'%Y-%m-%d').date()
-      lastTradeType = latestTrades[e['symbol']][1]
-      '''
-      try:
-        avgBuyPrice = latestTrades[e['symbol']][2] #if this exists in the list (should only be an issue in the transition, not applicable for fresh use cases)
-      except Exception:
-      '''
+      lastTradeDate = a.o.dt.datetime.strptime(latestTrades[e['symbol']]['tradeDate'],'%Y-%m-%d').date()
+      lastTradeType = latestTrades[e['symbol']]['tradeType']
       avgBuyPrice = float(e['avg_entry_price']) #if it doesn't exist, default to the avg buy price over all time - it's important to keep a separate record to reset after a sell rather than over all time
-      try:
-        marked2sell = latestTrades[e['symbol']][3] #sell if marked 2 sell regardless of price 
-      except Exception: #in the event it doesn't exist, don't worry about it
-        marked2sell = False
     except Exception:
       lastTradeDate = a.o.dt.date.today()-a.o.dt.timedelta(1)
       lastTradeType = "NA"
       avgBuyPrice = float(e['avg_entry_price'])
-      marked2sell = False
-      
+
+    try:
+      shouldSell = latestTrades[e['symbol']]['shouldSell']
+    except Exception: #in the event it doesn't exist, don't worry about it
+      shouldSell = False
+
     #if marked to sell, sell regardless of price immediately
-    if(marked2sell):
-      a.createOrder("sell",e['qty'],e['symbol'])
-      
-    #TODO: add field from latestTrades to sell regardless of price if marked for selling there
-    if(lastTradeDate<a.o.dt.date.today() or lastTradeType=="sell" or float(a.getPrice(e['symbol']))/avgBuyPrice>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
+    if(shouldSell):
+      print(e['symbol']+" marked for immediate sale.")
+      print(a.createOrder("sell",e['qty'],e['symbol']))
+      latestTrades[e['symbol']] = {
+                                   "tradeDate": str(a.o.dt.date.today()),
+                                   "tradeType": "sell",
+                                   "buyPrice":0,
+                                   "shouldSell": False
+                                  }
+      with open(a.o.c['latestTradesFile'],"w") as f:
+        f.write(a.o.json.dumps(latestTrades, indent=2))
+    
+    elif(lastTradeDate<a.o.dt.date.today() or lastTradeType=="sell" or float(a.getPrice(e['symbol']))/avgBuyPrice>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
       buyPrice = avgBuyPrice
       closePrice = float(e['lastday_price'])
       #curPrice = float(e['current_price'])
@@ -181,15 +180,19 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
       if(buyPrice==0 or curPrice/buyPrice<=sellDn or buyInfo=="Missed jump"):
         print("Lost it on "+e['symbol'])
         print(a.createOrder("sell",e['qty'],e['symbol']))
-        latestTrades[e['symbol']] = [str(a.o.dt.date2.today()), "sell", 0, False]
-        f = open(a.o.c['latestTradesFile'],"w")
-        f.write(a.o.json.dumps(latestTrades, indent=2))
-        f.close()
+        latestTrades[e['symbol']] = {
+                                     "tradeDate": str(a.o.dt.date.today()),
+                                     "tradeType": "sell",
+                                     "buyPrice":0,
+                                     "shouldSell": False
+                                    }
+        with open(a.o.c['latestTradesFile'],"w") as f:
+          f.write(a.o.json.dumps(latestTrades, indent=2))
       
       #use e['lastday_price'] to get previous close amount ... or curPrice/float(e['lastday_price'])>=sellUpFromYesterday
       elif(curPrice/buyPrice>=sellUp or curPrice/closePrice>=sellUp):
-        print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
         if(not e['symbol'] in [t.getName() for t in threading.enumerate()]): #if the thread is not found in names of the running threads, then start it (this stops multiple instances of the same stock thread)
+          print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
           triggerThread = threading.Thread(target=triggeredUp, args=(e, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, latestTrades)) #init the thread
           triggerThread.setName(e['symbol']) #set the name to the stock symb
           triggerThread.start() #start the thread
@@ -205,10 +208,9 @@ def triggeredUp(symbObj, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, lat
     a.o.time.sleep(3)
   
   print(a.createOrder("sell",symbObj['qty'],symbObj['symbol']))
-  latestTrades[symbObj['symbol']] = [str(a.o.dt.date.today()), "sell", 0] #reset the avgBuyPrice to 0 after a sell
-  f = open(a.o.c['latestTradesFile'],"w")
-  f.write(a.o.json.dumps(latestTrades, indent=2))
-  f.close()
+  latestTrades[symbObj['symbol']] = [str(a.o.dt.date.today()), "sell", 0, False] #reset the avgBuyPrice to 0 after a sell
+  with open(a.o.c['latestTradesFile'],"w") as f:
+    f.write(a.o.json.dumps(latestTrades, indent=2))
 
 
 
@@ -232,10 +234,10 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
     #TODO: in this conditional, also check that the gain isn't greater than ~75% of sellUp (e.g. must be <1.15 if sellUp=1.2)
     if(symb not in [t.getName() for t in threading.enumerate()]): #make sure the stock isn't trying to be sold already
       try: #check when it was traded last
-        lastTradeDate = a.o.dt.datetime.strptime(latestTrades[symb][0],'%Y-%m-%d').date()
-        lastTradeType = latestTrades[symb][1]
+        lastTradeDate = a.o.dt.datetime.strptime(latestTrades[symb]['tradeDate'],'%Y-%m-%d').date()
+        lastTradeType = latestTrades[symb]['tradeType']
         try:
-          avgBuyPrice = latestTrades[symb][2]
+          avgBuyPrice = latestTrades[symb]['buyPrice']
         except Exception:
           avgBuyPrice = 0
       except Exception:
@@ -253,10 +255,14 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
             if(orderText.endswith('accepted')):
               print(orderText)
               #record the transaction
-              latestTrades[symb] = [str(a.o.dt.date.today()),"buy",(curPrice+avgBuyPrice)/(1+avgBuyPrice>0)] #set the avgBuyPrice to the average of the currentPrice and the previous avg (unless the prev avg<=0)
-              f = open(a.o.c['latestTradesFile'],"w") #TODO: make this a with statement
-              f.write(a.o.json.dumps(latestTrades, indent=2))
-              f.close()
+              latestTrades[symb] = { #set the avgBuyPrice to the average of the currentPrice and the previous avg (unless the prev avg<=0)
+                                    "tradeDate": str(a.o.dt.date.today()),
+                                    "tradeType": "buy",
+                                    "buyPrice": (curPrice+avgBuyPrice)/(1+avgBuyPrice>0),
+                                    "shouldSell": False
+                                    }
+              with open(a.o.c['latestTradesFile'],"w") as f:
+                f.write(a.o.json.dumps(latestTrades, indent=2))
               stocksBought += 1
             i += 1 #try the next stock
           else:

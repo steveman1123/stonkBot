@@ -7,10 +7,8 @@ from math import ceil
 
 settingsFile = './stonkBot.config'
 
-#TODO: make this a with statement
-f = open(settingsFile,"r")
-c = json.loads(f.read())
-f.close()
+with open(settingsFile,"r") as f:
+  c = json.loads(f.read())
 stockDir = c['stockDataDir']
 
 def isTradable(symb):
@@ -152,10 +150,9 @@ def getHistory(symb, startDate, endDate):
         time.sleep(3)
         continue
     
-    out = open(stockDir+symb+'.csv','w') #write to file for later usage - old api used csv format
-#    out = open(stckDir+symb+".json",'w') #new api uses json
-    out.write(r)
-    out.close()
+    # with open(stckDir+symb+".json",'w') as out: #new api uses json
+    with open(stockDir+symb+'.csv','w') as out: #write to file for later usage - old api used csv format
+      out.write(r)
   
   #read csv and convert to array
   #TODO: see if we can not have to save it to a file if possible due to high read/writes - can also eliminate csv library

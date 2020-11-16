@@ -1,9 +1,8 @@
 import otherfxns as o
 
 isPaper = bool(o.c['isPaper']) #set up as paper trading (testing), or actual trading
-keyFile = open(o.c['keyFile'],"r")
-apiKeys = o.json.loads(keyFile.read())
-keyFile.close()
+with open(o.c['keyFile'],"r") as keyFile:
+  apiKeys = o.json.loads(keyFile.read())
   
 if(isPaper):
   APIKEY = apiKeys["ALPACAPAPERKEY"]
@@ -126,7 +125,7 @@ def createOrder(side, qty, sym, orderType="market", time_in_force="day", limPric
     # print(r)
     try:
       #TODO: add trade info here?
-      return "Order to "+r["side"]+" "+r["qty"]+" share(s) of "+r["symbol"]+" at "+r["updated_at"]+" - "+r["status"]
+      return "Order to "+r["side"]+" "+r["qty"]+" share(s) of "+r["symbol"]+" at "+r["updated_at"].split('.')[0]+" - "+r["status"]
     except Exception:
       return "Error: "+o.json.dumps(r)
   else:

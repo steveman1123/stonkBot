@@ -70,7 +70,10 @@ def scrapeCNBC(symb):
   #data is stored in js var symbolInfo
   inf = r.split('symbolInfo = ')[1].split(';\n')[0] #isolate symbol info
   inf = a.o.json.loads(inf) #convert to json
-  inf = inf['assets']['partner']['rss']['channel']['item'] #isolate news
+  try:
+    inf = inf['assets']['partner']['rss']['channel']['item'] #isolate news
+  except Exception:
+    inf = []
 
   #remove extra data and rename needed ones
   for e in inf:
