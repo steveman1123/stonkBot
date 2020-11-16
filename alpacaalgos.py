@@ -8,6 +8,20 @@ gainers = [] #global list of potential gaining stocks
 gainerDates = {} #global list of gainers plus their initial jump date and predicted next jump date
 gStocksUpdated = False
 
+#used for coloring the displayed text
+class bcolor:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
+
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
 #TODO: make list of wins & loses and analyze why (improve algo as it goes)
 #TODO: adjust sell %'s if > 1+(sellUp-1)/2 (e.g. if >1.1 if sellUp=1.2), then have a larger sellUpDn (e.g. 5%), then decrease if it reaches sellUp
@@ -122,8 +136,8 @@ def mainAlgo():
         
 #check to sell a list of stocks - symlist is the output of a.getPos()
 def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
-  print("symb\tinitial jump\tpredicted jump (+/- 3wks)\tchange from buy\tchange from close\tsell points")
-  print("----\t------------\t-------------------------\t---------------\t-----------------\t-----------")
+  print("symb\tinit jump\tpred jump (+/- 3wks)\tchg from buy\tchg from close\tsell points")
+  print("----\t---------\t--------------------\t------------\t--------------\t-----------")
   for e in symList:
     #if(a.isAlpacaTradable(e['symbol'])): #just skip it if it can't be traded - skipping this for slower connections & to save a query
     try:
@@ -170,11 +184,15 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
         #sellDn change of 0 if <=5 weeks after initial jump, +.05 for every week after 6 weeks for a max of 1
         sellDn = round(min(1,mainSellDn+.05*max(0,int((a.o.dt.date.today()-(lastJump+a.o.dt.timedelta(6*7))).days/7))),2)
 
-        print(e['symbol']+"\t"+str(lastJump)+"\t"+str(lastJump+a.o.dt.timedelta(5*7))+"\t\t\t"+str(round(curPrice/buyPrice,2))+"\t\t"+str(round(curPrice/closePrice,2))+"\t\t\t"+str(sellUp)+" & "+str(sellDn)) #goodbuy() defaults to look at the last 25 days, but we can force it to look farther back (in this case ~260 trading days in a year)
+        totalChange = round(curPrice/buyPrice,2)
+        dayChange = round(curPrice/closePrice,2)
+        print(f"{e['symbol']}\t{lastJump}\t{lastJump+a.o.dt.timedelta(5*7)}\t\t{bcolor.FAIL if totalChange<1 else bcolor.OKGREEN}{totalChange}{bcolor.ENDC}\t\t{bcolor.FAIL if dayChange<1 else bcolor.OKGREEN}{dayChange}{bcolor.ENDC}\t\t{sellUp} & {sellDn}")
       except Exception:
         print(e['symbol']+" - "+buyInfo)
         sellUp = mainSellUp
         sellDn = mainSellDn
+
+
 
       #cut the losses if we missed the jump or if the price dropped too much
       if(buyPrice==0 or curPrice/buyPrice<=sellDn or buyInfo=="Missed jump"):
