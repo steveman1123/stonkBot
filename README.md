@@ -86,7 +86,7 @@ After the first day, assuming you have stocks held, it will show something simil
 
 Generally it seems that it takes about 5 weeks (+/- 3 weeks) after the initial jump to jump a second time.
 
-From testing between 2020-07-14 to 2020-11-02, I have gotten an average growth rate of 0.56%/day with a standard deviation of 3.75% (including 1 week of no trading due to a power outage)
+From testing between 2020-07-14 to 2020-11-15, I have gotten an average growth rate of 0.57%/day with a standard deviation of 3.57% (including 1 week of no trading due to a power outage)
 
 ![Daily Returns](https://github.com/steveman1123/stonkBot/blob/master/dailyReturns.jpg?raw=true)
 
