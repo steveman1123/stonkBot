@@ -134,9 +134,10 @@ def getHistory(symb, startDate, endDate):
     modDate = dt.date.today()-dt.timedelta(1)
   #write to file after checking that the file doesn't already exist (we don't want to abuse the api) or that it was edited more than a day ago
   if(not os.path.isfile(stockDir+symb+".csv") or modDate<dt.date.today()):
+    #TODO: add the following url as a backup option if tries maxes out
     #url = f'https://api.nasdaq.com/api/quote/{symb}/historical?assetclass=stocks&fromdate={startDate}&todate={enddate}' #currently only returns 14 days
-    
-    while True:
+    tries=0
+    while tries<10:
       try:
         url = f'https://www.nasdaq.com/api/v1/historical/{symb}/stocks/{startDate}/{endDate}' #old api url (depreciated?)
         r = requests.get(url, headers={"user-agent":"-"}, timeout=5).text #send request and store response - cannot have empty user-agent
@@ -149,10 +150,14 @@ def getHistory(symb, startDate, endDate):
         print("No connection, or other error encountered in getHistory. Trying again...")
         time.sleep(3)
         continue
+      tries+=1
     
     # with open(stckDir+symb+".json",'w') as out: #new api uses json
-    with open(stockDir+symb+'.csv','w') as out: #write to file for later usage - old api used csv format
-      out.write(r)
+    try:
+      with open(stockDir+symb+'.csv','w') as out: #write to file for later usage - old api used csv format
+        out.write(r)
+    except Exception:
+      return []
   
   #read csv and convert to array
   #TODO: see if we can not have to save it to a file if possible due to high read/writes - can also eliminate csv library

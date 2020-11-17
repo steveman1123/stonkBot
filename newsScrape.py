@@ -77,21 +77,23 @@ def scrapeCNBC(symb):
 
   #remove extra data and rename needed ones
   for e in inf:
-    e.pop("metadata:credit",None)
-    e.pop("metadata:image",None)
-    e.pop("metadata:company",None)
-    e.pop("metadata:contentType",None)
-    e.pop("metadata:id",None)
-    e.pop("metadata:entitlement",None)
-    e.pop("metadata:tickersymbol",None)
-    e.pop("link",None)
-    e.pop("guid",None)
-    e.pop("category",None)
+    try:
+      e.pop("metadata:credit",None)
+      e.pop("metadata:image",None)
+      e.pop("metadata:company",None)
+      e.pop("metadata:contentType",None)
+      e.pop("metadata:id",None)
+      e.pop("metadata:entitlement",None)
+      e.pop("metadata:tickersymbol",None)
+      e.pop("link",None)
+      e.pop("guid",None)
+      e.pop("category",None)
 
-    e['abstract'] = e.pop("description",None)
-    e['source'] = e.pop('metadata:source',None)
-    e['date'] = e.pop('pubDate',None)
-
+      e['abstract'] = e.pop("description",None)
+      e['source'] = e.pop('metadata:source',None)
+      e['date'] = e.pop('pubDate',None)
+    except Exception:
+      continue
 
   return inf
 
