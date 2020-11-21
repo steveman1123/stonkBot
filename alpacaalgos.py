@@ -24,6 +24,8 @@ class bcolor:
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
 #TODO: make list of wins & loses and analyze why (improve algo as it goes)
 #TODO: adjust sell %'s if > 1+(sellUp-1)/2 (e.g. if >1.1 if sellUp=1.2), then have a larger sellUpDn (e.g. 5%), then decrease if it reaches sellUp
+#TODO: WHY IS IT BUYING THE SAME DAY AS A SALE?????
+#TODO: Why is it buying past the ability of the min buying power??
 
 
 #generates list of potential gainers, trades based off amount of cash
@@ -72,8 +74,9 @@ def mainAlgo():
         
         acctInfo = a.getAcct()
         stocksUpdated = gStocksUpdated #set the local value to the global value
+        #TODO: buy pow should be adjusted for withdrawalable funds rather than using the total amount
         portVal = float(acctInfo['portfolio_value'])
-        print("Portfolio val is $"+str(portVal)+". Buying power is $"+acctInfo['buying_power'])
+        print("Portfolio val is $"+str(portVal)+". Buying power is $"+acctInfo['buying_power']) #TODO: display available buy pow alongside actual buy pow (adjusted for withdrawalable)
         
         #only update the stock list and buy stocks if the gainers list is done being populated/updated and that we actually have enough money to buy things
         if('listUpdate' not in [t.getName() for t in threading.enumerate()] and float(acctInfo['buying_power'])>=minDolPerStock):
