@@ -14,7 +14,7 @@ cnbc - works, very large site
 import alpacafxns as a
 
 def scrapeYF(symb):
-  print("Getting yahoo finance news...")
+  # print("Getting yahoo finance news...")
   while True:
     try:
       r = a.o.requests.get(f"https://finance.yahoo.com/quote/{symb}",headers={"user-agent":"-"},timeout=5).text #get data
@@ -49,7 +49,7 @@ def scrapeYF(symb):
 
 #this might not actually work?
 def scrapeNASDAQ(symb):
-  print("Getting nasdaq news...")
+  # print("Getting nasdaq news...")
   r = a.o.requests.get(f"https://www.nasdaq.com/market-activity/stocks/{symb}",headers={"user-agent":"-"},timeout=5).text
   s = a.o.bs(r,'html.parser')
   
@@ -57,7 +57,7 @@ def scrapeNASDAQ(symb):
 
 #TODO: check out the html from this site to see their quote api (in js near the top of the page)
 def scrapeCNBC(symb):
-  print("Getting cnbc news...")
+  # print("Getting cnbc news...")
   while True:
     try:
       r = a.o.requests.get(f"https://www.cnbc.com/quotes/?symbol={symb}",headers={"user-agent":"-"},timeout=5).text
@@ -101,7 +101,7 @@ def scrapeCNBC(symb):
 #market watch
 #press releases require js, but news does not. Figure out source and get both
 def scrapeMW(symb):
-  print("Getting market watch news...")
+  # print("Getting market watch news...")
   r = a.o.requests.get(f"https://www.marketwatch.com/investing/stock/{symb}", headers={"user-agent":"-"},timeout=5).content
   #s = a.o.bs(r,'html.parser')
   print(r)
@@ -109,6 +109,6 @@ def scrapeMW(symb):
 
 #combine all different news sources
 def scrape(symb):
-  print(symb+":")
+  # print(f"Getting {symb} news")
   return scrapeYF(symb)+scrapeCNBC(symb)
 

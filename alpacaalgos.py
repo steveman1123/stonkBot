@@ -24,19 +24,10 @@ class bcolor:
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
 #TODO: make list of wins & loses and analyze why (improve algo as it goes)
 #TODO: adjust sell %'s if > 1+(sellUp-1)/2 (e.g. if >1.1 if sellUp=1.2), then have a larger sellUpDn (e.g. 5%), then decrease if it reaches sellUp
-#TODO: WHY IS IT BUYING THE SAME DAY AS A SALE?????
-#TODO: Why is it buying past the ability of the min buying power??
 
 
 #generates list of potential gainers, trades based off amount of cash
-def mainAlgo():
-  '''
-  buy/sell logic:
-   - limit gain to at least 20%, sell if it drops by 2% or is close to close
-   - buy $minDolPerStock ($5) worth of stocks until usableBuyPow>(minDolPerStock*len(gainers)) - then increase dolPerStock
-   - stop loss at ~70%
-  '''
-  
+def mainAlgo():  
   global gStocksUpdated #this only gets set once in this function - after market is closed
   isMaster = a.o.c['isMaster'] #is the master or a slave program - a slave will relinquish control to a master if the master is running, but will take over if the master dies
   
@@ -74,9 +65,8 @@ def mainAlgo():
         
         acctInfo = a.getAcct()
         stocksUpdated = gStocksUpdated #set the local value to the global value
-        #TODO: buy pow should be adjusted for withdrawalable funds rather than using the total amount
         portVal = float(acctInfo['portfolio_value'])
-        print("Portfolio val is $"+str(portVal)+". Buying power is $"+acctInfo['buying_power']) #TODO: display available buy pow alongside actual buy pow (adjusted for withdrawalable)
+        print(f"Portfolio val is ${portVal}. Buying power is ${acctInfo['buying_power']}, ${max(float(acctInfo['buying_power'])-minBuyPow*buyPowMargin,0)} available")
         
         #only update the stock list and buy stocks if the gainers list is done being populated/updated and that we actually have enough money to buy things
         if('listUpdate' not in [t.getName() for t in threading.enumerate()] and float(acctInfo['buying_power'])>=minDolPerStock):
@@ -114,10 +104,12 @@ def mainAlgo():
         
         p = a.getPos()
         for e in p:
+          print(f"{e['symbol']} marked to sell? ",end="")
           news = str(ns.scrape(e['symbol'])).lower()
           #add field to latest trades if it's marked to be sold
           
           shouldSell = "reverse stock split" in news or "reverse-stock-split" in news #sell before a reverse stock split
+          print(shouldSell)
           with open(a.o.c['latestTradesFile'],"r") as f:
             latestTrades = a.o.json.loads(f.read())
           try:  
@@ -233,22 +225,28 @@ def triggeredUp(symbObj, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, lat
     f.write(a.o.json.dumps(latestTrades, indent=2))
 
 
-
 #buy int(buyPow/10) # of individual stocks. If buyPow>minBuyPow*buyPowMargin, then usablebuyPow=buyPow-minBuyPow
 def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
   usableBuyPow = float(a.getAcct()['buying_power']) #init as the current buying power
-  if(usableBuyPow>=minBuyPow*buyPowMargin): #if we have more buying power than the min plus some leeway, then reduce it to hold onto that buy pow
-    print("Can withdrawl $"+str(round(minBuyPow,2))+" safely.")
-    usableBuyPow = max(usableBuyPow-minBuyPow,0) #use max just in case buyPowMargin is accidentally set to <1
+  if(buyPowMargin<1): #buyPowMargin MUST BE GREATER THAN 1 in order for it to work correctly
+    raise("Error: withdrawlable funds margin is less than 1. Multiplier must be >=1")
   
-  try:
+  if(usableBuyPow>=minBuyPow*buyPowMargin): #if we have more buying power than the min plus some leeway, then reduce it to hold onto that buy pow
+    print(f"Can safely withdrawl ${round(minBuyPow,2)}")
+    usableBuyPow = usableBuyPow-minBuyPow*buyPowMargin #subtract the minBuyPow plus the margin
+  elif(usableBuyPow>minBuyPow and usableBuyPow<minBuyPow*buyPowMargin):
+    usableBuyPow = 0 #stop trading if we've started to eat into the margin, that way we don't overshoot
+    
+  if(len(gainers)>0):
     dolPerStock = max(minDolPerStock, usableBuyPow/len(gainers)) #if buyPow>(minDolPerStock*len(gainers)) then divvy up buyPow over gainers
-  except Exception:
+  else:
     dolPerStock = minDolPerStock
     
   i=0 #index of gainers
   stocksBought = 0 #number of stocks bought
+  
   stocks2buy = int(usableBuyPow/dolPerStock) #number of stocks to buy
+  
   while(stocksBought<stocks2buy and i<len(gainers)):
     symb = gainers[i] #candidate stock to buy
     #TODO: in this conditional, also check that the gain isn't greater than ~75% of sellUp (e.g. must be <1.15 if sellUp=1.2)
@@ -264,7 +262,8 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
         lastTradeDate = a.o.dt.datetime.today().date()-a.o.dt.timedelta(1)
         lastTradeType = "NA"
         avgBuyPrice = 0
-
+        
+      #for some reason this check was being bypassed. This should be resolved in the updateStockList function where it removes any prospective stock to be bought from the list if it was sold today
       if(lastTradeType != "sell" or lastTradeDate < a.o.dt.datetime.today().date()): #make sure we didn't sell it today already
         if(a.isAlpacaTradable(symb)): #make sure it's tradable on the market
           curPrice = a.getPrice(symb)
@@ -304,6 +303,12 @@ def updateStockList():
   print("Updating stock list")
   #list of stocks that may gain in the near future as well as currently held stocks and their last gain date
   gainerDates = a.o.getGainers(list(dict.fromkeys(a.o.getList()+[e['symbol'] for e in a.getPos()]))) #combine nasdaq list & my stocks & remove duplicates - order doesn't matter
-  gainers = list(gainerDates) #list of just the stock symbols
+  #only add gainers who are not in the news for a reverse stock split and have not already been traded today
+  todaysTrades = a.getTrades(str(a.o.dt.date.today()))
+  soldToday = [e['symbol'] for e in todaysTrades if e['side']=='sell']
+  for e in list(gainerDates):
+    news = str(ns.scrape(e)).lower()
+    if(("reverse stock split" not in news or "reverse-stock-split" not in news) and (e not in soldToday)):
+      gainers.append(e)
   print(f"Done updating list - {len(gainers)} potential gainers")
   gStocksUpdated = True
