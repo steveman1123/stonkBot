@@ -48,7 +48,7 @@ def getPos():
       continue
   return o.json.loads(html)
 
-# return currently held positions/stocks/whatever
+# return orders for positions/stocks/whatever
 def getOrders():
   while True:
     try:
@@ -143,7 +143,7 @@ def marketIsOpen():
       continue
   return r["is_open"]
 
-#current market time in seconds since midnight
+#current market time (returns yyyy,mm,dd,sec since midnight)
 def marketTime():
   while True:
     try:
@@ -212,6 +212,7 @@ def openCloseTimes(checkDate): #checkdate of format yyyy-mm-dd
   return [o.dt.datetime.strptime(d["date"]+d["open"],"%Y-%m-%d%H:%M"), o.dt.datetime.strptime(d["date"]+d["close"],"%Y-%m-%d%H:%M")]
 
 # return the current price of the indicated stock
+# can be used as alpaca or non-alpaca TODO: make that an extra parameter (default to non-alpaca, but could use it if desiered
 def getPrice(symb):
   symb = symb.upper() #make sure it's uppercase, otherwise it may error out
   #using the alpaca link is faster, but the nasdaq link updates the prices more frequently
@@ -251,6 +252,7 @@ def isAlpacaTradable(symb):
     return False
 
 
+#make sure that the keys being used to access the api are valid
 def checkValidKeys():
   while True:
     try:
@@ -278,7 +280,6 @@ def checkValidKeys():
       print("Unknown issue encountered.")
     o.sys.exit()
 
-#TODO: add this function - see https://alpaca.markets/docs/api-documentation/api-v2/account-activities/
 #get the trades made on a specified date  
 def getTrades(date):
   while True:
@@ -312,6 +313,7 @@ def getStockTrades(symb,startDate=str(o.dt.date.today())):
 
 
 #get the avg price a stock was bought at since the last sell
+#this may be the same as avg_entry_price in getPos, but more experimentation is needed
 def getBuyPrice(symb):
   '''
   average the stock's buy prices from the minimum of the jump date or when the last sell was

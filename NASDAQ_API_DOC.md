@@ -61,18 +61,18 @@ Python example:
 ```
 import requests, json
 
-url1 = "https://api.nasdaq.com/api/"
-url2 = "https://www.nasdaq.com/api/v1/"
+url1 = "https://api.nasdaq.com/api"
+url2 = "https://www.nasdaq.com/api/v1"
 
-symb = "msft".upper()
+symb = "MSFT"
 
-infourl = f"{url1}quote/{symb}/info?assetclass=stocks"
-newsurl = f"{url2}quote-news/1/2"
+infourl = "{}/quote/{}/info?assetclass=stocks".format(url1,symb)
+newsurl = "{}/quote-news/1/2".format(url2)
 
 info = json.loads(requests.get(infourl,headers={'user-agent':"-"},timeout=5).text)
 news = json.loads(requests.get(newsurl,headers={'user-agent':"-"},timeout=5).text)
 
-print(f"{symb} INFO:")
+print("{} INFO:".format(symb))
 print(json.dumps(info, indent=2))
 
 print("\nSTOCK NEWS:")
