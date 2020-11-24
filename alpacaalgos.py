@@ -66,7 +66,7 @@ def mainAlgo():
         acctInfo = a.getAcct()
         stocksUpdated = gStocksUpdated #set the local value to the global value
         portVal = float(acctInfo['portfolio_value'])
-        print(f"Portfolio val is ${portVal}. Buying power is ${acctInfo['buying_power']}, ${max(float(acctInfo['buying_power'])-minBuyPow*buyPowMargin,0)} available")
+        print(f"Portfolio val is ${round(portVal,2)}. Buying power is ${round(float(acctInfo['buying_power']),2)}, ${max(float(round(float(acctInfo['buying_power']),2))-minBuyPow*buyPowMargin,0)} available")
         
         #only update the stock list and buy stocks if the gainers list is done being populated/updated and that we actually have enough money to buy things
         if('listUpdate' not in [t.getName() for t in threading.enumerate()] and float(acctInfo['buying_power'])>=minDolPerStock):
@@ -211,6 +211,7 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
 
 #triggered selling-up - this is the one that gets multithreaded
 def triggeredUp(symbObj, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, latestTrades):
+  global gainers
   print("Starting thread for "+symbObj['symbol'])
   
   while((curPrice/buyPrice>=maxPrice/buyPrice*sellUpDn or curPrice/closePrice>=maxPrice/closePrice*sellUpDn) and a.timeTillClose()>=30):
@@ -220,9 +221,17 @@ def triggeredUp(symbObj, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, lat
     a.o.time.sleep(3)
   
   print(a.createOrder("sell",symbObj['qty'],symbObj['symbol']))
-  latestTrades[symbObj['symbol']] = [str(a.o.dt.date.today()), "sell", 0, False] #reset the avgBuyPrice to 0 after a sell
+  latestTrades[symbObj['symbol']] = {
+                                     "tradeDate": str(a.o.dt.date.today()),
+                                     "tradeType": "sell",
+                                     "buyPrice": 0, #reset the avgBuyPrice to 0 after a sell
+                                     "shouldSell": False
+                                    }
   with open(a.o.c['latestTradesFile'],"w") as f:
     f.write(a.o.json.dumps(latestTrades, indent=2))
+  #remove from gainers in case it sells after updateStockList has run
+  if(symbObj['symbol'] in gainers):
+    gainers.remove(symbOjb['symbol'])
 
 
 #buy int(buyPow/10) # of individual stocks. If buyPow>minBuyPow*buyPowMargin, then usablebuyPow=buyPow-minBuyPow
@@ -308,7 +317,8 @@ def updateStockList():
   soldToday = [e['symbol'] for e in todaysTrades if e['side']=='sell']
   for e in list(gainerDates):
     news = str(ns.scrape(e)).lower()
-    if(("reverse stock split" not in news or "reverse-stock-split" not in news) and (e not in soldToday)):
+    #TODO: use the nasdaq calendar splits api instead of scraping the news
+    if(not ("reverse stock split" in news or "reverse-stock-split" in news) and (e not in soldToday)):
       gainers.append(e)
   print(f"Done updating list - {len(gainers)} potential gainers")
   gStocksUpdated = True
