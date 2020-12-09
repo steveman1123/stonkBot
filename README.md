@@ -86,18 +86,16 @@ After the first day, assuming you have stocks held, it will show something simil
 
 Generally it seems that it takes about 5 weeks (+/- 3 weeks) after the initial jump to jump a second time.
 
-From testing between 2020-07-14 to 2020-11-23, I have gotten an average growth rate of 0.65%/day with a standard deviation of 3.48%
+From testing between 2020-07-14 to 2020-12-08, I have gotten an average growth rate of 0.80%/day with a standard deviation of 3.40%
 
 ![Daily Returns](https://github.com/steveman1123/stonkBot/blob/master/dailyReturns.jpg?raw=true)
 
-## External Resources
+## Resources
 [Alpaca](https://alpaca.markets/)
 
 [MarketWatch Stock Screener](https://www.marketwatch.com/tools/stockresearch/screener/)
 
 [Stocks Under $1](https://stocksunder1.org/)
-
-[AlphaVantage](https://www.alphavantage.co/)
 
 [NASDAQ API Documentation](https://github.com/steveman1123/stonkBot/blob/master/NASDAQ_API_DOC.md)
 
@@ -106,19 +104,6 @@ From testing between 2020-07-14 to 2020-11-23, I have gotten an average growth r
 *If you are encountering issues, make sure to pull the latest version, it is under active delopment, so things change quickly (especially over the weekends).*
 
 if the power goes out for a while while using this (like mine did), I'd suggest finding a way to sell everything before the portfolio value starts dropping (like mine did)
-
-### Shortterm resolutions:
-* Scrape web for other likely gainers, and add to gainers list (see stonk2 repo)
-* Add timer or other ability to check how close a jump is from the target sell point (if it starts to fall, sell before falling too far)
-
-### Midterm resolutions:
-* Add master/slave relationship to allow it to run on multiple computers in the event of the primary program going down (add redundancy)
-* Make config file more readable (not json)
-* Allow for use with multiple algorithms on a single account
-
-### Longterm resolutions:
-* Record trade history and give performance analytics
-* Add some basic machine learning to improve trades over time
 
 ## Disclaimer
 I do not claim to be a financial expert and cannot be held accountable for any losses you may incur as a result of using this software
