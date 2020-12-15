@@ -18,7 +18,7 @@ endpoint urls:
     **Additional Parameters:**  
     ```?assetclass={mutualfunds|stocks}``` (**required for all**)  
     ```&fromdate={yyyy-mm-dd}``` (**required for historical**)  
-    ```&todate={yyyy-mm-dd}``` (optional for historical)  
+    ```&offset={##}``` (optional for historical)  
     I believe there are other parameters that would allow seeing more data in historical, this setup returns a max of 14 days worth
 
 2. ```/company/{1}/{company-profile|financials}``` where {1} is the symbol  
@@ -41,7 +41,7 @@ endpoint urls:
 ## Examples:
 1. quote  
     1. [chart](https://api.nasdaq.com/api/quote/MSFT/chart?assetclass=stocks)  
-    2. [historical](https://api.nasdaq.com/api/quote/MSFT/historical?assetclass=stocks&fromdate=2020-10-15&todate=2020-10-30)  
+    2. [historical](https://api.nasdaq.com/api/quote/MSFT/historical?assetclass=stocks&fromdate=2020-10-15&offset=5)  
     3. [info](https://api.nasdaq.com/api/quote/MSFT/info?assetclass=stocks)  
     4. [summary](https://api.nasdaq.com/api/quote/MSFT/summary?assetclass=stocks)  
 2. company  
