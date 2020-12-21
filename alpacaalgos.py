@@ -108,7 +108,7 @@ def mainAlgo():
           news = str(ns.scrape(e['symbol'])).lower()
           #add field to latest trades if it's marked to be sold
           
-          shouldSell = "reverse stock split" in news or "reverse-stock-split" in news #sell before a reverse stock split
+          shouldSell = "reverse stock split" in news or "reverse-stock-split" in news or "bankrupt" in news #sell before a reverse stock split or bankruptcy
           print(shouldSell)
           with open(a.o.c['latestTradesFile'],"r") as f:
             latestTrades = a.o.json.loads(f.read())

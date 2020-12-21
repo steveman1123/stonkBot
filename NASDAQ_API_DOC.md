@@ -19,7 +19,8 @@ endpoint urls:
     ```?assetclass={mutualfunds|stocks}``` (**required for all**)  
     ```&fromdate={yyyy-mm-dd}``` (**required for historical**)  
     ```&todate={yyyy-mm-dd}``` (optional for historical)  
-    I believe there are other parameters that would allow seeing more data in historical, this setup returns a max of 14 days worth
+    ```&offset={#}``` (optional for historical)
+    I believe there are other parameters that would allow seeing more data in historical, this setup returns a max of 14 days worth. There also seems to be an issue that if todate is specified and is more than one month ago from today, and the difference between todate and fromdate is less than one month, then nothing will be returned. This could potentially be worked around using offset.
 
 2. ```/company/{1}/{company-profile|financials}``` where {1} is the symbol  
     **Additional Parameters:**  
@@ -32,7 +33,7 @@ endpoint urls:
 
 ## ww<span>w.</span>nasdaq.com/api/v1
 
-5. ```/historical/{1}/{2}/{3}/{4}``` where {1} is the symbol, {2} is the assetclass, and {3} and {4} are the start and end dates in yyyy-mm-dd format. **Returns a csv document.**
+5. ```/historical/{1}/{2}/{3}/{4}``` where {1} is the symbol, {2} is the assetclass, and {3} and {4} are the start and end dates in yyyy-mm-dd format. **Returns a csv document.** (this may have the same issue as the other historical data request)
 
 6. ```/quote-news/{1}/{2}``` where I don't know what {1} is, and {2} is number of headlines per request
 

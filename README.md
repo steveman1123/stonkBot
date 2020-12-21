@@ -54,7 +54,7 @@ The overall folder structure should look something like this*:
 *The root folder name does not matter. The stockStuff folder needs to be moved from the repo to the location shown above
 
 ## File Description
-stonkBot.py - The main file to run - this was more useful when testing a number of functions all located in alpacaalgos.py, however it now serevrs as a clean/simple file to run everything
+stonkBot.py - The main file to run - this was more useful when testing a number of functions all located in alpacaalgos.py, however it now serevrs as a clean/simple file to run everything. Run ```sudo python3 stonkbot.py```
 
 alpacaalgos.py - Contains the logic and error checking for actually buying and selling stocks
 
@@ -86,7 +86,7 @@ After the first day, assuming you have stocks held, it will show something simil
 
 Generally it seems that it takes about 5 weeks (+/- 3 weeks) after the initial jump to jump a second time.
 
-From testing between 2020-07-14 to 2020-12-08, I have gotten an average growth rate of 0.80%/day with a standard deviation of 3.40%
+From testing between 2020-07-14 to 2020-12-18, I have gotten an average growth rate of 0.75%/day with a standard deviation of 3.30%
 
 ![Daily Returns](https://github.com/steveman1123/stonkBot/blob/master/dailyReturns.jpg?raw=true)
 

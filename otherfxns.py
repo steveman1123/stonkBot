@@ -124,20 +124,20 @@ def getList():
   print("Done getting stock lists")
   return symbList
 
+#returns as 2d array order of Date, Close/Last, Volume, Open, High, Low sorted by dates newest to oldest (does not include today's info)
 #get the history of a stock from the nasdaq api (date format is yyyy-mm-dd)
-#returns as 2d array order of Date, Close/Last, Volume, Open, High, Low sorted by dates newest to oldest
-def getHistory(symb, startDate, endDate):
+def getHistory(symb, startDate, endDate, maxTries=10):
   #try checking the modified date of the file, if it throws an error, just set it to yesterday
   try:
-    modDate = dt.datetime.strptime(time.strftime("%Y-%m-%d",time.localtime(os.stat(stockDir+symb+'.csv').st_mtime)),"%Y-%m-%d").date() #if ANYONE knows of a better way to get the mod date into a date format, for the love of god please let me know
+    modDate = dt.datetime.strptime(time.strftime("%Y-%m-%d",time.localtime(os.stat(stockDir+symb+'.csv').st_mtime)),"%Y-%m-%d").date() #if ANYONE knows of a better way to get the modified date into a date format, for the love of god please let me know
   except Exception:
     modDate = dt.date.today()-dt.timedelta(1)
   #write to file after checking that the file doesn't already exist (we don't want to abuse the api) or that it was edited more than a day ago
   if(not os.path.isfile(stockDir+symb+".csv") or modDate<dt.date.today()):
-    #TODO: add the following url as a backup option if tries maxes out
-    #url = f'https://api.nasdaq.com/api/quote/{symb}/historical?assetclass=stocks&fromdate={startDate}&todate={enddate}' #currently only returns 14 days
+    
     tries=0
-    while tries<10:
+    while tries<maxTries: #only try getting history with this method a few times before trying the next method
+      tries += 1
       try:
         url = f'https://www.nasdaq.com/api/v1/historical/{symb}/stocks/{startDate}/{endDate}' #old api url (depreciated?)
         r = requests.get(url, headers={"user-agent":"-"}, timeout=5).text #send request and store response - cannot have empty user-agent
@@ -150,28 +150,79 @@ def getHistory(symb, startDate, endDate):
         print("No connection, or other error encountered in getHistory. Trying again...")
         time.sleep(3)
         continue
-      tries+=1
     
-    # with open(stckDir+symb+".json",'w') as out: #new api uses json
-    try:
-      with open(stockDir+symb+'.csv','w') as out: #write to file for later usage - old api used csv format
+    with open(stockDir+symb+'.csv','w',newline='') as out: #write to file for later usage - old api used csv format
+      if(tries>=maxTries):
+        r = getHistory2(symb, startDate, endDate) #getHistory2 is slower/uses more requests, so not as good as getHistory, at least until we learn the api better
+        r = [['Date','Close/Last','Volume','Open','High','Low']]+r
+        csv.writer(out,delimiter=',').writerows(r)
+      else:
         out.write(r)
-    except Exception:
-      return []
   
   #read csv and convert to array
   #TODO: see if we can not have to save it to a file if possible due to high read/writes - can also eliminate csv library
   #     ^ or at least research where it should be saved to avoid writing to sdcard
   with open(stockDir+symb+".csv") as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
-    out = [[ee.replace('$','').replace('N/A','0') for ee in e] for e in csv_reader][1::] #trim first line to get rid of headers, also replace $'s and N/A volumes to calculable values
-  
+    out = [[ee.replace('$','').replace('N/A','0').strip() for ee in e] for e in csv_reader][1::] #trim first line to get rid of headers, also replace $'s and N/A volumes to calculable values
   return out
+
+#use the new nasdaq api to return in the same format as getHistory
+#this does NOT save the csv file
+#TODO: shouldn't be an issue for this case, but here's some logic:
+#   if(todate-fromdate<22 and todate>1 month ago): 0-1 days will be returned
+def getHistory2(symb, startDate, endDate, maxTries=10):
+  maxDays = 14 #max rows returned per request
+  tries=0
+  while tries<maxTries: #get the first set of dates
+    try:
+      j = json.loads(requests.get(f'https://api.nasdaq.com/api/quote/{symb}/historical?assetclass=stocks&fromdate={startDate}&todate={endDate}',headers={'user-agent':'-'}).text)
+      break
+    except Exception:
+      print("Error in getHistory2. Trying again...")
+      time.sleep(3)
+      continue
+    tries += 1
+  if(tries>=maxTries or j['data']['totalRecords']==0):
+    print("Failed to get history")
+    return []
+  else: #something's fucky with this api, jsyk
+    if(j['data']['totalRecords']>maxDays): #get subsequent sets
+      for i in range(1,ceil(j['data']['totalRecords']/maxDays)):
+        while True:
+          try:
+            r = json.loads(requests.get(f'https://api.nasdaq.com/api/quote/{symb}/historical?assetclass=stocks&fromdate={startDate}&todate={endDate}&offset={i*maxDays+i}',headers={'user-agent':'-'}).text)
+            break
+          except Exception:
+            print("Error in getHistory2. Trying again...")
+            time.sleep(3)
+            continue
+        j['data']['tradesTable']['rows'] += r['data']['tradesTable']['rows'] #append the sets together
+    
+    #format the data to return the same as getHistory
+    #2d array order of Date, Close/Last, Volume, Open, High, Low sorted by dates newest to oldest
+    out = [[e['date'],e['close'],e['volume'].replace(',',''),e['open'],e['high'],e['low']] for e in j['data']['tradesTable']['rows']]
+    return out
+
+#return if the stock jumped today some %
+def jumpedToday(symb,jump):
+  url = f'https://api.nasdaq.com/api/quote/{symb}/summary?assetclass=stocks'
+  while True:
+    try:
+      j = json.loads(requests.get(url,headers={'user-agent':'-'}).text)
+      break
+    except Exception:
+      print("Error in jumpedToday. Trying again...")
+      time.sleep(3)
+      continue
+  close = float(j['data']['summaryData']['PreviousClose']['value'].replace('$','').replace(',','')) #previous day close
+  high = float(j['data']['summaryData']['TodayHighLow']['value'].replace('$','').replace(',','').split('/')[0]) #today's high, today's low is index [1]
+  return high/close>=jump
+
 
 #checks whether something is a good buy or not (if not, return why - no initial jump or second jump already missed).
 #if it is a good buy, return initial jump date
 #this is where the magic really happens
-
 def goodBuy(symb,days2look=c['simDays2look']): #days2look=how far back to look for a jump
   validBuy = "NA" #set to the jump date if it's valid
   if isTradable(symb):
@@ -228,12 +279,13 @@ def goodBuy(symb,days2look=c['simDays2look']): #days2look=how far back to look f
                 #check to see if we missed the next jump (where we want to strike)
                 missedJump = False
                 validBuy = "Missed jump"
-                for e in range(0,startDate):
-                  # print(str(dateData[e])+" - "+str(float(dateData[e][4])/float(dateData[e+1][1])) +" - "+ str(sellUp))
-                  if(float(dateData[e][4])/float(dateData[e+1][1]) >= sellUp): #compare the high vs previous close
-                    missedJump = True
-                if(not missedJump):
-                  validBuy = dateData[startDate][0] #return the date the stock initially jumped
+                if(not jumpedToday(symb, sellUp)): #history grabs from previous day and before, it does not grab today's info. Check that it hasn't jumped today too
+                  for e in range(0,startDate):
+                    # print(str(dateData[e])+" - "+str(float(dateData[e][4])/float(dateData[e+1][1])) +" - "+ str(sellUp))
+                    if(float(dateData[e][4])/float(dateData[e+1][1]) >= sellUp): #compare the high vs previous close
+                      missedJump = True
+                  if(not missedJump):
+                    validBuy = dateData[startDate][0] #return the date the stock initially jumped
     
   return validBuy #return a dict of valid stocks and the date of their latest jump
   
