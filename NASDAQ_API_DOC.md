@@ -21,8 +21,6 @@ endpoint urls:
     ```&todate={yyyy-mm-dd}``` (optional for historical)  
     ```&offset={#}``` (optional for historical)
     I believe there are other parameters that would allow seeing more data in historical, this setup returns a max of 14 days worth. There also seems to be an issue that if todate is specified and is more than one month ago from today, and the difference between todate and fromdate is less than one month, then nothing will be returned. This could potentially be worked around using offset.
-    ```&offset={##}``` (optional for historical)  
-    I believe there are other parameters that would allow seeing more data in historical, this setup returns a max of 14 days worth
 
 2. ```/company/{1}/{company-profile|financials}``` where {1} is the symbol  
     **Additional Parameters:**  
