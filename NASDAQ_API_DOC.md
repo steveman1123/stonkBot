@@ -18,14 +18,11 @@ endpoint urls:
     **Additional Parameters:**  
     ```?assetclass={mutualfunds|stocks}``` (**required for all**)  
     ```&fromdate={yyyy-mm-dd}``` (**required for historical**)  
-<<<<<<< HEAD
     ```&todate={yyyy-mm-dd}``` (optional for historical)  
     ```&offset={#}``` (optional for historical)
     I believe there are other parameters that would allow seeing more data in historical, this setup returns a max of 14 days worth. There also seems to be an issue that if todate is specified and is more than one month ago from today, and the difference between todate and fromdate is less than one month, then nothing will be returned. This could potentially be worked around using offset.
-=======
     ```&offset={##}``` (optional for historical)  
     I believe there are other parameters that would allow seeing more data in historical, this setup returns a max of 14 days worth
->>>>>>> 3f75d0843c1bad87f9a54450e44ae41a0f218803
 
 2. ```/company/{1}/{company-profile|financials}``` where {1} is the symbol  
     **Additional Parameters:**  
