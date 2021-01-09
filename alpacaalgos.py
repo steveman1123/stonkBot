@@ -24,7 +24,7 @@ class bcolor:
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
 #TODO: make list of wins & loses and analyze why (improve algo as it goes)
 #TODO: adjust sell %'s if > 1+(sellUp-1)/2 (e.g. if >1.1 if sellUp=1.2), then have a larger sellUpDn (e.g. 5%), then decrease if it reaches sellUp
-
+#TODO: change list update to be overnight or if len()=0, then right now instead of just before close
 
 #generates list of potential gainers, trades based off amount of cash
 def mainAlgo():  
@@ -66,10 +66,10 @@ def mainAlgo():
         acctInfo = a.getAcct()
         stocksUpdated = gStocksUpdated #set the local value to the global value
         portVal = float(acctInfo['portfolio_value'])
-        print(f"Portfolio val is ${round(portVal,2)}. Buying power is ${round(float(acctInfo['buying_power']),2)}, ${max(float(round(float(acctInfo['buying_power']),2))-minBuyPow*buyPowMargin,0)} available")
+        print(f"Portfolio val is ${round(portVal,2)}. Buying power is ${round(float(acctInfo['cash']),2)}, ${max(round(float(acctInfo['cash'])-minBuyPow*buyPowMargin,2),0)} available")
         
         #only update the stock list and buy stocks if the gainers list is done being populated/updated and that we actually have enough money to buy things
-        if('listUpdate' not in [t.getName() for t in threading.enumerate()] and float(acctInfo['buying_power'])>=minDolPerStock):
+        if('listUpdate' not in [t.getName() for t in threading.enumerate()] and float(acctInfo['cash'])>=minDolPerStock):
           #update the stock list 20 minutes before close, if it's not already updated
           if((not stocksUpdated) and a.timeTillClose()<=a.o.c['updateListTime']*60):
             updateThread = threading.Thread(target=updateStockList) #init the thread
@@ -231,12 +231,12 @@ def triggeredUp(symbObj, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, lat
     f.write(a.o.json.dumps(latestTrades, indent=2))
   #remove from gainers in case it sells after updateStockList has run
   if(symbObj['symbol'] in gainers):
-    gainers.remove(symbOjb['symbol'])
+    gainers.remove(symbObj['symbol'])
 
 
 #buy int(buyPow/10) # of individual stocks. If buyPow>minBuyPow*buyPowMargin, then usablebuyPow=buyPow-minBuyPow
 def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
-  usableBuyPow = float(a.getAcct()['buying_power']) #init as the current buying power
+  usableBuyPow = float(a.getAcct()['cash']) #init as the current buying power
   if(buyPowMargin<1): #buyPowMargin MUST BE GREATER THAN 1 in order for it to work correctly
     raise("Error: withdrawlable funds margin is less than 1. Multiplier must be >=1")
   
@@ -317,7 +317,7 @@ def updateStockList():
   soldToday = [e['symbol'] for e in todaysTrades if e['side']=='sell']
   for e in list(gainerDates):
     news = str(ns.scrape(e)).lower()
-    #TODO: use the nasdaq calendar splits api instead of scraping the news
+    #TODO: use the nasdaq calendar splits api instead of scraping the news, also check for bankruptcy
     if(not ("reverse stock split" in news or "reverse-stock-split" in news) and (e not in soldToday)):
       gainers.append(e)
   print(f"Done updating list - {len(gainers)} potential gainers")

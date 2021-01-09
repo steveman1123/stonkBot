@@ -210,13 +210,13 @@ def jumpedToday(symb,jump):
   while True:
     try:
       j = json.loads(requests.get(url,headers={'user-agent':'-'}).text)
+      close = float(j['data']['summaryData']['PreviousClose']['value'].replace('$','').replace(',','')) #previous day close
+      high = float(j['data']['summaryData']['TodayHighLow']['value'].replace('$','').replace(',','').split('/')[0]) #today's high, today's low is index [1]
       break
     except Exception:
       print("Error in jumpedToday. Trying again...")
       time.sleep(3)
       continue
-  close = float(j['data']['summaryData']['PreviousClose']['value'].replace('$','').replace(',','')) #previous day close
-  high = float(j['data']['summaryData']['TodayHighLow']['value'].replace('$','').replace(',','').split('/')[0]) #today's high, today's low is index [1]
   return high/close>=jump
 
 
