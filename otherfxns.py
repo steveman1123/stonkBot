@@ -372,5 +372,28 @@ def masterLives():
   print("No slave functionality yet")
   return True
 
-
-
+#return stocks going through a reverse split (this list also includes ETFs)
+def reverseSplitters():
+  while True: #get page of pending stocks
+    try:
+      r = json.loads(requests.get("https://api.nasdaq.com/api/calendar/splits", headers={"user-agent":"-"}, timeout=5).text)['data']['rows']
+      break
+    except Exception:
+      print("No connection, or other error encountered in reverseSplitters. trying again...")
+      time.sleep(3)
+      continue
+  out = []
+  for e in r:
+    try: #normally the data is formatted as # : # as the ratio, but sometimes it's a %
+      ratio = e['ratio'].split(" : ")
+      ratio = int(ratio[0])/int(ratio[1])
+    except Exception: #this is where it'd go if it were a %
+      ratio = float(e['ratio'][:-1])/100+1 #trim the % symbol and convert to a number
+    
+    out.append([e['symbol'],ratio])
+  
+  
+  return [e[0] for e in out if e[1]<1]
+  
+  
+  

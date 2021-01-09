@@ -110,5 +110,12 @@ def scrapeMW(symb):
 #combine all different news sources
 def scrape(symb):
   # print(f"Getting {symb} news")
-  return scrapeYF(symb)+scrapeCNBC(symb)
+  try: #sometimes YF or CNBC returns a dict (somehow?), so the final output throws an error because it can't be concatinated
+    out = scrapeYF(symb)+scrapeCNBC(symb)
+  except Exception:
+    try:
+      out = scrapeCNBC(symb)
+    except Exception:
+      out = []
+  return out
 

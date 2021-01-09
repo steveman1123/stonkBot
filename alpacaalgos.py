@@ -2,7 +2,7 @@ import random, threading
 from workdays import networkdays as nwd
 from glob import glob
 import alpacafxns as a
-import newsScrape as ns
+# import newsScrape as ns
 
 gainers = [] #global list of potential gaining stocks
 gainerDates = {} #global list of gainers plus their initial jump date and predicted next jump date
@@ -24,7 +24,6 @@ class bcolor:
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
 #TODO: make list of wins & loses and analyze why (improve algo as it goes)
 #TODO: adjust sell %'s if > 1+(sellUp-1)/2 (e.g. if >1.1 if sellUp=1.2), then have a larger sellUpDn (e.g. 5%), then decrease if it reaches sellUp
-#TODO: change list update to be overnight or if len()=0, then right now instead of just before close
 
 #generates list of potential gainers, trades based off amount of cash
 def mainAlgo():  
@@ -64,21 +63,19 @@ def mainAlgo():
           latestTrades = a.o.json.loads(f.read())
         
         acctInfo = a.getAcct()
-        stocksUpdated = gStocksUpdated #set the local value to the global value
         portVal = float(acctInfo['portfolio_value'])
         print(f"Portfolio val is ${round(portVal,2)}. Buying power is ${round(float(acctInfo['cash']),2)}, ${max(round(float(acctInfo['cash'])-minBuyPow*buyPowMargin,2),0)} available")
         
+        #if the program is started while the market is open, update the stock list immediately
+        if(not gStocksUpdated):
+          #mark stocks to be sold, then update the stock list
+          markUpdateThread = threading.Thread(target=markAndUpdate) #init the thread
+          markUpdateThread.setName('markUpdate') #set the name to the stock symb
+          markUpdateThread.start() #start the thread 
+        
         #only update the stock list and buy stocks if the gainers list is done being populated/updated and that we actually have enough money to buy things
         if('listUpdate' not in [t.getName() for t in threading.enumerate()] and float(acctInfo['cash'])>=minDolPerStock):
-          #update the stock list 20 minutes before close, if it's not already updated
-          if((not stocksUpdated) and a.timeTillClose()<=a.o.c['updateListTime']*60):
-            updateThread = threading.Thread(target=updateStockList) #init the thread
-            updateThread.setName('listUpdate') #set the name to the stock symb
-            updateThread.start() #start the thread
-        
-        
           #check here if the time is close to close - in the function, check that the requested stock didn't peak today
-          
           if(a.timeTillClose()<=a.o.c['buyTime']*60): #must be within some time before close to start buying and buying thread cannot be running already
             #Use this for non-threading:
             check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock)
@@ -102,22 +99,7 @@ def mainAlgo():
         print("Market closed.")
         gStocksUpdated = False
         
-        p = a.getPos()
-        for e in p:
-          print(f"{e['symbol']} marked to sell? ",end="")
-          news = str(ns.scrape(e['symbol'])).lower()
-          #add field to latest trades if it's marked to be sold
-          
-          shouldSell = "reverse stock split" in news or "reverse-stock-split" in news or "bankrupt" in news #sell before a reverse stock split or bankruptcy
-          print(shouldSell)
-          with open(a.o.c['latestTradesFile'],"r") as f:
-            latestTrades = a.o.json.loads(f.read())
-          try:  
-            latestTrades[e['symbol']]['shouldSell'] = shouldSell
-          except Exception:
-            latestTrades[e['symbol']] = {'shouldSell' : shouldSell}
-          with open(a.o.c['latestTradesFile'],"w") as f:
-            f.write(a.o.json.dumps(latestTrades, indent=2))
+        
        
 
         if(a.o.dt.date.today().weekday()==4): #if it's friday
@@ -125,8 +107,18 @@ def mainAlgo():
           for f in glob(a.o.c['stockDataDir']+"*.csv"):
             a.o.os.unlink(f)
         tto = a.timeTillOpen()
-        print("Opening in "+str(round(tto/3600,2))+" hours")
-        a.o.time.sleep(tto)
+        print(f"Opening in {round(tto/3600,2)} hours")
+        #at n minutes or later before market opens, update the stock list. If market is open, update immediately
+        if(tto<=a.o.c['updateListTime']*60):
+          #mark stocks to be sold, then update the stock list
+          markUpdateThread = threading.Thread(target=markAndUpdate) #init the thread
+          markUpdateThread.setName('markUpdate') #set the name to the stock symb
+          markUpdateThread.start() #start the thread
+          
+          a.o.time.sleep(tto) #we'll probably lose ~1 second of market time in the morning
+        else:
+          print(f"Updating list in {round((tto-a.o.c['updateListTime']*60)/3600,2)} hours")
+          a.o.time.sleep(tto-a.o.c['updateListTime']*60) #sleep until time to update
         
 #check to sell a list of stocks - symlist is the output of a.getPos()
 def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
@@ -310,15 +302,41 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
 def updateStockList():
   global gainers, gainerDates, gStocksUpdated
   print("Updating stock list")
+  gainers = [] #clear the gainer list
   #list of stocks that may gain in the near future as well as currently held stocks and their last gain date
   gainerDates = a.o.getGainers(list(dict.fromkeys(a.o.getList()+[e['symbol'] for e in a.getPos()]))) #combine nasdaq list & my stocks & remove duplicates - order doesn't matter
-  #only add gainers who are not in the news for a reverse stock split and have not already been traded today
+  #only add gainers who are not slated for a reverse stock split and have not already been traded today
   todaysTrades = a.getTrades(str(a.o.dt.date.today()))
   soldToday = [e['symbol'] for e in todaysTrades if e['side']=='sell']
+  splitters = a.o.reverseSplitters()
   for e in list(gainerDates):
-    news = str(ns.scrape(e)).lower()
-    #TODO: use the nasdaq calendar splits api instead of scraping the news, also check for bankruptcy
-    if(not ("reverse stock split" in news or "reverse-stock-split" in news) and (e not in soldToday)):
+    # news = str(ns.scrape(e)).lower()
+    # if(not ("reverse stock split" in news or "reverse-stock-split" in news) and (e not in soldToday)):
+    if(e not in splitters and (e not in soldToday)):
       gainers.append(e)
   print(f"Done updating list - {len(gainers)} potential gainers")
   gStocksUpdated = True
+
+def mark2sell():
+  p = a.getPos()
+  splitters = a.o.reverseSplitters()
+  for e in p:
+    print(f"{e['symbol']}\tmarked to sell? ",end="")
+    # news = str(ns.scrape(e['symbol'])).lower()
+    
+    # shouldSell = "reverse stock split" in news or "reverse-stock-split" in news or "bankrupt" in news #sell before a reverse stock split or bankruptcy
+    shouldSell = e in splitters
+    print(shouldSell)
+    with open(a.o.c['latestTradesFile'],"r") as f:
+      latestTrades = a.o.json.loads(f.read())
+    try:  
+      latestTrades[e['symbol']]['shouldSell'] = shouldSell
+    except Exception:
+      latestTrades[e['symbol']] = {'shouldSell' : shouldSell}
+    with open(a.o.c['latestTradesFile'],"w") as f:
+      f.write(a.o.json.dumps(latestTrades, indent=2))
+
+#mark stocks to be sold, then update the stock list (only meant to be run as a thread while market is closed)
+def markAndUpdate():
+  mark2sell()
+  updateStockList()
