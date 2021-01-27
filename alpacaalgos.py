@@ -26,24 +26,24 @@ class bcolor:
 #TODO: adjust sell %'s if > 1+(sellUp-1)/2 (e.g. if >1.1 if sellUp=1.2), then have a larger sellUpDn (e.g. 5%), then decrease if it reaches sellUp
 
 #generates list of potential gainers, trades based off amount of cash
-def mainAlgo():  
+def mainAlgo():
   global gStocksUpdated #this only gets set once in this function - after market is closed
-  isMaster = a.o.c['isMaster'] #is the master or a slave program - a slave will relinquish control to a master if the master is running, but will take over if the master dies
+  isMaster = bool(a.o.c['Master Info']['isMaster']) #is the master or a slave program - a slave will relinquish control to a master if the master is running, but will take over if the master dies
   
-  minBuyPow = a.o.c['minBuyPow'] #min buying power to hold onto if..
-  buyPowMargin = a.o.c['buyPowMargin'] # actual buy pow > this*minBuyPow
-  minDolPerStock = a.o.c['minDolPerStock'] #min $ to dedicate to an individual stock
+  minBuyPow = float(a.o.c['Account Params']['minBuyPow']) #min buying power to hold onto if..
+  buyPowMargin = float(a.o.c['Account Params']['buyPowMargin']) # actual buy pow > this*minBuyPow
+  minDolPerStock = float(a.o.c['Account Params']['minDolPerStock']) #min $ to dedicate to an individual stock
 
-  minPortVal = a.o.c['minPortVal'] #stop trading if portfolio reaches this amount
+  minPortVal = float(a.o.c['Account Params']['minPortVal']) #stop trading if portfolio reaches this amount
 
-  sellUp = a.o.c['sellUp'] #trigger point. Compare to when it was bought, additional logic to see if it goes higher
-  sellDn = a.o.c['sellDn'] #limit loss
-  sellUpDn = a.o.c['sellUpDn'] #sell if it triggers sellUp then drops sufficiently
+  sellUp = float(a.o.c['Sell Params']['sellUp']) #trigger point. Compare to when it was bought, additional logic to see if it goes higher
+  sellDn = float(a.o.c['Sell Params']['sellDn']) #limit loss
+  sellUpDn = float(a.o.c['Sell Params']['sellUpDn']) #sell if it triggers sellUp then drops sufficiently
   
   
   #init the stock list if we rereun during the week
   if(a.o.dt.date.today().weekday()<5): #not saturday or sunday
-    with open(a.o.c['latestTradesFile'],"r") as f:
+    with open(a.o.c['File Locations']['latestTradesFile'],"r") as f:
       latestTrades = a.o.json.loads(f.read())
 
   portVal = float(a.getAcct()['portfolio_value'])
@@ -59,15 +59,15 @@ def mainAlgo():
       
       if(a.marketIsOpen()):
         print("\nMarket is open")
-        with open(a.o.c['latestTradesFile'],"r") as f:
+        with open(a.o.c['File Locations']['latestTradesFile'],"r") as f:
           latestTrades = a.o.json.loads(f.read())
         
         acctInfo = a.getAcct()
         portVal = float(acctInfo['portfolio_value'])
         print(f"Portfolio val is ${round(portVal,2)}. Buying power is ${round(float(acctInfo['cash']),2)}, ${max(round(float(acctInfo['cash'])-minBuyPow*buyPowMargin,2),0)} available")
         
-        #if the program is started while the market is open, update the stock list immediately
-        if(not gStocksUpdated):
+        #if the program is started while the market is open, update the stock list immediately (do not try to run it again if it's already running)
+        if(not gStocksUpdated and 'markUpdate' not in [t.getName() for t in threading.enumerate()]):
           #mark stocks to be sold, then update the stock list
           markUpdateThread = threading.Thread(target=markAndUpdate) #init the thread
           markUpdateThread.setName('markUpdate') #set the name to the stock symb
@@ -76,12 +76,12 @@ def mainAlgo():
         #only update the stock list and buy stocks if the gainers list is done being populated/updated and that we actually have enough money to buy things
         if('listUpdate' not in [t.getName() for t in threading.enumerate()] and float(acctInfo['cash'])>=minDolPerStock):
           #check here if the time is close to close - in the function, check that the requested stock didn't peak today
-          if(a.timeTillClose()<=a.o.c['buyTime']*60): #must be within some time before close to start buying and buying thread cannot be running already
+          if(a.timeTillClose()<=float(a.o.c['Time Params']['buyTime'])*60): #must be within some time before close to start buying and buying thread cannot be running already
             #Use this for non-threading:
             check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock)
             '''
             #use this for threading:
-            if('buying' not in [t.getName() for t in threading.enumerate()] and a.timeTillClose()<=a.o.c['buyTime']*60): #must be within some time before close to start buying and buying thread cannot be running already
+            if('buying' not in [t.getName() for t in threading.enumerate()] and a.timeTillClose()<=a.o.c['Time Params']['buyTime']*60): #must be within some time before close to start buying and buying thread cannot be running already
               buyThread = threading.Thread(target=check2buy, args=(latestTrades, minBuyPow, buyPowMargin, dolPerStock)) #init the thread
               buyThread.setName('buying') #set the name to the stock symb
               a.o.buyThread.start() #start the thread
@@ -90,7 +90,7 @@ def mainAlgo():
         print("Tradable Stocks:")
         check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn)
         '''
-        with open(a.o.c['webDataFile'],'w') as f:
+        with open(a.o.c['File Locations']['webDataFile'],'w') as f:
           f.write(a.o.json.dumps({"portVal":round(portVal,2),"updated":a.o.dt.datetime.utcnow().strftime("%Y-%m-%d, %H:%M")+" UTC"}))
         '''
         a.o.time.sleep(60)
@@ -104,12 +104,12 @@ def mainAlgo():
 
         if(a.o.dt.date.today().weekday()==4): #if it's friday
           print("Removing saved csv files") #delete all csv files in stockDataDir
-          for f in glob(a.o.c['stockDataDir']+"*.csv"):
+          for f in glob(a.o.c['File Locations']['stockDataDir']+"*.csv"):
             a.o.os.unlink(f)
         tto = a.timeTillOpen()
         print(f"Opening in {round(tto/3600,2)} hours")
         #at n minutes or later before market opens, update the stock list. If market is open, update immediately
-        if(tto<=a.o.c['updateListTime']*60):
+        if(tto<=a.o.c['Time Params']['updateListTime']*60):
           #mark stocks to be sold, then update the stock list
           markUpdateThread = threading.Thread(target=markAndUpdate) #init the thread
           markUpdateThread.setName('markUpdate') #set the name to the stock symb
@@ -117,9 +117,12 @@ def mainAlgo():
           
           a.o.time.sleep(tto) #we'll probably lose ~1 second of market time in the morning
         else:
-          print(f"Updating list in {round((tto-a.o.c['updateListTime']*60)/3600,2)} hours")
-          a.o.time.sleep(tto-a.o.c['updateListTime']*60) #sleep until time to update
-        
+          print(f"Updating list in {round((tto-a.o.c['Time Params']['updateListTime']*60)/3600,2)} hours")
+          a.o.time.sleep(tto-a.o.c['Time Params']['updateListTime']*60) #sleep until time to update
+  
+  print(f"Portfolio value of ${portVal} is less than minimum value of ${round(minPortVal,2)}")
+  a.sellAll()
+
 #check to sell a list of stocks - symlist is the output of a.getPos()
 def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
   print("symb\tinit jump\tpred jump (+/- 3wks)\tchg from buy\tchg from close\tsell points")
@@ -150,7 +153,7 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
                                    "buyPrice":0,
                                    "shouldSell": False
                                   }
-      with open(a.o.c['latestTradesFile'],"w") as f:
+      with open(a.o.c['File Locations']['latestTradesFile'],"w") as f:
         f.write(a.o.json.dumps(latestTrades, indent=2))
     
     elif(lastTradeDate<a.o.dt.date.today() or lastTradeType=="sell" or float(a.getPrice(e['symbol']))/avgBuyPrice>=1.75): #prevent selling on the same day as a buy (only sell if only other trade today was a sell or price increased substantially)
@@ -165,6 +168,8 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
         lastJump = a.o.dt.datetime.strptime(buyInfo,"%m/%d/%Y").date()
         #adjust selling targets based on date to add a time limit
 
+        #TODO: change these to change on a daily basis rather than on a weekly basis and scale to both reach 1 at the same time
+        #      after 6 weeks since the initial jump, the sell values should reach 1 after 4 weeks (20 work days)
         #sellUp change of 0 if <=5 weeks after initial jump, -.05 for every week after 6 weeks for a min of 1
         sellUp = round(max(1,mainSellUp-.05*max(0,int((a.o.dt.date.today()-(lastJump+a.o.dt.timedelta(6*7))).days/7))),2)
         #sellDn change of 0 if <=5 weeks after initial jump, +.05 for every week after 6 weeks for a max of 1
@@ -190,7 +195,7 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
                                      "buyPrice":0,
                                      "shouldSell": False
                                     }
-        with open(a.o.c['latestTradesFile'],"w") as f:
+        with open(a.o.c['File Locations']['latestTradesFile'],"w") as f:
           f.write(a.o.json.dumps(latestTrades, indent=2))
       
       #use e['lastday_price'] to get previous close amount ... or curPrice/float(e['lastday_price'])>=sellUpFromYesterday
@@ -219,7 +224,7 @@ def triggeredUp(symbObj, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, lat
                                      "buyPrice": 0, #reset the avgBuyPrice to 0 after a sell
                                      "shouldSell": False
                                     }
-  with open(a.o.c['latestTradesFile'],"w") as f:
+  with open(a.o.c['File Locations']['latestTradesFile'],"w") as f:
     f.write(a.o.json.dumps(latestTrades, indent=2))
   #remove from gainers in case it sells after updateStockList has run
   if(symbObj['symbol'] in gainers):
@@ -281,7 +286,7 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
                                     "buyPrice": (curPrice+avgBuyPrice)/(1+avgBuyPrice>0),
                                     "shouldSell": False
                                     }
-              with open(a.o.c['latestTradesFile'],"w") as f:
+              with open(a.o.c['File Locations']['latestTradesFile'],"w") as f:
                 f.write(a.o.json.dumps(latestTrades, indent=2))
               stocksBought += 1
             i += 1 #try the next stock
@@ -327,13 +332,13 @@ def mark2sell():
     # shouldSell = "reverse stock split" in news or "reverse-stock-split" in news or "bankrupt" in news #sell before a reverse stock split or bankruptcy
     shouldSell = e in splitters
     print(shouldSell)
-    with open(a.o.c['latestTradesFile'],"r") as f:
+    with open(a.o.c['File Locations']['latestTradesFile'],"r") as f:
       latestTrades = a.o.json.loads(f.read())
     try:  
       latestTrades[e['symbol']]['shouldSell'] = shouldSell
     except Exception:
       latestTrades[e['symbol']] = {'shouldSell' : shouldSell}
-    with open(a.o.c['latestTradesFile'],"w") as f:
+    with open(a.o.c['File Locations']['latestTradesFile'],"w") as f:
       f.write(a.o.json.dumps(latestTrades, indent=2))
 
 #mark stocks to be sold, then update the stock list (only meant to be run as a thread while market is closed)

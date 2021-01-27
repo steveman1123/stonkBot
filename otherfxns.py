@@ -1,15 +1,19 @@
 #This module should be any function that doesn't require alpaca or keys to use
 
-import json,requests,os,time,re,csv
+import json,requests,os,time,re,csv, configparser
 import datetime as dt
 from bs4 import BeautifulSoup as bs
 from math import ceil
 
 settingsFile = './stonkBot.config'
 
-with open(settingsFile,"r") as f:
-  c = json.loads(f.read())
-stockDir = c['stockDataDir']
+c = configparser.ConfigParser()
+c.read(settingsFile)
+
+
+# with open(settingsFile,"r") as f:
+#   c = json.loads(f.read())
+stockDir = c['File Locations']['stockDataDir']
 
 def isTradable(symb):
   isTradable = False
@@ -35,14 +39,14 @@ def getList():
   url = 'https://www.marketwatch.com/tools/stockresearch/screener/results.asp'
   #many of the options listed are optional and can be removed from the get request
   params = {
-    "TradesShareEnable" : "True", 
-    "TradesShareMin" : str(c['simMinPrice']),
-    "TradesShareMax" : str(c['simMaxPrice']),
+    "TradesShareEnable" : "True",
+    "TradesShareMin" : str(c['Sim Params']['simMinPrice']),
+    "TradesShareMax" : str(c['Sim Params']['simMaxPrice']),
     "PriceDirEnable" : "False",
     "PriceDir" : "Up",
     "LastYearEnable" : "False",
     "TradeVolEnable" : "true",
-    "TradeVolMin" : str(c['simMinVol']),
+    "TradeVolMin" : str(c['Sim Params']['simMinVol']),
     "TradeVolMax" : "",
     "BlockEnable" : "False",
     "PERatioEnable" : "False",
@@ -227,25 +231,25 @@ def jumpedToday(symb,jump):
 #checks whether something is a good buy or not (if not, return why - no initial jump or second jump already missed).
 #if it is a good buy, return initial jump date
 #this is where the magic really happens
-def goodBuy(symb,days2look=c['simDays2look']): #days2look=how far back to look for a jump
+def goodBuy(symb,days2look = int(c['Sim Params']['simDays2look'])): #days2look=how far back to look for a jump
   validBuy = "NA" #set to the jump date if it's valid
   if isTradable(symb):
     #calc price % diff over past 20 days (current price/price of day n) - current must be >= 80% for any
     #calc volume % diff over average past some days (~60 days?) - must be sufficiently higher (~300% higher?)
     
-    days2wait4fall = c['simWait4fall'] #wait for stock price to fall for this many days
-    startDate = days2wait4fall+c['simStartDateDiff'] #add 1 to account for the jump day itself
-    firstJumpAmt = c['simFirstJumpAmt'] #stock first must jump by this amount (1.3=130% over 1 day)
-    sellUp = c['simSellUp'] #% to sell up at
-    sellDn = c['simSellDn'] #% to sell dn at
+    days2wait4fall = int(c['Sim Params']['simWait4fall']) #wait for stock price to fall for this many days
+    startDate = days2wait4fall + int(c['Sim Params']['simStartDateDiff']) #add 1 to account for the jump day itself
+    firstJumpAmt = float(c['Sim Params']['simFirstJumpAmt']) #stock first must jump by this amount (1.3=130% over 1 day)
+    sellUp = float(c['Sim Params']['simSellUp']) #% to sell up at
+    sellDn = float(c['Sim Params']['simSellDn']) #% to sell dn at
     
     #make sure that the jump happened in the  frame rather than too long ago
-    volAvgDays = c['simVolAvgDays'] #arbitrary number to avg volumes over
-    checkPriceDays = c['simChkPriceDays'] #check if the price jumped substantially over the last __ trade days
-    checkPriceAmt = c['simChkPriceAmt'] #check if the price jumped by this amount in the above days (% - i.e 1.5 = 150%)
-    volGain = c['simVolGain'] #check if the volume increased by this amount during the jump (i.e. 3 = 300% or 3x, 0.5 = 50% or 0.5x)
-    volLoss = c['simVolLoss'] #check if the volume decreases by this amount during the price drop
-    priceDrop = c['simPriceDrop'] #price should drop this far when the volume drops
+    volAvgDays = int(c['Sim Params']['simVolAvgDays']) #arbitrary number to avg volumes over
+    checkPriceDays = int(c['Sim Params']['simChkPriceDays']) #check if the price jumped substantially over the last __ trade days
+    checkPriceAmt = float(c['Sim Params']['simChkPriceAmt']) #check if the price jumped by this amount in the above days (% - i.e 1.5 = 150%)
+    volGain = float(c['Sim Params']['simVolGain']) #check if the volume increased by this amount during the jump (i.e. 3 = 300% or 3x, 0.5 = 50% or 0.5x)
+    volLoss = float(c['Sim Params']['simVolLoss']) #check if the volume decreases by this amount during the price drop
+    priceDrop = float(c['Sim Params']['simPriceDrop']) #price should drop this far when the volume drops
     
     start = str(dt.date.today()-dt.timedelta(days=(volAvgDays+days2look)))
     end = str(dt.date.today())
@@ -362,7 +366,7 @@ def masterLives():
   i=0
   while i<3: #try reaching the master 3 times
     try:
-      r = requests.request(url=c['masterAddress])
+      r = requests.request(url = c['masterAddress])
       if(r is something good): #if it does reach the master and returns good signal
         return True
       else: #if it does reach the master but returns bad signal (computer is on, but script isn't running)
@@ -378,7 +382,7 @@ def masterLives():
 
 #return stocks going through a reverse split (this list also includes ETFs)
 def reverseSplitters():
-  while True: #get page of pending stocks
+  while True: #get page of upcoming stock splits
     try:
       r = json.loads(requests.get("https://api.nasdaq.com/api/calendar/splits", headers={"user-agent":"-"}, timeout=5).text)['data']['rows']
       break

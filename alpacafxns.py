@@ -1,7 +1,7 @@
 import otherfxns as o
 
-isPaper = bool(o.c['isPaper']) #set up as paper trading (testing), or actual trading
-with open(o.c['keyFile'],"r") as keyFile:
+isPaper = bool(int(o.c['Account Params']['isPaper'])) #set up as paper trading (testing), or actual trading
+with open(o.c['File Locations']['keyFile'],"r") as keyFile:
   apiKeys = o.json.loads(keyFile.read())
   
 if(isPaper):
@@ -22,6 +22,7 @@ POSURL = "{}/v2/positions".format(ENDPOINTURL) #positions url
 CLKURL = "{}/v2/clock".format(ENDPOINTURL) #clock url
 CALURL = "{}/v2/calendar".format(ENDPOINTURL) #calendar url
 ASSETURL = "{}/v2/assets".format(ENDPOINTURL) #asset url
+HISTURL = "{}/v2/account/portfolio/history".format(ENDPOINTURL) #profile history url
 
 # return string of account info
 def getAcct():
@@ -350,3 +351,13 @@ def getBuyPrice(symb):
     return 0
 
 
+def getProfileHistory(startDate):
+  while True:
+    try:
+      html = o.requests.get(HISTURL, headers=HEADERS, params={'date_end':startDate,'period':'1A'}, timeout=5).content
+      break
+    except Exception:
+      print("No connection, or other error encountered in getProfileHistory. Trying again...")
+      o.time.sleep(3)
+      continue
+  return o.json.loads(html)
