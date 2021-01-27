@@ -207,17 +207,21 @@ def getHistory2(symb, startDate, endDate, maxTries=10):
 #return if the stock jumped today some %
 def jumpedToday(symb,jump):
   url = f'https://api.nasdaq.com/api/quote/{symb}/summary?assetclass=stocks'
-  while True:
+  tries=0
+  while tries<3:
     try:
       j = json.loads(requests.get(url,headers={'user-agent':'-'}).text)
       close = float(j['data']['summaryData']['PreviousClose']['value'].replace('$','').replace(',','')) #previous day close
       high = float(j['data']['summaryData']['TodayHighLow']['value'].replace('$','').replace(',','').split('/')[0]) #today's high, today's low is index [1]
+      out = high/close>=jump
       break
     except Exception:
-      print("Error in jumpedToday. Trying again...")
+      print(f"Error in jumpedToday. Trying again ({tries} - {symb})...")
       time.sleep(3)
-      continue
-  return high/close>=jump
+      out=False
+      pass
+    tries+=1
+  return out
 
 
 #checks whether something is a good buy or not (if not, return why - no initial jump or second jump already missed).
@@ -386,7 +390,7 @@ def reverseSplitters():
   for e in r:
     try: #normally the data is formatted as # : # as the ratio, but sometimes it's a %
       ratio = e['ratio'].split(" : ")
-      ratio = int(ratio[0])/int(ratio[1])
+      ratio = float(ratio[0])/float(ratio[1])
     except Exception: #this is where it'd go if it were a %
       ratio = float(e['ratio'][:-1])/100+1 #trim the % symbol and convert to a number
     
