@@ -109,7 +109,7 @@ def mainAlgo():
         tto = a.timeTillOpen()
         print(f"Opening in {round(tto/3600,2)} hours")
         #at n minutes or later before market opens, update the stock list. If market is open, update immediately
-        if(tto<=a.o.c['Time Params']['updateListTime']*60):
+        if(tto<=float(a.o.c['Time Params']['updateListTime'])*60):
           #mark stocks to be sold, then update the stock list
           markUpdateThread = threading.Thread(target=markAndUpdate) #init the thread
           markUpdateThread.setName('markUpdate') #set the name to the stock symb
@@ -117,8 +117,8 @@ def mainAlgo():
           
           a.o.time.sleep(tto) #we'll probably lose ~1 second of market time in the morning
         else:
-          print(f"Updating list in {round((tto-a.o.c['Time Params']['updateListTime']*60)/3600,2)} hours")
-          a.o.time.sleep(tto-a.o.c['Time Params']['updateListTime']*60) #sleep until time to update
+          print(f"Updating list in {round((tto-float(a.o.c['Time Params']['updateListTime'])*60)/3600,2)} hours")
+          a.o.time.sleep(tto-float(a.o.c['Time Params']['updateListTime'])*60) #sleep until time to update
   
   print(f"Portfolio value of ${portVal} is less than minimum value of ${round(minPortVal,2)}")
   a.sellAll()

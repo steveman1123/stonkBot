@@ -193,19 +193,25 @@ def getHistory2(symb, startDate, endDate, maxTries=10):
   else: #something's fucky with this api, jsyk
     if(j['data']['totalRecords']>maxDays): #get subsequent sets
       for i in range(1,ceil(j['data']['totalRecords']/maxDays)):
-        while True:
+        tries=0
+        while tries<3: #magc number. This could be larger, but the larger it is, the longer it'll take to fail out of a process if it doesn't work
           try:
             r = json.loads(requests.get(f'https://api.nasdaq.com/api/quote/{symb}/historical?assetclass=stocks&fromdate={startDate}&todate={endDate}&offset={i*maxDays+i}',headers={'user-agent':'-'}).text)
+            j['data']['tradesTable']['rows'] += r['data']['tradesTable']['rows'] #append the sets together
             break
           except Exception:
             print("Error in getHistory2. Trying again...")
             time.sleep(3)
             continue
-        j['data']['tradesTable']['rows'] += r['data']['tradesTable']['rows'] #append the sets together
+          tries += 1
     
     #format the data to return the same as getHistory
     #2d array order of Date, Close/Last, Volume, Open, High, Low sorted by dates newest to oldest
-    out = [[e['date'],e['close'],e['volume'].replace(',',''),e['open'],e['high'],e['low']] for e in j['data']['tradesTable']['rows']]
+    try:
+      out = [[e['date'],e['close'],e['volume'].replace(',',''),e['open'],e['high'],e['low']] for e in j['data']['tradesTable']['rows']]
+    except Exception:
+      out = []
+      print("Failed to get history")
     return out
 
 #return if the stock jumped today some %
