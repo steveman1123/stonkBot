@@ -14,20 +14,20 @@ Don't be afraid to change things around (especially in the settings file): nothi
 ### System Requirements
 - [Python 3.7](https://www.python.org/) or greater
 
-- [Linux OS](https://www.raspberrypi.org/) (mostly tested on Rasbian, had issues with Windows for some reason*)
+- A computer with internet that can be left running 24/7
 
-- [Internet connection](https://2018.bloomca.me/en)
+- Some cash to throw at it (I started with $100, but got impatient and put more in over time)
 
-*may potentially be issues with the time.sleep() function operating off the system clock which may change depending if the computer is active or not
+*Note: Windows 10 may have an issue with time.sleep(). I didn't test much, but I would recommend [a linux system](https://www.raspberrypi.org/) over Windows for this application
 
 ### Setup
 
-I use a raspberry pi connected directly to the router via ethernet cable, but any system will do provided that it runs nearly 24/7 (Windows seems to have issues, see above)
+I use a raspberry pi connected directly to the router via ethernet cable, but any system will do provided that it runs nearly 24/7
 
 1. Download the repo
 2. Move the stockStuff folder outside the repo to create the folder structure as seen below
-3. Create Alpaca account, populate keys in apikeys.txt, and set the desired isPaper value in alpacafxns.py (isPaper=0 is live trading, isPaper=1 is paper trading)
-4. Run and install any missing python modules (suggest also installing "screen" or "tmux" package if running on raspberry pi)
+3. Create an Alpaca account, populate keys in the apikeys.txt, and set the desired isPaper value in stonkbot.config (isPaper=0 is live trading, isPaper=1 is paper trading)
+4. Install any missing python modules (suggest also installing "screen" or "tmux" package if running on raspberry pi)
 5. Run continuously and wait (it works best if left alone other than to check for errors and provide some masochism)
 6. ???
 7. Profit
@@ -62,11 +62,11 @@ alpacafxns.py - Functions that require an Alpaca API query
 
 otherfxns.py - Other functions that do not require an Alpaca API query (i.e. functions that query the NASDAQ API, or provide the logic to determine which stocks to buy)
 
-stonkBot.config - config file for settings in the files listed above. Formatted as json, double spaces indicate which file it's mostly used in in the heirarchy (order specific to the files listed above)
+stonkBot.config - config file for settings in the files listed above.
 
 stockStuff/ - contains data that won't be synced with the repo (api keys, latest trades, and stock histories (these are cleared every Friday evening)) - **the folder and its contents needs to be moved to the location shown above for the program to work**
 
-apikeys.txt - Contains the API keys used for Alpaca and AlphaVantage - the file in the repo should be filled in with your information
+apikeys.txt - Contains the API keys used for Alpaca - the file in the repo should be filled in with your information
 
 latestTrades.json - Contains the stock name and the latest trade date and type for the stock
 
@@ -80,13 +80,11 @@ The output should look something akin to this:
 
 ![Sample Output](https://github.com/steveman1123/stonkBot/blob/master/sampleOutput.jpg?raw=true)
 
-On the first day, there will be no tradable stocks, 20 minutes before market close, a thread to start getting stocks to buy will run (if you have sufficient buying power), then 10 minutes before market close, it will start to buy stocks - the times can be changed in the settings file, but the time to check for stocks should be _at least_ 10-15 minutes more than when to buy the stocks
-
-After the first day, assuming you have stocks held, it will show something similar to above, and will check to sell the listed stocks throughout the day if they reach one of the trigger points.
+This is designed to run 24/7/365 with no human interaction. It may appear to be in a useless loop if you don't have any shares held in anything. Please wait at least a full day of running before filing an issue. If you don't have shares held, then it may appear to be doing nothing for most of the day.
 
 Generally it seems that it takes about 5 weeks (+/- 3 weeks) after the initial jump to jump a second time.
 
-From testing between 2020-07-14 to 2021-01-09, I have gotten an average growth rate of 0.83%/day with a standard deviation of 3.19%
+From running between 2020-07-14 to 2021-02-21, I have gotten an average growth rate of 1.06%/day with a standard deviation of 3.98% (accounting for bad data (reverse splits that weren't caught, and a power outage), the adjusted average and standard deviation are 1.17% and 2.92% respectively)
 
 ![Daily Returns](https://github.com/steveman1123/stonkBot/blob/master/dailyReturns.jpg?raw=true)
 
@@ -99,11 +97,8 @@ From testing between 2020-07-14 to 2021-01-09, I have gotten an average growth r
 
 [NASDAQ API Documentation](https://github.com/steveman1123/stonkBot/blob/master/NASDAQ_API_DOC.md)
 
-## Issues & Enhancements
-
-*If you are encountering issues, make sure to pull the latest version, it is under active delopment, so things change quickly (especially over the weekends).*
-
-if the power goes out for a while while using this (like mine did), I'd suggest finding a way to sell everything before the portfolio value starts dropping (like mine did)
+## Issues
+There are still issues. I've done my best to account for any failings, but if there's something that stops the program and is not caught by a TODO, then report it.
 
 ## Disclaimer
 I do not claim to be a financial expert and cannot be held accountable for any losses you may incur as a result of using this software

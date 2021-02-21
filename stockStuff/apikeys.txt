@@ -6,7 +6,4 @@
   "ALPACAPAPERKEY" : "",
   "ALPACAPAPERSECRETKEY" : "",
   "ALPACAPAPERURL" : "https://paper-api.alpaca.markets",
-
-  "ALPHAVANTAGEKEY" : "",
-  "ALPHAVANTAGEURL" : "https://www.alphavantage.co/query"
 }

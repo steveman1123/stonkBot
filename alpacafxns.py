@@ -16,13 +16,13 @@ else:
 HEADERS = {"APCA-API-KEY-ID":APIKEY,"APCA-API-SECRET-KEY":SECRETKEY} #headers for data
 
 #alpaca = alpacaapi.REST(APIKEY,SECRETKEY,ENDPOINTURL,api_version="v2")
-ACCTURL = "{}/v2/account".format(ENDPOINTURL) #account url
-ORDERSURL = "{}/v2/orders".format(ENDPOINTURL) #orders url
-POSURL = "{}/v2/positions".format(ENDPOINTURL) #positions url
-CLKURL = "{}/v2/clock".format(ENDPOINTURL) #clock url
-CALURL = "{}/v2/calendar".format(ENDPOINTURL) #calendar url
-ASSETURL = "{}/v2/assets".format(ENDPOINTURL) #asset url
-HISTURL = "{}/v2/account/portfolio/history".format(ENDPOINTURL) #profile history url
+ACCTURL = f"{ENDPOINTURL}/v2/account" #account url
+ORDERSURL = f"{ENDPOINTURL}/v2/orders" #orders url
+POSURL = f"{ENDPOINTURL}/v2/positions" #positions url
+CLKURL = f"{ENDPOINTURL}/v2/clock" #clock url
+CALURL = f"{ENDPOINTURL}/v2/calendar" #calendar url
+ASSETURL = f"{ENDPOINTURL}/v2/assets" #asset url
+HISTURL = f"{ENDPOINTURL}/v2/account/portfolio/history" #profile history url
 
 # return string of account info
 def getAcct():
@@ -213,29 +213,54 @@ def openCloseTimes(checkDate): #checkdate of format yyyy-mm-dd
   return [o.dt.datetime.strptime(d["date"]+d["open"],"%Y-%m-%d%H:%M"), o.dt.datetime.strptime(d["date"]+d["close"],"%Y-%m-%d%H:%M")]
 
 # return the current price of the indicated stock
-# can be used as alpaca or non-alpaca TODO: make that an extra parameter (default to non-alpaca, but could use it if desiered
-def getPrice(symb):
+#optinal params can be used to have it use alpaca or non-alpaca apis, or if the function should also return the market cap (related because it's also included in the same api request on the nasdaq api)
+def getPrice(symb,withCap=False,isAlpaca=False):
   symb = symb.upper() #make sure it's uppercase, otherwise it may error out
-  #using the alpaca link is faster, but the nasdaq link updates the prices more frequently
-  url = 'https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks'.format(symb) #use this URL to avoid alpaca
-  #url = 'https://data.alpaca.markets/v1/last/stocks/{}'.format(symb)
-  while True:
+  if(isAlpaca):
+    if(withCap):
+      print("Cannot return market cap and price using alpaca api")
+    url = f'https://data.alpaca.markets/v1/last/stocks/{symb}'
+    while True:
+      try:
+        response = o.requests.get(url,headers=HEADERS, timeout=5).text #send request and store response
+        break
+      except Exception:
+        print("No connection, or other error encountered in getPrice. Trying again...")
+        o.time.sleep(3)
+        continue
     try:
-      #response = o.requests.get(url,headers=HEADERS, timeout=5).text #send request and store response
-      response = o.requests.get(url,headers={"User-Agent": "-"}, timeout=5).text #nasdaq url requires a non-empty user-agent string
-      break
+      latestPrice = float(o.json.loads(response)['last']['price'])
+      return latestPrice
     except Exception:
-      print("No connection, or other error encountered in getPrice. Trying again...")
-      o.time.sleep(3)
-      continue
-
-  try:
-    latestPrice = float(o.json.loads(response)["data"]["primaryData"]["lastSalePrice"][1:]) #use this line for the alt. URL
-    #latestPrice = float(o.json.loads(response)['last']['price'])
-    return latestPrice
-  except Exception:
-    print("Invalid Stock - "+symb)
-    return 0
+      print(f"Invalid Stock - {symb}")
+      return [0,0] if(withCap) else 0
+  else: #using the nasdaq api
+    url = f'https://api.nasdaq.com/api/quote/{symb}/info?assetclass=stocks' #use this URL to avoid alpaca
+    while True:
+      try:
+        response = o.requests.get(url,headers={"User-Agent": "-"}, timeout=5).text #nasdaq url requires a non-empty user-agent string
+        break
+      except Exception:
+        print("No connection, or other error encountered in getPrice. Trying again...")
+        o.time.sleep(3)
+        continue
+  
+    try:
+      latestPrice = float(o.json.loads(response)["data"]["primaryData"]["lastSalePrice"][1:])
+      if(withCap):
+        try:
+          #sometimes there isn't a listed market cap, so we look for one, and if it's not there, then we estimate one
+          mktCap = float(o.json.loads(response)['data']['keyStats']['MarketCap']['value'].replace(',',''))
+        except Exception:
+          print(f"Invalid market cap found for {symb}. Calculating an estimate")
+          vol = float(o.json.loads(response)['data']['keyStats']['Volume']['value'].replace(',',''))
+          mktCap = vol*latestPrice #this isn't the actual cap, but it's better than nothing
+        return [latestPrice,mktCap]
+      else:
+        return latestPrice
+    except Exception:
+      print("Invalid Stock - "+symb)
+      return [0,0] if(withCap) else 0
 
 #make sure that we can trade it on alpaca too
 def isAlpacaTradable(symb):
@@ -281,11 +306,19 @@ def checkValidKeys():
       print("Unknown issue encountered.")
     o.sys.exit()
 
-#get the trades made on a specified date  
-def getTrades(date):
+#get the trades made on a specified date or date range
+def getTrades(startDate,endDate=False):
   while True:
     try:
-      d = o.json.loads(o.requests.get(ACCTURL+"/activities/FILL", headers=HEADERS, params={"date":date}, timeout=5).content)
+      if(not endDate): #no end date set, just use a single day
+        d = o.json.loads(o.requests.get(ACCTURL+"/activities/FILL", headers=HEADERS, params={"date":startDate}, timeout=5).content)
+      else: #end date is set, make a range
+        d=[]
+        r = o.json.loads(o.requests.get(ACCTURL+"/activities/FILL", headers=HEADERS, params={"after":startDate,"until":endDate}, timeout=5).content)
+        d+=r
+        while len(r)==100:
+          r = o.json.loads(o.requests.get(ACCTURL+"/activities/FILL", headers=HEADERS, params={"after":startDate,"until":endDate,"page_token":d[-1]['id']}, timeout=5).content)
+          d+=r
       break
     except Exception:
       print("No connection, or other error encountered in getTrades. Trying again...")
@@ -350,7 +383,7 @@ def getBuyPrice(symb):
   else:
     return 0
 
-
+#get the account history fromt the beginning to the startDate
 def getProfileHistory(startDate):
   while True:
     try:

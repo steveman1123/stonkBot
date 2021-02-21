@@ -23,10 +23,13 @@ class bcolor:
 
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
 #TODO: make list of wins & loses and analyze why (improve algo as it goes)
+#TODO: incorporate multiple algos first by editing how the latestTrades file is structured, then adding conditionals to the program here to determine which algo should be applied
+#TODO: count how many requests/min we're making (should be linearly related to how many stocks we hold)
+#TODO: don't run goodBuy every minute (wastes api calls just to display a date)
 #TODO: adjust sell %'s if > 1+(sellUp-1)/2 (e.g. if >1.1 if sellUp=1.2), then have a larger sellUpDn (e.g. 5%), then decrease if it reaches sellUp
 
 #generates list of potential gainers, trades based off amount of cash
-def mainAlgo():
+def main():
   global gStocksUpdated #this only gets set once in this function - after market is closed
   isMaster = bool(a.o.c['Master Info']['isMaster']) #is the master or a slave program - a slave will relinquish control to a master if the master is running, but will take over if the master dies
   
@@ -48,7 +51,7 @@ def mainAlgo():
 
   portVal = float(a.getAcct()['portfolio_value'])
 
-  while portVal>minPortVal: #TODO: adjust minPortVal to be some % of max port val
+  while portVal>minPortVal: #TODO: adjust minPortVal to be some % of max port val (based on closing values)
     random.shuffle(gainers) #randomize list so when buying new ones, they won't always choose the top of the original list
 
     
@@ -61,8 +64,9 @@ def mainAlgo():
         print("\nMarket is open")
         with open(a.o.c['File Locations']['latestTradesFile'],"r") as f:
           latestTrades = a.o.json.loads(f.read())
-        
+        pos = a.getPos()
         acctInfo = a.getAcct()
+        #TODO: move this to after the check2Buy part to show updated port/cash values
         portVal = float(acctInfo['portfolio_value'])
         print(f"Portfolio val is ${round(portVal,2)}. Buying power is ${round(float(acctInfo['cash']),2)}, ${max(round(float(acctInfo['cash'])-minBuyPow*buyPowMargin,2),0)} available")
         
@@ -78,17 +82,17 @@ def mainAlgo():
           #check here if the time is close to close - in the function, check that the requested stock didn't peak today
           if(a.timeTillClose()<=float(a.o.c['Time Params']['buyTime'])*60): #must be within some time before close to start buying and buying thread cannot be running already
             #Use this for non-threading:
-            check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock)
+            check2buyDJ(latestTrades, pos, minBuyPow, buyPowMargin, minDolPerStock)
             '''
             #use this for threading:
             if('buying' not in [t.getName() for t in threading.enumerate()] and a.timeTillClose()<=a.o.c['Time Params']['buyTime']*60): #must be within some time before close to start buying and buying thread cannot be running already
-              buyThread = threading.Thread(target=check2buy, args=(latestTrades, minBuyPow, buyPowMargin, dolPerStock)) #init the thread
+              buyThread = threading.Thread(target=check2buyDJ, args=(latestTrades, minBuyPow, buyPowMargin, dolPerStock)) #init the thread
               buyThread.setName('buying') #set the name to the stock symb
               a.o.buyThread.start() #start the thread
             '''
         
         print("Tradable Stocks:")
-        check2sell(a.getPos(), latestTrades, sellDn, sellUp, sellUpDn)
+        check2sellDJ(pos, latestTrades, sellDn, sellUp, sellUpDn)
         '''
         with open(a.o.c['File Locations']['webDataFile'],'w') as f:
           f.write(a.o.json.dumps({"portVal":round(portVal,2),"updated":a.o.dt.datetime.utcnow().strftime("%Y-%m-%d, %H:%M")+" UTC"}))
@@ -99,9 +103,7 @@ def mainAlgo():
         print("Market closed.")
         gStocksUpdated = False
         
-        
        
-
         if(a.o.dt.date.today().weekday()==4): #if it's friday
           print("Removing saved csv files") #delete all csv files in stockDataDir
           for f in glob(a.o.c['File Locations']['stockDataDir']+"*.csv"):
@@ -123,15 +125,17 @@ def mainAlgo():
   print(f"Portfolio value of ${portVal} is less than minimum value of ${round(minPortVal,2)}")
   a.sellAll()
 
-#check to sell a list of stocks - symlist is the output of a.getPos()
-def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
+#check to sell a list of stocks for the double jump algo - symlist is the output of a.getPos()
+#TODO: adjust sell %'s if > 1+(sellUp-1)/2 (e.g. if >1.1 if sellUp=1.2), then have a larger sellUpDn (e.g. 5%), then decrease if it reaches sellUp
+#TODO: if it failed to sell previously "Asset XXXX is not tradable.", then mark it in latestTrades and don't check for the rest of the day
+def check2sellDJ(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
   print("symb\tinit jump\tpred jump (+/- 3wks)\tchg from buy\tchg from close\tsell points")
   print("----\t---------\t--------------------\t------------\t--------------\t-----------")
   for e in symList:
     #if(a.isAlpacaTradable(e['symbol'])): #just skip it if it can't be traded - skipping this for slower connections & to save a query
     try:
-      lastTradeDate = a.o.dt.datetime.strptime(latestTrades[e['symbol']]['tradeDate'],'%Y-%m-%d').date()
-      lastTradeType = latestTrades[e['symbol']]['tradeType']
+      lastTradeDate = a.o.dt.datetime.strptime(latestTrades['doubleJump'][e['symbol']]['tradeDate'],'%Y-%m-%d').date()
+      lastTradeType = latestTrades['doubleJump'][e['symbol']]['tradeType']
       avgBuyPrice = float(e['avg_entry_price']) #if it doesn't exist, default to the avg buy price over all time - it's important to keep a separate record to reset after a sell rather than over all time
     except Exception:
       lastTradeDate = a.o.dt.date.today()-a.o.dt.timedelta(1)
@@ -139,7 +143,7 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
       avgBuyPrice = float(e['avg_entry_price'])
 
     try:
-      shouldSell = latestTrades[e['symbol']]['shouldSell']
+      shouldSell = latestTrades['doubleJump'][e['symbol']]['shouldSell']
     except Exception: #in the event it doesn't exist, don't worry about it
       shouldSell = False
 
@@ -147,7 +151,7 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
     if(shouldSell):
       print(e['symbol']+" marked for immediate sale.")
       print(a.createOrder("sell",e['qty'],e['symbol']))
-      latestTrades[e['symbol']] = {
+      latestTrades['doubleJump'][e['symbol']] = {
                                    "tradeDate": str(a.o.dt.date.today()),
                                    "tradeType": "sell",
                                    "buyPrice":0,
@@ -162,22 +166,26 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
       #curPrice = float(e['current_price'])
       curPrice = a.getPrice(e['symbol'])
       maxPrice = 0
-      buyInfo = a.o.goodBuy(e['symbol'],260)
+      buyInfo = a.o.goodBuy(e['symbol'],260) #TODO: replace this with a single per day rather than every minute
       
       try:
         lastJump = a.o.dt.datetime.strptime(buyInfo,"%m/%d/%Y").date()
         #adjust selling targets based on date to add a time limit
-
-        #TODO: change these to change on a daily basis rather than on a weekly basis and scale to both reach 1 at the same time
-        #      after 6 weeks since the initial jump, the sell values should reach 1 after 4 weeks (20 work days)
+  
+        #after some weeks since the initial jump, the sell values should reach 1 after some more weeks
+        #piecewise function: if less than time to start squeezing, remain constant, else start squeezing linearily per day
+        sellUp = mainSellUp if(a.o.dt.date.today()<lastJump+a.o.dt.timedelta(float(a.o.c['Sell Params']['startSqueeze'])*7)) else mainSellUp-(mainSellUp-1)*(a.o.dt.date.today()-(lastJump+a.o.dt.timedelta(float(a.o.c['Sell Params']['startSqueeze'])*7))).days/(float(a.o.c['Sell Params']['squeezeTime'])*7)
+        
+        sellDn = mainSellDn if(a.o.dt.date.today()<lastJump+a.o.dt.timedelta(float(a.o.c['Sell Params']['startSqueeze'])*7)) else mainSellDn-(mainSellDn-1)*(a.o.dt.date.today()-(lastJump+a.o.dt.timedelta(float(a.o.c['Sell Params']['startSqueeze'])*7))).days/(float(a.o.c['Sell Params']['squeezeTime'])*7)
+        
         #sellUp change of 0 if <=5 weeks after initial jump, -.05 for every week after 6 weeks for a min of 1
-        sellUp = round(max(1,mainSellUp-.05*max(0,int((a.o.dt.date.today()-(lastJump+a.o.dt.timedelta(6*7))).days/7))),2)
+        # sellUp = round(max(1,mainSellUp-.05*max(0,int((a.o.dt.date.today()-(lastJump+a.o.dt.timedelta(6*7))).days/7))),2)
         #sellDn change of 0 if <=5 weeks after initial jump, +.05 for every week after 6 weeks for a max of 1
-        sellDn = round(min(1,mainSellDn+.05*max(0,int((a.o.dt.date.today()-(lastJump+a.o.dt.timedelta(6*7))).days/7))),2)
-
+        # sellDn = round(min(1,mainSellDn+.05*max(0,int((a.o.dt.date.today()-(lastJump+a.o.dt.timedelta(6*7))).days/7))),2)
+  
         totalChange = round(curPrice/buyPrice,2)
         dayChange = round(curPrice/closePrice,2)
-        print(f"{e['symbol']}\t{lastJump}\t{lastJump+a.o.dt.timedelta(5*7)}\t\t{bcolor.FAIL if totalChange<1 else bcolor.OKGREEN}{totalChange}{bcolor.ENDC}\t\t{bcolor.FAIL if dayChange<1 else bcolor.OKGREEN}{dayChange}{bcolor.ENDC}\t\t{sellUp} & {sellDn}")
+        print(f"{e['symbol']}\t{lastJump}\t{lastJump+a.o.dt.timedelta(5*7)}\t\t{bcolor.FAIL if totalChange<1 else bcolor.OKGREEN}{totalChange}{bcolor.ENDC}\t\t{bcolor.FAIL if dayChange<1 else bcolor.OKGREEN}{dayChange}{bcolor.ENDC}\t\t{round(sellUp,2)} & {round(sellDn,2)}")
       except Exception:
         print(e['symbol']+" - "+buyInfo)
         sellUp = mainSellUp
@@ -189,7 +197,7 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
       if(buyPrice==0 or curPrice/buyPrice<=sellDn or buyInfo=="Missed jump"):
         print("Lost it on "+e['symbol'])
         print(a.createOrder("sell",e['qty'],e['symbol']))
-        latestTrades[e['symbol']] = {
+        latestTrades['doubleJump'][e['symbol']] = {
                                      "tradeDate": str(a.o.dt.date.today()),
                                      "tradeType": "sell",
                                      "buyPrice":0,
@@ -202,23 +210,24 @@ def check2sell(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
       elif(curPrice/buyPrice>=sellUp or curPrice/closePrice>=sellUp):
         if(not e['symbol'] in [t.getName() for t in threading.enumerate()]): #if the thread is not found in names of the running threads, then start it (this stops multiple instances of the same stock thread)
           print("Trigger point reached on "+e['symbol']+". Seeing if it will go up...")
-          triggerThread = threading.Thread(target=triggeredUp, args=(e, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, latestTrades)) #init the thread
+          triggerThread = threading.Thread(target=triggeredUpDJ, args=(e, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, latestTrades)) #init the thread
           triggerThread.setName(e['symbol']) #set the name to the stock symb
           triggerThread.start() #start the thread
 
-#triggered selling-up - this is the one that gets multithreaded
-def triggeredUp(symbObj, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, latestTrades):
+#triggered once the stock gains enough for the double jump algo
+def triggeredUpDJ(symbObj, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, latestTrades):
   global gainers
   print("Starting thread for "+symbObj['symbol'])
   
   while((curPrice/buyPrice>=maxPrice/buyPrice*sellUpDn or curPrice/closePrice>=maxPrice/closePrice*sellUpDn) and a.timeTillClose()>=30):
     curPrice = a.getPrice(symbObj['symbol'])
     maxPrice = max(maxPrice, curPrice)
-    print(symbObj['symbol']+" - "+str(round(curPrice/buyPrice,2))+":"+str(round(maxPrice/buyPrice*sellUpDn,2))+" - "+str(round(curPrice/closePrice,2))+":"+str(round(maxPrice/closePrice,2)))
+    print(f"{symbObj['symbol']} - {round(curPrice/buyPrice,2)}:{round(maxPrice/buyPrice*sellUpDn,2)} - {round(curPrice/closePrice,2)}:{round(maxPrice/closePric,2)}")
+    #print(symbObj['symbol']+" - "+str(round(curPrice/buyPrice,2))+":"+str(round(maxPrice/buyPrice*sellUpDn,2))+" - "+str(round(curPrice/closePrice,2))+":"+str(round(maxPrice/closePrice,2)))
     a.o.time.sleep(3)
   
   print(a.createOrder("sell",symbObj['qty'],symbObj['symbol']))
-  latestTrades[symbObj['symbol']] = {
+  latestTrades['doubleJump'][symbObj['symbol']] = {
                                      "tradeDate": str(a.o.dt.date.today()),
                                      "tradeType": "sell",
                                      "buyPrice": 0, #reset the avgBuyPrice to 0 after a sell
@@ -232,8 +241,13 @@ def triggeredUp(symbObj, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, lat
 
 
 #buy int(buyPow/10) # of individual stocks. If buyPow>minBuyPow*buyPowMargin, then usablebuyPow=buyPow-minBuyPow
-def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
+#TODO: figure out why it doesn't buy more per loop
+#TODO: why does it not buy if cash<minBuyPow?
+def check2buyDJ(latestTrades, pos, minBuyPow, buyPowMargin, minDolPerStock):
+  
+  pQty = {e['symbol']:e['qty'] for e in pos} #isolate just the held stock and the # of shares
   usableBuyPow = float(a.getAcct()['cash']) #init as the current buying power
+  
   if(buyPowMargin<1): #buyPowMargin MUST BE GREATER THAN 1 in order for it to work correctly
     raise("Error: withdrawlable funds margin is less than 1. Multiplier must be >=1")
   
@@ -258,10 +272,10 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
     #TODO: in this conditional, also check that the gain isn't greater than ~75% of sellUp (e.g. must be <1.15 if sellUp=1.2)
     if(symb not in [t.getName() for t in threading.enumerate()]): #make sure the stock isn't trying to be sold already
       try: #check when it was traded last
-        lastTradeDate = a.o.dt.datetime.strptime(latestTrades[symb]['tradeDate'],'%Y-%m-%d').date()
-        lastTradeType = latestTrades[symb]['tradeType']
+        lastTradeDate = a.o.dt.datetime.strptime(latestTrades['doubleJump'][symb]['tradeDate'],'%Y-%m-%d').date()
+        lastTradeType = latestTrades['doubleJump'][symb]['tradeType']
         try:
-          avgBuyPrice = latestTrades[symb]['buyPrice']
+          avgBuyPrice = latestTrades['doubleJump'][symb]['buyPrice']
         except Exception:
           avgBuyPrice = 0
       except Exception:
@@ -271,29 +285,32 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
         
       #for some reason this check was being bypassed. This should be resolved in the updateStockList function where it removes any prospective stock to be bought from the list if it was sold today
       if(lastTradeType != "sell" or lastTradeDate < a.o.dt.datetime.today().date()): #make sure we didn't sell it today already
-        if(a.isAlpacaTradable(symb)): #make sure it's tradable on the market
-          curPrice = a.getPrice(symb)
-          if(curPrice>0):
-            shares2buy = int(dolPerStock/curPrice)
-            orderText = a.createOrder("buy",shares2buy,symb,"market","day")
-            #make sure it actually executed the order, then increment
-            if(orderText.endswith('accepted')):
-              print(orderText)
-              #record the transaction
-              latestTrades[symb] = { #set the avgBuyPrice to the average of the currentPrice and the previous avg (unless the prev avg<=0)
-                                    "tradeDate": str(a.o.dt.date.today()),
-                                    "tradeType": "buy",
-                                    "buyPrice": (curPrice+avgBuyPrice)/(1+avgBuyPrice>0),
-                                    "shouldSell": False
-                                    }
-              with open(a.o.c['File Locations']['latestTradesFile'],"w") as f:
-                f.write(a.o.json.dumps(latestTrades, indent=2))
-              stocksBought += 1
-            i += 1 #try the next stock
-          else:
-            i += 1 #try the next stock
+        # if(a.isAlpacaTradable(symb)): #make sure it's tradable on the market (optional check?)
+        [curPrice,mktCap] = a.getPrice(symb,True) #market cap is needed because we don't want to buy too much of the company that the pattern would no longer hold
+        sharesHeld = 0 if(symb not in pQty) else float(pQty[symb]) #get the shares held of a certain stock (if we have it)
+        if(curPrice>0):
+          #calc outstanding shares, reduce to our acceptable holding % of shares, account for currently held shares (don't let it go negative). If within that range, then just look at the divvied cash
+          shares2buy = min(max(int(mktCap/curPrice*float(a.o.c['Buy Params']['maxVolPerc'])-sharesHeld),0),int(dolPerStock/curPrice))
+          #shares2buy = int(dolPerStock/curPrice) #outdated # of shares to buy (does not account for marketCap)
+          orderText = a.createOrder("buy",shares2buy,symb,"market","day")
+          #make sure it actually executed the order, then increment
+          if(orderText.endswith('accepted')):
+            print(orderText)
+            #record the transaction
+            latestTrades['doubleJump'][symb] = { #set the avgBuyPrice to the average of the currentPrice and the previous avg (unless the prev avg<=0)
+                                  "tradeDate": str(a.o.dt.date.today()),
+                                  "tradeType": "buy",
+                                  "buyPrice": (curPrice+avgBuyPrice)/(1+avgBuyPrice>0),
+                                  "shouldSell": False
+                                  }
+            with open(a.o.c['File Locations']['latestTradesFile'],"w") as f:
+              f.write(a.o.json.dumps(latestTrades, indent=2))
+            stocksBought += 1
+          i += 1 #try the next stock
         else:
           i += 1 #try the next stock
+        # else:
+          # i += 1 #try the next stock
       else:
         i += 1 #try the next stock
     else:
@@ -303,7 +320,7 @@ def check2buy(latestTrades, minBuyPow, buyPowMargin, minDolPerStock):
 
 
 
-#update the stock list - takes ~5 minutes to process 400 stocks
+#update the stock list
 def updateStockList():
   global gainers, gainerDates, gStocksUpdated
   print("Updating stock list")
@@ -322,6 +339,7 @@ def updateStockList():
   print(f"Done updating list - {len(gainers)} potential gainers")
   gStocksUpdated = True
 
+#mark stocks to sell asap in the event that they mess up or go under
 def mark2sell():
   p = a.getPos()
   splitters = a.o.reverseSplitters()
@@ -330,14 +348,14 @@ def mark2sell():
     # news = str(ns.scrape(e['symbol'])).lower()
     
     # shouldSell = "reverse stock split" in news or "reverse-stock-split" in news or "bankrupt" in news #sell before a reverse stock split or bankruptcy
-    shouldSell = e in splitters
+    shouldSell = e['symbol'] in splitters
     print(shouldSell)
     with open(a.o.c['File Locations']['latestTradesFile'],"r") as f:
       latestTrades = a.o.json.loads(f.read())
     try:  
-      latestTrades[e['symbol']]['shouldSell'] = shouldSell
-    except Exception:
-      latestTrades[e['symbol']] = {'shouldSell' : shouldSell}
+      latestTrades['doubleJump'][e['symbol']]['shouldSell'] = shouldSell
+    except Exception: #for legacy - transition from the old format
+      latestTrades['doubleJump'][e['symbol']] = {'shouldSell' : shouldSell}
     with open(a.o.c['File Locations']['latestTradesFile'],"w") as f:
       f.write(a.o.json.dumps(latestTrades, indent=2))
 

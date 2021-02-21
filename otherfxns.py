@@ -5,21 +5,16 @@ import datetime as dt
 from bs4 import BeautifulSoup as bs
 from math import ceil
 
-settingsFile = './stonkBot.config'
-
 c = configparser.ConfigParser()
-c.read(settingsFile)
+c.read('./stonkBot.config')
 
-
-# with open(settingsFile,"r") as f:
-#   c = json.loads(f.read())
 stockDir = c['File Locations']['stockDataDir']
 
 def isTradable(symb):
   isTradable = False
   while True:
     try:
-      r = requests.request("GET","https://api.nasdaq.com/api/quote/{}/info?assetclass=stocks".format(symb), headers={"user-agent":"-"}, timeout=5).content
+      r = requests.request("GET",f"https://api.nasdaq.com/api/quote/{symb}/info?assetclass=stocks", headers={"user-agent":"-"}, timeout=5).content
       break
     except Exception:
       print("No connection, or other error encountered in isTradable, trying again...")
@@ -28,7 +23,7 @@ def isTradable(symb):
   try:
     isTradable = bool(json.loads(r)['data']['isNasdaqListed'])
   except Exception:
-    print(symb+" - Error in isTradable")
+    print(f"{symb} - Error in isTradable")
 
   return isTradable
 
@@ -40,13 +35,13 @@ def getList():
   #many of the options listed are optional and can be removed from the get request
   params = {
     "TradesShareEnable" : "True",
-    "TradesShareMin" : str(c['Sim Params']['simMinPrice']),
-    "TradesShareMax" : str(c['Sim Params']['simMaxPrice']),
+    "TradesShareMin" : str(c['Double Jump Params']['simMinPrice']),
+    "TradesShareMax" : str(c['Double Jump Params']['simMaxPrice']),
     "PriceDirEnable" : "False",
     "PriceDir" : "Up",
     "LastYearEnable" : "False",
     "TradeVolEnable" : "true",
-    "TradeVolMin" : str(c['Sim Params']['simMinVol']),
+    "TradeVolMin" : str(c['Double Jump Params']['simMinVol']),
     "TradeVolMax" : "",
     "BlockEnable" : "False",
     "PERatioEnable" : "False",
@@ -97,17 +92,19 @@ def getList():
         time.sleep(3)
         continue
 
-    table = bs(r,'html.parser').find_all('table')[0]
-    for e in table.find_all('tr')[1::]:
-      symbList.append(e.find_all('td')[0].get_text())
-
+    try:
+      table = bs(r,'html.parser').find_all('table')[0]
+      for e in table.find_all('tr')[1::]:
+        symbList.append(e.find_all('td')[0].get_text())
+    except Exception:
+      print("Error in MW website.")
   
   #now that we have the marketWatch list, let's get the stocksunder1 list - essentially the getPennies() fxn from other files
   print("Getting stocksunder1 data...")
   urlList = ['nasdaq','tech','biotech','marijuana','healthcare','energy']
   for e in urlList:  
     print(e+" stock list")
-    url = 'https://stocksunder1.org/{}-penny-stocks/'.format(e)
+    url = f'https://stocksunder1.org/{e}-penny-stocks/'
     while True:
       try:
         html = requests.post(url, params={"price":5,"volume":0,"updown":"up"}, timeout=5).content
@@ -130,7 +127,7 @@ def getList():
 
 #returns as 2d array order of Date, Close/Last, Volume, Open, High, Low sorted by dates newest to oldest (does not include today's info)
 #get the history of a stock from the nasdaq api (date format is yyyy-mm-dd)
-def getHistory(symb, startDate, endDate, maxTries=10):
+def getHistory(symb, startDate, endDate, maxTries=5):
   #try checking the modified date of the file, if it throws an error, just set it to yesterday
   try:
     modDate = dt.datetime.strptime(time.strftime("%Y-%m-%d",time.localtime(os.stat(stockDir+symb+'.csv').st_mtime)),"%Y-%m-%d").date() #if ANYONE knows of a better way to get the modified date into a date format, for the love of god please let me know
@@ -175,19 +172,19 @@ def getHistory(symb, startDate, endDate, maxTries=10):
 #this does NOT save the csv file
 #TODO: shouldn't be an issue for this case, but here's some logic:
 #   if(todate-fromdate<22 and todate>1 month ago): 0-1 days will be returned
-def getHistory2(symb, startDate, endDate, maxTries=10):
+def getHistory2(symb, startDate, endDate, maxTries=5):
   maxDays = 14 #max rows returned per request
-  tries=0
-  while tries<maxTries: #get the first set of dates
+  tries=1
+  while tries<=maxTries: #get the first set of dates
     try:
       j = json.loads(requests.get(f'https://api.nasdaq.com/api/quote/{symb}/historical?assetclass=stocks&fromdate={startDate}&todate={endDate}',headers={'user-agent':'-'}).text)
       break
     except Exception:
-      print("Error in getHistory2. Trying again...")
+      print(f"Error in getHistory2. Trying again ({tries}/{maxTries})...")
       time.sleep(3)
       continue
     tries += 1
-  if(tries>=maxTries or j['data']['totalRecords']==0):
+  if(j['data'] is None or tries>=maxTries or j['data']['totalRecords']==0): #TODO: this could have a failure if the stock isn't found/returns nothing
     print("Failed to get history")
     return []
   else: #something's fucky with this api, jsyk
@@ -218,7 +215,8 @@ def getHistory2(symb, startDate, endDate, maxTries=10):
 def jumpedToday(symb,jump):
   url = f'https://api.nasdaq.com/api/quote/{symb}/summary?assetclass=stocks'
   tries=0
-  while tries<3:
+  maxTries = 3 #sometimes this one really hangs but it's not terribly important, so we set a max limit and just assume it didn't jump today if it fails
+  while tries<maxTries:
     try:
       j = json.loads(requests.get(url,headers={'user-agent':'-'}).text)
       close = float(j['data']['summaryData']['PreviousClose']['value'].replace('$','').replace(',','')) #previous day close
@@ -226,7 +224,7 @@ def jumpedToday(symb,jump):
       out = high/close>=jump
       break
     except Exception:
-      print(f"Error in jumpedToday. Trying again ({tries} - {symb})...")
+      print(f"Error in jumpedToday. Trying again ({tries+1}/{maxTries} - {symb})...")
       time.sleep(3)
       out=False
       pass
@@ -237,25 +235,26 @@ def jumpedToday(symb,jump):
 #checks whether something is a good buy or not (if not, return why - no initial jump or second jump already missed).
 #if it is a good buy, return initial jump date
 #this is where the magic really happens
-def goodBuy(symb,days2look = int(c['Sim Params']['simDays2look'])): #days2look=how far back to look for a jump
+#TODO: separate this out into separate functions (should also end up going into a different file with the other functions relating only to the double jump algo)
+def goodBuy(symb,days2look = int(c['Double Jump Params']['simDays2look'])): #days2look=how far back to look for a jump
   validBuy = "NA" #set to the jump date if it's valid
   if isTradable(symb):
     #calc price % diff over past 20 days (current price/price of day n) - current must be >= 80% for any
     #calc volume % diff over average past some days (~60 days?) - must be sufficiently higher (~300% higher?)
     
-    days2wait4fall = int(c['Sim Params']['simWait4fall']) #wait for stock price to fall for this many days
-    startDate = days2wait4fall + int(c['Sim Params']['simStartDateDiff']) #add 1 to account for the jump day itself
-    firstJumpAmt = float(c['Sim Params']['simFirstJumpAmt']) #stock first must jump by this amount (1.3=130% over 1 day)
-    sellUp = float(c['Sim Params']['simSellUp']) #% to sell up at
-    sellDn = float(c['Sim Params']['simSellDn']) #% to sell dn at
+    days2wait4fall = int(c['Double Jump Params']['simWait4fall']) #wait for stock price to fall for this many days
+    startDate = days2wait4fall + int(c['Double Jump Params']['simStartDateDiff']) #add 1 to account for the jump day itself
+    firstJumpAmt = float(c['Double Jump Params']['simFirstJumpAmt']) #stock first must jump by this amount (1.3=130% over 1 day)
+    sellUp = float(c['Double Jump Params']['simSellUp']) #% to sell up at
+    sellDn = float(c['Double Jump Params']['simSellDn']) #% to sell dn at
     
     #make sure that the jump happened in the  frame rather than too long ago
-    volAvgDays = int(c['Sim Params']['simVolAvgDays']) #arbitrary number to avg volumes over
-    checkPriceDays = int(c['Sim Params']['simChkPriceDays']) #check if the price jumped substantially over the last __ trade days
-    checkPriceAmt = float(c['Sim Params']['simChkPriceAmt']) #check if the price jumped by this amount in the above days (% - i.e 1.5 = 150%)
-    volGain = float(c['Sim Params']['simVolGain']) #check if the volume increased by this amount during the jump (i.e. 3 = 300% or 3x, 0.5 = 50% or 0.5x)
-    volLoss = float(c['Sim Params']['simVolLoss']) #check if the volume decreases by this amount during the price drop
-    priceDrop = float(c['Sim Params']['simPriceDrop']) #price should drop this far when the volume drops
+    volAvgDays = int(c['Double Jump Params']['simVolAvgDays']) #arbitrary number to avg volumes over
+    checkPriceDays = int(c['Double Jump Params']['simChkPriceDays']) #check if the price jumped substantially over the last __ trade days
+    checkPriceAmt = float(c['Double Jump Params']['simChkPriceAmt']) #check if the price jumped by this amount in the above days (% - i.e 1.5 = 150%)
+    volGain = float(c['Double Jump Params']['simVolGain']) #check if the volume increased by this amount during the jump (i.e. 3 = 300% or 3x, 0.5 = 50% or 0.5x)
+    volLoss = float(c['Double Jump Params']['simVolLoss']) #check if the volume decreases by this amount during the price drop
+    priceDrop = float(c['Double Jump Params']['simPriceDrop']) #price should drop this far when the volume drops
     
     start = str(dt.date.today()-dt.timedelta(days=(volAvgDays+days2look)))
     end = str(dt.date.today())
@@ -301,7 +300,7 @@ def goodBuy(symb,days2look = int(c['Sim Params']['simDays2look'])): #days2look=h
                   if(not missedJump):
                     validBuy = dateData[startDate][0] #return the date the stock initially jumped
     
-  return validBuy #return a dict of valid stocks and the date of their latest jump
+  return validBuy
   
 
 #get the ticker symbol and exchange of a company or return "-" if not found
