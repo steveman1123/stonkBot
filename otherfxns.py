@@ -10,24 +10,27 @@ c.read('./stonkBot.config')
 
 stockDir = c['File Locations']['stockDataDir']
 
+#query nasdaq api to see if something is tradable on the market
 def isTradable(symb):
   isTradable = False
   while True:
     try:
-      r = requests.request("GET",f"https://api.nasdaq.com/api/quote/{symb}/info?assetclass=stocks", headers={"user-agent":"-"}, timeout=5).content
+      r = json.loads(requests.request("GET",f"https://api.nasdaq.com/api/quote/{symb}/info?assetclass=stocks", headers={"user-agent":"-"}, timeout=5).content)
       break
     except Exception:
       print("No connection, or other error encountered in isTradable, trying again...")
       time.sleep(3)
       continue
-  try:
-    isTradable = bool(json.loads(r)['data']['isNasdaqListed'])
-  except Exception:
-    print(f"{symb} - Error in isTradable")
+  if(r['data'] is not None):
+    try:
+      isTradable = bool(r['data']['isNasdaqListed'])
+    except Exception:
+      print(f"{symb} - Error in isTradable")
 
   return isTradable
 
 #get list of stocks from stocksUnder1 and marketWatch lists
+#TODO: rename this function to be more specific
 def getList():
   symbList = list()
   
@@ -127,6 +130,7 @@ def getList():
 
 #returns as 2d array order of Date, Close/Last, Volume, Open, High, Low sorted by dates newest to oldest (does not include today's info)
 #get the history of a stock from the nasdaq api (date format is yyyy-mm-dd)
+#TODO: this function may be obsolete now. Swap with getHistory2?
 def getHistory(symb, startDate, endDate, maxTries=5):
   #try checking the modified date of the file, if it throws an error, just set it to yesterday
 

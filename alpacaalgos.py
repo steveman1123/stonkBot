@@ -7,6 +7,7 @@ import alpacafxns as a
 gainers = [] #global list of potential gaining stocks
 gainerDates = {} #global list of gainers plus their initial jump date and predicted next jump date
 gStocksUpdated = False
+jumpDates = {} #global dict of held positions and their initial jump date
 
 #used for coloring the displayed text
 class bcolor:
@@ -129,6 +130,7 @@ def main():
 #TODO: adjust sell %'s if > 1+(sellUp-1)/2 (e.g. if >1.1 if sellUp=1.2), then have a larger sellUpDn (e.g. 5%), then decrease if it reaches sellUp
 #TODO: if it failed to sell previously "Asset XXXX is not tradable.", then mark it in latestTrades and don't check for the rest of the day
 def check2sellDJ(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
+  global jumpList
   print("symb\tinit jump\tpred jump (+/- 3wks)\tchg from buy\tchg from close\tsell points")
   print("----\t---------\t--------------------\t------------\t--------------\t-----------")
   for e in symList:
@@ -156,6 +158,8 @@ def check2sellDJ(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
                                    "tradeType": "sell",
                                    "buyPrice":0,
                                    "shouldSell": False
+                                   #TODO: add isTradable:date
+                                   #TODO: add sharesHeld:##
                                   }
       with open(a.o.c['File Locations']['latestTradesFile'],"w") as f:
         f.write(a.o.json.dumps(latestTrades, indent=2))
@@ -166,7 +170,14 @@ def check2sellDJ(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
       #curPrice = float(e['current_price'])
       curPrice = a.getPrice(e['symbol'])
       maxPrice = 0
-      buyInfo = a.o.goodBuy(e['symbol'],260) #TODO: replace this with a single per day rather than every minute
+      
+      #setup jump dates/info about the held positions (reset in markandupdate() and at the beginning of the program)
+      if(e['symbol'] not in jumpDates): #only update if not already present
+        jumpDates[e['symbol']] = a.o.goodBuy(e['symbol'],260)
+      #TODO: add another check here that if it does have an error, try updating it again (especially if few points available)
+      #elif(jumpDates[e['symbol']]!= <some date format>): then do the thing also
+#        jumpDates[e['symbol']] = a.o.goodBuy(e['symbol'],260)
+      buyInfo = jumpDates[e['symbol']]  #TODO: phase out buyInfo in lieu of just jumpDates index
       
       try:
         lastJump = a.o.dt.datetime.strptime(buyInfo,"%m/%d/%Y").date()
@@ -258,6 +269,7 @@ def check2buyDJ(latestTrades, pos, minBuyPow, buyPowMargin, minDolPerStock):
     usableBuyPow = 0 #stop trading if we've started to eat into the margin, that way we don't overshoot
     
   if(len(gainers)>0):
+    #TODO: investigate this delaration?
     dolPerStock = max(minDolPerStock, usableBuyPow/len(gainers)) #if buyPow>(minDolPerStock*len(gainers)) then divvy up buyPow over gainers
   else:
     dolPerStock = minDolPerStock
@@ -361,5 +373,7 @@ def mark2sell():
 
 #mark stocks to be sold, then update the stock list (only meant to be run as a thread while market is closed)
 def markAndUpdate():
+  global jumpDates
+  jumpDates = {} #reset so they'll be recalculated the next day
   mark2sell()
   updateStockList()
