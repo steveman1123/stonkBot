@@ -222,7 +222,7 @@ def triggeredUpDJ(symbObj, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, l
   while((curPrice/buyPrice>=maxPrice/buyPrice*sellUpDn or curPrice/closePrice>=maxPrice/closePrice*sellUpDn) and a.timeTillClose()>=30):
     curPrice = a.getPrice(symbObj['symbol'])
     maxPrice = max(maxPrice, curPrice)
-    print(f"{symbObj['symbol']} - {round(curPrice/buyPrice,2)}:{round(maxPrice/buyPrice*sellUpDn,2)} - {round(curPrice/closePrice,2)}:{round(maxPrice/closePric,2)}")
+    print(f"{symbObj['symbol']} - {round(curPrice/buyPrice,2)}:{round(maxPrice/buyPrice*sellUpDn,2)} - {round(curPrice/closePrice,2)}:{round(maxPrice/closePrice,2)}")
     #print(symbObj['symbol']+" - "+str(round(curPrice/buyPrice,2))+":"+str(round(maxPrice/buyPrice*sellUpDn,2))+" - "+str(round(curPrice/closePrice,2))+":"+str(round(maxPrice/closePrice,2)))
     a.o.time.sleep(3)
   

@@ -1,9 +1,9 @@
 #This module should be any function that doesn't require alpaca or keys to use
 
-import json,requests,os,time,re,csv, configparser
+import json,requests,os,time,re,csv,sys,configparser
 import datetime as dt
 from bs4 import BeautifulSoup as bs
-from math import ceil
+from math import floor, ceil
 
 c = configparser.ConfigParser()
 c.read('./stonkBot.config')
@@ -129,6 +129,7 @@ def getList():
 #get the history of a stock from the nasdaq api (date format is yyyy-mm-dd)
 def getHistory(symb, startDate, endDate, maxTries=5):
   #try checking the modified date of the file, if it throws an error, just set it to yesterday
+
   try:
     modDate = dt.datetime.strptime(time.strftime("%Y-%m-%d",time.localtime(os.stat(stockDir+symb+'.csv').st_mtime)),"%Y-%m-%d").date() #if ANYONE knows of a better way to get the modified date into a date format, for the love of god please let me know
   except Exception:
@@ -136,7 +137,8 @@ def getHistory(symb, startDate, endDate, maxTries=5):
   #write to file after checking that the file doesn't already exist (we don't want to abuse the api) or that it was edited more than a day ago
   if(not os.path.isfile(stockDir+symb+".csv") or modDate<dt.date.today()):
     
-    tries=0
+    getHistory2(symb, startDate, endDate)
+    tries=maxTries
     while tries<maxTries: #only try getting history with this method a few times before trying the next method
       tries += 1
       try:
@@ -148,7 +150,7 @@ def getHistory(symb, startDate, endDate, maxTries=5):
           raise Exception('Returned invalid data') #sometimes the page will return html data that cannot be successfully parsed
         break
       except Exception:
-        print("No connection, or other error encountered in getHistory. Trying again...")
+        print(f"No connection, or other error encountered in getHistory for {symb}. Trying again...")
         time.sleep(3)
         continue
     
@@ -168,6 +170,7 @@ def getHistory(symb, startDate, endDate, maxTries=5):
     out = [[ee.replace('$','').replace('N/A','0').strip() for ee in e] for e in csv_reader][1::] #trim first line to get rid of headers, also replace $'s and N/A volumes to calculable values
   return out
 
+
 #use the new nasdaq api to return in the same format as getHistory
 #this does NOT save the csv file
 #TODO: shouldn't be an issue for this case, but here's some logic:
@@ -175,31 +178,38 @@ def getHistory(symb, startDate, endDate, maxTries=5):
 def getHistory2(symb, startDate, endDate, maxTries=5):
   maxDays = 14 #max rows returned per request
   tries=1
+  j = {}
   while tries<=maxTries: #get the first set of dates
     try:
       j = json.loads(requests.get(f'https://api.nasdaq.com/api/quote/{symb}/historical?assetclass=stocks&fromdate={startDate}&todate={endDate}',headers={'user-agent':'-'}).text)
       break
     except Exception:
-      print(f"Error in getHistory2. Trying again ({tries}/{maxTries})...")
+      print(f"Error in getHistory2 for {symb}. Trying again ({tries}/{maxTries})...")
       time.sleep(3)
-      continue
+      pass
     tries += 1
   if(j['data'] is None or tries>=maxTries or j['data']['totalRecords']==0): #TODO: this could have a failure if the stock isn't found/returns nothing
     print("Failed to get history")
     return []
   else: #something's fucky with this api, jsyk
     if(j['data']['totalRecords']>maxDays): #get subsequent sets
-      for i in range(1,ceil(j['data']['totalRecords']/maxDays)):
-        tries=0
-        while tries<3: #magc number. This could be larger, but the larger it is, the longer it'll take to fail out of a process if it doesn't work
+      for i in range(1,floor(j['data']['totalRecords']/maxDays)):
+        tries=1
+        while tries<=maxTries: #magc number. This could be larger, but the larger it is, the longer it'll take to fail out of a process if it doesn't work
+          #r = json.loads(requests.get(f'https://api.nasdaq.com/api/quote/{symb}/historical?assetclass=stocks&fromdate={startDate}&todate={endDate}&offset={i*maxDays+i}',headers={'user-agent':'-'}).text)
+          #print(f"{symb}|{i}/{floor(j['data']['totalRecords']/maxDays)} - {len(j['data']['tradesTable']['rows'])}")
+          #print(r['data']['tradesTable']['rows'])
+          #j['data']['tradesTable']['rows'] += r['data']['tradesTable']['rows'] #append the sets together
+          
+
           try:
             r = json.loads(requests.get(f'https://api.nasdaq.com/api/quote/{symb}/historical?assetclass=stocks&fromdate={startDate}&todate={endDate}&offset={i*maxDays+i}',headers={'user-agent':'-'}).text)
             j['data']['tradesTable']['rows'] += r['data']['tradesTable']['rows'] #append the sets together
             break
           except Exception:
-            print("Error in getHistory2. Trying again...")
+            print(f"Error in getHistory2 for {symb} index {i}. Trying again ({tries}/{maxTries})...")
             time.sleep(3)
-            continue
+            pass
           tries += 1
     
     #format the data to return the same as getHistory
