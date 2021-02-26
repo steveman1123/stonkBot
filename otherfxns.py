@@ -3,7 +3,7 @@
 import json,requests,os,time,re,csv,sys,configparser
 import datetime as dt
 from bs4 import BeautifulSoup as bs
-from math import floor, ceil
+from math import ceil
 
 c = configparser.ConfigParser()
 c.read('./stonkBot.config')
@@ -18,7 +18,7 @@ def isTradable(symb):
       r = json.loads(requests.request("GET",f"https://api.nasdaq.com/api/quote/{symb}/info?assetclass=stocks", headers={"user-agent":"-"}, timeout=5).content)
       break
     except Exception:
-      print("No connection, or other error encountered in isTradable, trying again...")
+      print(f"No connection, or other error encountered in isTradable for {symb}, trying again...")
       time.sleep(3)
       continue
   if(r['data'] is not None):
@@ -141,8 +141,8 @@ def getHistory(symb, startDate, endDate, maxTries=5):
   #write to file after checking that the file doesn't already exist (we don't want to abuse the api) or that it was edited more than a day ago
   if(not os.path.isfile(stockDir+symb+".csv") or modDate<dt.date.today()):
     
-    getHistory2(symb, startDate, endDate)
-    tries=maxTries
+    #getHistory2(symb, startDate, endDate)
+    tries=maxTries #since the old one doesn't seem to work anymore, aet this to maxTriws to bypass it
     while tries<maxTries: #only try getting history with this method a few times before trying the next method
       tries += 1
       try:
@@ -197,17 +197,11 @@ def getHistory2(symb, startDate, endDate, maxTries=5):
     return []
   else: #something's fucky with this api, jsyk
     if(j['data']['totalRecords']>maxDays): #get subsequent sets
-      for i in range(1,floor(j['data']['totalRecords']/maxDays)):
+      for i in range(1,ceil(j['data']['totalRecords']/(maxDays+1))):
         tries=1
-        while tries<=maxTries: #magc number. This could be larger, but the larger it is, the longer it'll take to fail out of a process if it doesn't work
-          #r = json.loads(requests.get(f'https://api.nasdaq.com/api/quote/{symb}/historical?assetclass=stocks&fromdate={startDate}&todate={endDate}&offset={i*maxDays+i}',headers={'user-agent':'-'}).text)
-          #print(f"{symb}|{i}/{floor(j['data']['totalRecords']/maxDays)} - {len(j['data']['tradesTable']['rows'])}")
-          #print(r['data']['tradesTable']['rows'])
-          #j['data']['tradesTable']['rows'] += r['data']['tradesTable']['rows'] #append the sets together
-          
-
+        while tries<=maxTries:
           try:
-            r = json.loads(requests.get(f'https://api.nasdaq.com/api/quote/{symb}/historical?assetclass=stocks&fromdate={startDate}&todate={endDate}&offset={i*maxDays+i}',headers={'user-agent':'-'}).text)
+            r = json.loads(requests.get(f'https://api.nasdaq.com/api/quote/{symb}/historical?assetclass=stocks&fromdate={startDate}&todate={endDate}&offset={i*(maxDays+1)}',headers={'user-agent':'-'}).text)
             j['data']['tradesTable']['rows'] += r['data']['tradesTable']['rows'] #append the sets together
             break
           except Exception:
@@ -364,18 +358,27 @@ def getDrugList():
   return arr
 
 
-#the new version of the getGainers function - uses the new functions getList, getHistory, and goodBuy
+#egt the potential gaining stocks for each algorithm
 def getGainers(symblist):
   gainers = {}
-  
+
+  #get the potential gainers for the double jump algo
   for i,e in enumerate(symblist):
-    b = goodBuy(e)
     try:
-      gainers[e] = [b, (dt.datetime.strptime(b,"%m/%d/%Y")+dt.timedelta(days=(7*5))).strftime("%m/%d/%Y")]
-      print(f"({i+1}/{len(symblist)}) {e} - {b} - {gainers[e][1]}")
+      initJump = str(dt.datetime.strptime(goodBuy(e),"%m/%d/%Y").date()) #attempt to calc the initial jump date if possible
+      gainers[e] = {"algo":"DJ","note":initJump}
+      print(f"({i+1}/{len(symblist)}) {e} - DJ ({initJump})")
     except Exception:
       pass
-  #TODO: once getDrugList() is finished, append the returned list to gainers
+
+
+  #append FDA drug list to gainers
+  druglist = getDrugList()
+  for i,e in enumerate(druglist):
+    #TODO: perform check to see when the stock was initially added to the drug list
+    gainers[e] = {"algo":"FDA","note":None}
+    print(f"({i+1}/{len(druglist)}) {e} - FDA")
+
   return gainers
 
 #TODO: add slave functionality

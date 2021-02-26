@@ -5,7 +5,6 @@ import alpacafxns as a
 # import newsScrape as ns
 
 gainers = [] #global list of potential gaining stocks
-gainerDates = {} #global list of gainers plus their initial jump date and predicted next jump date
 gStocksUpdated = False
 jumpDates = {} #global dict of held positions and their initial jump date
 
@@ -105,7 +104,7 @@ def main():
         gStocksUpdated = False
         
        
-        if(a.o.dt.date.today().weekday()==4): #if it's friday
+        if(a.o.dt.date.today().weekday()==4 and a.o.dt.time()>a.o.dt.time(12)): #if it's friday afternoon
           print("Removing saved csv files") #delete all csv files in stockDataDir
           for f in glob(a.o.c['File Locations']['stockDataDir']+"*.csv"):
             a.o.os.unlink(f)
@@ -205,7 +204,7 @@ def check2sellDJ(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
 
 
       #cut the losses if we missed the jump or if the price dropped too much
-      if(buyPrice==0 or curPrice/buyPrice<=sellDn or buyInfo=="Missed jump"):
+      if(buyPrice==0 or curPrice/buyPrice<=sellDn or buyInfo=="Missed jump"): #TODO: ensure that the stock is part of the DJ algo (should actually also check in the main algo rather then here, though might be good to check both?
         print("Lost it on "+e['symbol'])
         print(a.createOrder("sell",e['qty'],e['symbol']))
         latestTrades['doubleJump'][e['symbol']] = {
@@ -334,7 +333,7 @@ def check2buyDJ(latestTrades, pos, minBuyPow, buyPowMargin, minDolPerStock):
 
 #update the stock list
 def updateStockList():
-  global gainers, gainerDates, gStocksUpdated
+  global gainers, gStocksUpdated
   print("Updating stock list")
   gainers = [] #clear the gainer list
   #list of stocks that may gain in the near future as well as currently held stocks and their last gain date
