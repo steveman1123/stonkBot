@@ -4,7 +4,7 @@ from glob import glob
 import alpacafxns as a
 # import newsScrape as ns
 
-gainers = [] #global list of potential gaining stocks
+gainers = {} #global list of potential gaining stocks
 gStocksUpdated = False
 jumpDates = {} #global dict of held positions and their initial jump date
 
@@ -24,8 +24,6 @@ class bcolor:
 #TODO: add master/slave functionality to enable a backup to occur - that is if this is run on 2 computers, one can be set to master, the other to slave, and if the master dies, the slave can become the master
 #TODO: make list of wins & loses and analyze why (improve algo as it goes)
 #TODO: incorporate multiple algos first by editing how the latestTrades file is structured, then adding conditionals to the program here to determine which algo should be applied
-#TODO: count how many requests/min we're making (should be linearly related to how many stocks we hold)
-#TODO: don't run goodBuy every minute (wastes api calls just to display a date)
 #TODO: adjust sell %'s if > 1+(sellUp-1)/2 (e.g. if >1.1 if sellUp=1.2), then have a larger sellUpDn (e.g. 5%), then decrease if it reaches sellUp
 
 #generates list of potential gainers, trades based off amount of cash
@@ -52,8 +50,6 @@ def main():
   portVal = float(a.getAcct()['portfolio_value'])
 
   while portVal>minPortVal: #TODO: adjust minPortVal to be some % of max port val (based on closing values)
-    random.shuffle(gainers) #randomize list so when buying new ones, they won't always choose the top of the original list
-
     
     #TODO: if slave, check here to see if master is back online
     if(not isMaster and a.o.masterLives()):
@@ -68,7 +64,7 @@ def main():
         acctInfo = a.getAcct()
         #TODO: move this to after the check2Buy part to show updated port/cash values
         portVal = float(acctInfo['portfolio_value'])
-        print(f"Portfolio val is ${round(portVal,2)}. Buying power is ${round(float(acctInfo['cash']),2)}, ${max(round(float(acctInfo['cash'])-minBuyPow*buyPowMargin,2),0)} available")
+        print(f"Portfolio val is ${round(portVal,2)}. Buying power is ${round(float(acctInfo['cash']),2)}, ${round(float(acctInfo['cash']) if float(acctInfo['cash'])<=minBuyPow else max(0,float(acctInfo['cash'])-minBuyPow*buyPowMargin),2)} available")
         
         #if the program is started while the market is open, update the stock list immediately (do not try to run it again if it's already running)
         if(not gStocksUpdated and 'markUpdate' not in [t.getName() for t in threading.enumerate()]):
@@ -91,7 +87,7 @@ def main():
               a.o.buyThread.start() #start the thread
             '''
         
-        print("Tradable Stocks:")
+        # print("Tradable Stocks:")
         check2sellDJ(pos, latestTrades, sellDn, sellUp, sellUpDn)
         '''
         with open(a.o.c['File Locations']['webDataFile'],'w') as f:
@@ -104,7 +100,7 @@ def main():
         gStocksUpdated = False
         
        
-        if(a.o.dt.date.today().weekday()==4 and a.o.dt.time()>a.o.dt.time(12)): #if it's friday afternoon
+        if(a.o.dt.date.today().weekday()==4 and a.o.dt.datetime.now()>a.o.dt.time(12)): #if it's friday afternoon
           print("Removing saved csv files") #delete all csv files in stockDataDir
           for f in glob(a.o.c['File Locations']['stockDataDir']+"*.csv"):
             a.o.os.unlink(f)
@@ -128,10 +124,11 @@ def main():
 #check to sell a list of stocks for the double jump algo - symlist is the output of a.getPos()
 #TODO: adjust sell %'s if > 1+(sellUp-1)/2 (e.g. if >1.1 if sellUp=1.2), then have a larger sellUpDn (e.g. 5%), then decrease if it reaches sellUp
 #TODO: if it failed to sell previously "Asset XXXX is not tradable.", then mark it in latestTrades and don't check for the rest of the day
+#TODO: setup for looking only at DJ
 def check2sellDJ(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
-  global jumpList
-  print("symb\tinit jump\tpred jump (+/- 3wks)\tchg from buy\tchg from close\tsell points")
-  print("----\t---------\t--------------------\t------------\t--------------\t-----------")
+  global jumpDates
+  print("symb\tchg from buy\tchg from close\tsell points\tinit jump\tpred jump (+/- 3wks)")
+  print("----\t------------\t--------------\t-----------\t---------\t--------------------")
   for e in symList:
     #if(a.isAlpacaTradable(e['symbol'])): #just skip it if it can't be traded - skipping this for slower connections & to save a query
     try:
@@ -169,9 +166,9 @@ def check2sellDJ(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
       #curPrice = float(e['current_price'])
       curPrice = a.getPrice(e['symbol'])
       maxPrice = 0
-      
+       
       #setup jump dates/info about the held positions (reset in markandupdate() and at the beginning of the program)
-      if(e['symbol'] not in jumpDates): #only update if not already present
+      if(e['symbol'] not in jumpDates and e['symbol'] in latestTrades['doubleJump']): #only update if not already present
         jumpDates[e['symbol']] = a.o.goodBuy(e['symbol'],260)
       #TODO: add another check here that if it does have an error, try updating it again (especially if few points available)
       #elif(jumpDates[e['symbol']]!= <some date format>): then do the thing also
@@ -195,9 +192,9 @@ def check2sellDJ(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
   
         totalChange = round(curPrice/buyPrice,2)
         dayChange = round(curPrice/closePrice,2)
-        print(f"{e['symbol']}\t{lastJump}\t{lastJump+a.o.dt.timedelta(5*7)}\t\t{bcolor.FAIL if totalChange<1 else bcolor.OKGREEN}{totalChange}{bcolor.ENDC}\t\t{bcolor.FAIL if dayChange<1 else bcolor.OKGREEN}{dayChange}{bcolor.ENDC}\t\t{round(sellUp,2)} & {round(sellDn,2)}")
+        print(f"{e['symbol']}\t{bcolor.FAIL if totalChange<1 else bcolor.OKGREEN}{totalChange}{bcolor.ENDC}\t\t{bcolor.FAIL if dayChange<1 else bcolor.OKGREEN}{dayChange}{bcolor.ENDC}\t\t{round(sellUp,2)} & {round(sellDn,2)}\t{lastJump}\t{lastJump+a.o.dt.timedelta(5*7)}\t")
       except Exception:
-        print(e['symbol']+" - "+buyInfo)
+        print(f"{e['symbol']}\t{bcolor.FAIL if totalChange<1 else bcolor.OKGREEN}{totalChange}{bcolor.ENDC}\t\t{bcolor.FAIL if dayChange<1 else bcolor.OKGREEN}{dayChange}{bcolor.ENDC}\t\t{round(sellUp,2)} & {round(sellDn,2)}\t{buyInfo}")
         sellUp = mainSellUp
         sellDn = mainSellDn
 
@@ -247,7 +244,7 @@ def triggeredUpDJ(symbObj, curPrice, buyPrice, closePrice, maxPrice, sellUpDn, l
     f.write(a.o.json.dumps(latestTrades, indent=2))
   #remove from gainers in case it sells after updateStockList has run
   if(symbObj['symbol'] in gainers):
-    gainers.remove(symbObj['symbol'])
+    gainers.pop(symbObj['symbol'],None)
 
 
 #buy int(buyPow/10) # of individual stocks. If buyPow>minBuyPow*buyPowMargin, then usablebuyPow=buyPow-minBuyPow
@@ -277,11 +274,12 @@ def check2buyDJ(latestTrades, pos, minBuyPow, buyPowMargin, minDolPerStock):
   stocksBought = 0 #number of stocks bought
   
   stocks2buy = int(usableBuyPow/dolPerStock) #number of stocks to buy
-  
+  gainerList = random.shuffle(list(gainers)) #Shuffle the list to avoid scanning from the top down every loop (must be a list rather than dict)
   while(stocksBought<stocks2buy and i<len(gainers)):
-    symb = gainers[i] #candidate stock to buy
+    symb = gainerList[i] #candidate stock to buy
     #TODO: in this conditional, also check that the gain isn't greater than ~75% of sellUp (e.g. must be <1.15 if sellUp=1.2)
-    if(symb not in [t.getName() for t in threading.enumerate()]): #make sure the stock isn't trying to be sold already
+
+    if(symb not in [t.getName() for t in threading.enumerate()] and gainers[symb]['algo']=="DJ"): #make sure the stock isn't trying to be sold already and that the algorithm is doubleJump
       try: #check when it was traded last
         lastTradeDate = a.o.dt.datetime.strptime(latestTrades['doubleJump'][symb]['tradeDate'],'%Y-%m-%d').date()
         lastTradeType = latestTrades['doubleJump'][symb]['tradeType']
@@ -330,23 +328,35 @@ def check2buyDJ(latestTrades, pos, minBuyPow, buyPowMargin, minDolPerStock):
   print("Done buying")
 
 
+#TODO: define this function and add to main()
+def check2buyFDA():
+  return None
+
+#TODO: define this function and add to main()
+def check2sellFDA():
+  return None
+
+#TODO: define this function and add to main()
+def triggeredUpFDA():
+  return None
 
 #update the stock list
 def updateStockList():
   global gainers, gStocksUpdated
   print("Updating stock list")
-  gainers = [] #clear the gainer list
+  gainers = {} #clear the gainer list
   #list of stocks that may gain in the near future as well as currently held stocks and their last gain date
   gainerDates = a.o.getGainers(list(dict.fromkeys(a.o.getList()+[e['symbol'] for e in a.getPos()]))) #combine nasdaq list & my stocks & remove duplicates - order doesn't matter
   #only add gainers who are not slated for a reverse stock split and have not already been traded today
   todaysTrades = a.getTrades(str(a.o.dt.date.today()))
   soldToday = [e['symbol'] for e in todaysTrades if e['side']=='sell']
   splitters = a.o.reverseSplitters()
-  for e in list(gainerDates):
+  for e in gainerDates:
     # news = str(ns.scrape(e)).lower()
     # if(not ("reverse stock split" in news or "reverse-stock-split" in news) and (e not in soldToday)):
     if(e not in splitters and (e not in soldToday)):
-      gainers.append(e)
+      gainers[e] = gainerDates[e]
+      #TODO: this could probably be reduced to remove gainerDates and just update gainers. removing the ones that show up in splitters rather than adding the ones not in splitters
   print(f"Done updating list - {len(gainers)} potential gainers")
   gStocksUpdated = True
 
