@@ -175,6 +175,8 @@ def check2sellDJ(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
 #        jumpDates[e['symbol']] = a.o.goodBuy(e['symbol'],260)
       buyInfo = jumpDates[e['symbol']]  #TODO: phase out buyInfo in lieu of just jumpDates index
       
+      totalChange = round(curPrice/buyPrice,2)
+      dayChange = round(curPrice/closePrice,2)
       try:
         lastJump = a.o.dt.datetime.strptime(buyInfo,"%m/%d/%Y").date()
         #adjust selling targets based on date to add a time limit
@@ -190,8 +192,6 @@ def check2sellDJ(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
         #sellDn change of 0 if <=5 weeks after initial jump, +.05 for every week after 6 weeks for a max of 1
         # sellDn = round(min(1,mainSellDn+.05*max(0,int((a.o.dt.date.today()-(lastJump+a.o.dt.timedelta(6*7))).days/7))),2)
   
-        totalChange = round(curPrice/buyPrice,2)
-        dayChange = round(curPrice/closePrice,2)
         print(f"{e['symbol']}\t{bcolor.FAIL if totalChange<1 else bcolor.OKGREEN}{totalChange}{bcolor.ENDC}\t\t{bcolor.FAIL if dayChange<1 else bcolor.OKGREEN}{dayChange}{bcolor.ENDC}\t\t{round(sellUp,2)} & {round(sellDn,2)}\t{lastJump}\t{lastJump+a.o.dt.timedelta(5*7)}\t")
       except Exception:
         print(f"{e['symbol']}\t{bcolor.FAIL if totalChange<1 else bcolor.OKGREEN}{totalChange}{bcolor.ENDC}\t\t{bcolor.FAIL if dayChange<1 else bcolor.OKGREEN}{dayChange}{bcolor.ENDC}\t\t{round(sellUp,2)} & {round(sellDn,2)}\t{buyInfo}")
@@ -274,7 +274,8 @@ def check2buyDJ(latestTrades, pos, minBuyPow, buyPowMargin, minDolPerStock):
   stocksBought = 0 #number of stocks bought
   
   stocks2buy = int(usableBuyPow/dolPerStock) #number of stocks to buy
-  gainerList = random.shuffle(list(gainers)) #Shuffle the list to avoid scanning from the top down every loop (must be a list rather than dict)
+  gainerList = list(gainers) #Shuffle the list to avoid scanning from the top down every loop (must be a list rather than dict)
+  random.shuffle(gainerList)
   while(stocksBought<stocks2buy and i<len(gainers)):
     symb = gainerList[i] #candidate stock to buy
     #TODO: in this conditional, also check that the gain isn't greater than ~75% of sellUp (e.g. must be <1.15 if sellUp=1.2)
