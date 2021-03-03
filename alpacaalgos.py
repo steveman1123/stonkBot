@@ -177,8 +177,6 @@ def check2sellDJ(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
       totalChange = round(curPrice/buyPrice,2)
       dayChange = round(curPrice/closePrice,2)
       
-      totalChange = round(curPrice/buyPrice,2)
-      dayChange = round(curPrice/closePrice,2)
       try:
         lastJump = a.o.dt.datetime.strptime(buyInfo,"%m/%d/%Y").date()
         #adjust selling targets based on date to add a time limit
