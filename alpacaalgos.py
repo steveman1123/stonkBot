@@ -177,6 +177,8 @@ def check2sellDJ(symList, latestTrades, mainSellDn, mainSellUp, sellUpDn):
       totalChange = round(curPrice/buyPrice,2)
       dayChange = round(curPrice/closePrice,2)
       
+      totalChange = round(curPrice/buyPrice,2)
+      dayChange = round(curPrice/closePrice,2)
       try:
         lastJump = a.o.dt.datetime.strptime(buyInfo,"%m/%d/%Y").date()
         #adjust selling targets based on date to add a time limit
@@ -274,7 +276,8 @@ def check2buyDJ(latestTrades, pos, minBuyPow, buyPowMargin, minDolPerStock):
   stocksBought = 0 #number of stocks bought
   
   stocks2buy = int(usableBuyPow/dolPerStock) #number of stocks to buy
-  gainerList = random.shuffle(list(gainers)) #Shuffle the list to avoid scanning from the top down every loop (must be a list rather than dict)
+  gainerList = list(gainers) #Shuffle the list to avoid scanning from the top down every loop (must be a list rather than dict)
+  random.shuffle(gainerList)
   while(stocksBought<stocks2buy and i<len(gainers)):
     symb = gainerList[i] #candidate stock to buy
     #TODO: in this conditional, also check that the gain isn't greater than ~75% of sellUp (e.g. must be <1.15 if sellUp=1.2)
