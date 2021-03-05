@@ -100,7 +100,7 @@ def main():
         gStocksUpdated = False
         
        
-        if(a.o.dt.date.today().weekday()==4 and a.o.dt.datetime.now()>a.o.dt.time(12)): #if it's friday afternoon
+        if(a.o.dt.date.today().weekday()==4 and a.o.dt.datetime.now().time()>a.o.dt.time(12)): #if it's friday afternoon
           print("Removing saved csv files") #delete all csv files in stockDataDir
           for f in glob(a.o.c['File Locations']['stockDataDir']+"*.csv"):
             a.o.os.unlink(f)
