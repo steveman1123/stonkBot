@@ -383,11 +383,12 @@ def getBuyPrice(symb):
   else:
     return 0
 
-#get the account history fromt the beginning to the startDate
-def getProfileHistory(startDate):
+
+#get the account history from the startDate going back some time (#D,W,M,A), default to 1 year from today 
+def getProfileHistory(startDate=str(o.dt.date.today()), period='1A'):
   while True:
     try:
-      html = o.requests.get(HISTURL, headers=HEADERS, params={'date_end':startDate,'period':'1A'}, timeout=5).content
+      html = o.requests.get(HISTURL, headers=HEADERS, params={'date_end':startDate,'period':period}, timeout=5).content
       break
     except Exception:
       print("No connection, or other error encountered in getProfileHistory. Trying again...")

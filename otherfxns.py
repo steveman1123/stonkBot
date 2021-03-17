@@ -130,8 +130,7 @@ def getList():
 
 #returns as 2d array order of Date, Close/Last, Volume, Open, High, Low sorted by dates newest to oldest (does not include today's info)
 #get the history of a stock from the nasdaq api (date format is yyyy-mm-dd)
-#TODO: this function may be obsolete now. Swap with getHistory2?
-def getHistory(symb, startDate, endDate, maxTries=5):
+def getHistory(symb, startDate, endDate, maxTries=3):
   #try checking the modified date of the file, if it throws an error, just set it to yesterday
 
   try:
@@ -141,8 +140,7 @@ def getHistory(symb, startDate, endDate, maxTries=5):
   #write to file after checking that the file doesn't already exist (we don't want to abuse the api) or that it was edited more than a day ago
   if(not os.path.isfile(stockDir+symb+".csv") or modDate<dt.date.today()):
     
-    #getHistory2(symb, startDate, endDate)
-    tries=maxTries #since the old one doesn't seem to work anymore, aet this to maxTriws to bypass it
+    tries=0 #set this to maxTries in the event that the old one dies (again)
     while tries<maxTries: #only try getting history with this method a few times before trying the next method
       tries += 1
       try:
@@ -160,7 +158,7 @@ def getHistory(symb, startDate, endDate, maxTries=5):
     
     with open(stockDir+symb+'.csv','w',newline='') as out: #write to file for later usage - old api used csv format
       if(tries>=maxTries):
-        r = getHistory2(symb, startDate, endDate) #getHistory2 is slower/uses more requests, so not as good as getHistory, at least until we learn the api better
+        r = getHistory2(symb, startDate, endDate) #getHistory2 uses more requests and is more complex, so use it as a backup rather than a primary
         r = [['Date','Close/Last','Volume','Open','High','Low']]+r
         csv.writer(out,delimiter=',').writerows(r)
       else:
@@ -179,7 +177,7 @@ def getHistory(symb, startDate, endDate, maxTries=5):
 #this does NOT save the csv file
 #TODO: shouldn't be an issue for this case, but here's some logic:
 #   if(todate-fromdate<22 and todate>1 month ago): 0-1 days will be returned
-def getHistory2(symb, startDate, endDate, maxTries=5):
+def getHistory2(symb, startDate, endDate, maxTries=3):
   maxDays = 14 #max rows returned per request
   tries=1
   j = {}
@@ -213,6 +211,7 @@ def getHistory2(symb, startDate, endDate, maxTries=5):
     #format the data to return the same as getHistory
     #2d array order of Date, Close/Last, Volume, Open, High, Low sorted by dates newest to oldest
     try:
+      j = json.loads(json.dumps(j).replace('$','')) #remove $ characters
       out = [[e['date'],e['close'],e['volume'].replace(',',''),e['open'],e['high'],e['low']] for e in j['data']['tradesTable']['rows']]
     except Exception:
       out = []
