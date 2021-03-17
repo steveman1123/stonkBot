@@ -15,25 +15,25 @@ endpoint urls:
 ## api.nasdaq.com/api
 
 1. ```/quote```
-  1. ```/{1}/{chart|dividends|eps|extended-trading|historical|info|option-chain|peg-ratio|realtime-trades|short-interest|summary}``` where {1} is the symbol followed by the data to return.  
-    **Additional Parameters:**  
-    ```?assetclass={commodities|crypto|currencies|fixedincome|futures|index|mutualfunds|stocks}``` (**required for all**)  
-    ```&fromdate={yyyy-mm-dd}``` (**required for historical**)  
-    ```&todate={yyyy-mm-dd}``` (optional for historical)  
-    ```&offset={#}``` (optional for historical)  
-    ```&charttype={real}``` (optional for chart)  
-    ```&limit={#}``` (optional)  
-    ```&markettype={pre|post}``` required for extended-trading  
-    I believe there are other parameters that would allow seeing more data in historical, this setup returns a max of 14 days worth. There also seems to be an issue that if todate is specified and is more than one month ago from today, and the difference between todate and fromdate is less than one month, then nothing will be returned. This can be worked around using offset, however this is not ideal.
-  2. ```/watchlist/```
-    **Additional Parameters:**  
-    ```?symbol={1}``` where symbol is an array, and {1} is formatted as "symb|assetclass". DYOR on how to pass arrays through get requests (see also the link example below for a simple url format)
-    ```&type={1}``` (optional) where {1} can be Rv (which may mean row/value?)  
-  3. ```/indices```  
-    **Additional Parameters:**  
-    ```?chartfor={1}``` (optional) where chartfor is an array (similar to symbol in /quote/watchlist), {1} is an index symbol
-    ```&symbol={2}``` (optional) where this is an array (similar to symbol in /quote/watchlist), {2} is an index symbol  
-    Note: leave off all params for a list of all indices
+    1. ```/{1}/{chart|dividends|eps|extended-trading|historical|info|option-chain|peg-ratio|realtime-trades|short-interest|summary}``` where {1} is the symbol followed by the data to return.  
+        **Additional Parameters:**  
+        ```?assetclass={commodities|crypto|currencies|fixedincome|futures|index|mutualfunds|stocks}``` (**required for all**)  
+        ```&fromdate={yyyy-mm-dd}``` (**required for historical**)  
+        ```&todate={yyyy-mm-dd}``` (optional for historical)  
+        ```&offset={#}``` (optional for historical)  
+        ```&charttype={real}``` (optional for chart)  
+        ```&limit={#}``` (optional)  
+        ```&markettype={pre|post}``` required for extended-trading  
+        I believe there are other parameters that would allow seeing more data in historical, this setup returns a max of 14 days worth. There also seems to be an issue that if todate is specified and is more than one month ago from today, and the difference between todate and fromdate is less than one month, then nothing will be returned. This can be worked around using offset, however this is not ideal.
+    2. ```/watchlist/```
+        **Additional Parameters:**  
+        ```?symbol={1}``` where symbol is an array, and {1} is formatted as "symb|assetclass". DYOR on how to pass arrays through get requests (see also the link example below for a simple url format)
+        ```&type={1}``` (optional) where {1} can be Rv (which may mean row/value?)  
+    3. ```/indices```  
+        **Additional Parameters:**  
+        ```?chartfor={1}``` (optional) where chartfor is an array (similar to symbol in /quote/watchlist), {1} is an index symbol
+        ```&symbol={2}``` (optional) where this is an array (similar to symbol in /quote/watchlist), {2} is an index symbol  
+        Note: leave off all params for a list of all indices
 
 2. ```/company/{1}/{company-profile|earnings-surprise|financials|historical-nocp|insider-trades|institutional-holdings|revenue|sec-filings}``` where {1} is the symbol  
     **Additional Parameters:**  
