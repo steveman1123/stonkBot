@@ -15,7 +15,7 @@ endpoint urls:
 ## api.nasdaq.com/api
 
 1. ```/quote```
-    1. ```/{1}/{chart|dividends|eps|extended-trading|historical|info|option-chain|peg-ratio|realtime-trades|short-interest|summary}``` where {1} is the symbol followed by the data to return.  
+    1. ```/{1}/{chart|dividends|eps|extended-trading|historical|info|option-chain|realtime-trades|short-interest|summary}``` where {1} is the symbol followed by the data to return.  
         **Additional Parameters:**  
         ```?assetclass={commodities|crypto|currencies|fixedincome|futures|index|mutualfunds|stocks}``` (**required for all**)  
         ```&fromdate={yyyy-mm-dd}``` (**required for historical**)  
@@ -67,7 +67,7 @@ endpoint urls:
     ```&offset={1}``` where 1 is the amount to offset the table by (returns only 50 entries by default)   
     **further parameters depend on which screener is being used** and can be found in the 'filters' section when tableonly=false  
 8. ```/analyst```
-    ```{1}/{earnings-date|earnings-forcast|estimate-momentum|ratings|targetprice}``` where 1 is a stock symbol
+    ```{1}/{earnings-date|earnings-forcast|estimate-momentum|peg-ratio|ratings|targetprice}``` where 1 is a stock symbol
 
 
 ## ww<span>w.</span>nasdaq.com/api/v1
@@ -86,7 +86,6 @@ endpoint urls:
         3. [eps](https://api.nasdaq.com/api/quote/MSFT/eps?assetclass=stocks)  
         4. [extended trading](https://api.nasdaq.com/api/quote/MSFT/extended-trading?assetclass=stocks&markettype=post)  
         5. [option chain](https://api.nasdaq.com/api/quote/MSFT/option-chain?assetclass=stocks)  
-        6. [P/E Ratio](https://api.nasdaq.com/api/quote/MSFT/peg-ratio?assetclass=stocks)  
         7. [realtime trades](https://api.nasdaq.com/api/quote/MSFT/realtime-trades?assetclass=stocks)  
         8. [short interest](https://api.nasdaq.com/api/quote/MSFT/short-interest?assetclass=stocks)  
         9. [historical](https://api.nasdaq.com/api/quote/MSFT/historical?assetclass=stocks&fromdate=2020-10-15&offset=5)  
@@ -117,11 +116,12 @@ endpoint urls:
 6. [ipo calendar](https://api.nasdaq.com/api/ipo/calendar?date=2021-03&type=spo)  
 7. [stock screener](https://api.nasdaq.com/api/screener/stocks?tableonly=false&region=north_america&country=united_states&exchange=NASDAQ)  
 8. analyst
-    1. [ratings](https://api.nasdaq.com/api/analyst/MSFT/ratings)  
-    2. [earnings date](https://api.nasdaq.com/api/analyst/MSFT/earnings-date)  
-    3. [earnings forecast](https://api.nasdaq.com/api/analyst/MSFT/earnings-forcast)  
-    4. [estimate momentum](https://api.nasdaq.com/api/analyst/MSFT/estimate-momentum)  
-    5. [target price](https://api.nasdaq.com/api/analyst/MSFT/targetprice)  
+    1. [earnings date](https://api.nasdaq.com/api/analyst/MSFT/earnings-date)  
+    2. [earnings forecast](https://api.nasdaq.com/api/analyst/MSFT/earnings-forcast)  
+    3. [estimate momentum](https://api.nasdaq.com/api/analyst/MSFT/estimate-momentum)  
+    4. [p/e growth ratio](https://api.nasdaq.com/api/analyst/MSFT/peg-ratio)  
+    5. [ratings](https://api.nasdaq.com/api/analyst/MSFT/ratings)  
+    6. [target price](https://api.nasdaq.com/api/analyst/MSFT/targetprice)  
 ---
 1. [historical](https://www.nasdaq.com/api/v1/historical/MSFT/stocks/2020-10-15/2020-11-23)  
 2. [quote news](https://www.nasdaq.com/api/v1/quote-news/31867/5)  
