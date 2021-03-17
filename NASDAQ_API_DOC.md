@@ -30,26 +30,20 @@ endpoint urls:
 
 4. ```/marketmovers```
 
-5. ```/calendar/{dividends|earnings|splits|upcoming|economicevents}```
-    **Additional Parameters:**
-    ```?date={1}``` where {1} is the date in yyyy-mm-dd format
+5. ```/calendar/{dividends|earnings|splits|upcoming|economicevents}```  
+    **Additional Parameters:**  
+    ```?date={1}``` where {1} is the date in yyyy-mm-dd format  
 
-6. ```/ipo/calendar
-    **Additional Parameters:**
-    ```?date={1}``` (optional) where {1} is the date in yyyy-mm format
-    ```&type={2}``` (optional) where {2} is the type (can be set to 'spo')
+6. ```/ipo/calendar```  
+    **Additional Parameters:**  
+    ```?date={1}``` (optional) where {1} is the date in yyyy-mm format  
+    ```&type={2}``` (optional) where {2} is the type (can be set to 'spo')  
     
-7. ```/screener/stocks``` likely can screen on etf and indx
-    **Additional Parameters:**
-    ```?tableonly={true|false}``` return only the table or additional filter info
-    ```&limit={#}``` return size of table
-    ```&region={1}``` where 1 is a value in the 'region' section of the filters returned when tableonly=false
-    ```&country={1}``` where 1 is a value in the 'country' section of the filters returned when tableonly=false
-    ```&exchange={1}``` where 1 is a value in the 'exchange' section of the filters returned when tableonly=false
-    ```&sector={1}``` where 1 is a value in the 'sector' section of the filters returned when tableonly=false
-    ```&reccommendation={1}``` where 1 is a value in the 'reccommendation' section of the filters returned when tableonly=false
-    ```&marketcap={1}``` where 1 is a value in the 'marketcap' section of the filters returned when tableonly=false
-    ```&exsubcategory={1}``` where 1 is a value in the 'exsubcategory' section of the filters returned when tableonly=false
+7. ```/screener/{stocks|etf|index|mutualfunds}```  
+    **Additional Parameters:**  
+    ```?tableonly={true|false}``` return only the table or additional filter info (defaults to true)  
+    ```&offset={1}``` where 1 is the amount to offset the table by (returns only 50 entries by default)   
+    **further parameters depend on which screener is being used** and can be found in the 'filters' section when tableonly=false  
 
 
 
@@ -80,8 +74,10 @@ endpoint urls:
     3. [splits](https://api.nasdaq.com/api/calendar/splits)  
     4. [upcoming](https://api.nasdaq.com/api/calendar/upcoming)  
 6. [ipo calendar](https://api.nasdaq.com/api/ipo/calendar?date=2021-03&type=spo)  
-7. [historical](https://www.nasdaq.com/api/v1/historical/MSFT/stocks/2020-10-15/2020-11-23)  
-8. [quote news](https://www.nasdaq.com/api/v1/quote-news/31867/5)  
+7. [stock screener](https://api.nasdaq.com/api/screener/stocks)  
+---
+1. [historical](https://www.nasdaq.com/api/v1/historical/MSFT/stocks/2020-10-15/2020-11-23)  
+2. [quote news](https://www.nasdaq.com/api/v1/quote-news/31867/5)  
 
 
 Python example:
