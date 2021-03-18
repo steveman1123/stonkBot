@@ -24,8 +24,8 @@ endpoint urls:
         ```&charttype={real}``` (optional for chart)  
         ```&limit={#}``` (optional)  
         ```&markettype={pre|post}``` required for extended-trading  
-        I believe there are other parameters that would allow seeing more data in historical, this setup returns a max of 14 days worth. There also seems to be an issue that if todate is specified and is more than one month ago from today, and the difference between todate and fromdate is less than one month, then nothing will be returned. This can be worked around using offset, however this is not ideal.
-    2. ```/watchlist/```
+        Historical defaults limit=15. There seems to be an issue that if todate is specified and is more than one month ago from today, and the difference between todate and fromdate is less than one month, then nothing will be returned. This can be worked around using offset and/or limit.
+    2. ```/watchlist/```  
         **Additional Parameters:**  
         ```?symbol={1}``` where symbol is an array, and {1} is formatted as "symb|assetclass". DYOR on how to pass arrays through get requests (see also the link example below for a simple url format)
         ```&type={1}``` (optional) where {1} can be Rv (which may mean row/value?)  
@@ -65,7 +65,7 @@ endpoint urls:
     **Additional Parameters:**  
     ```?tableonly={true|false}``` return only the table or additional filter info (defaults to true)  
     ```&offset={1}``` where 1 is the amount to offset the table by (returns only 50 entries by default)   
-    **further parameters depend on which screener is being used** and can be found in the 'filters' section when tableonly=false  
+    **Further parameters depend on which screener is being used** and can be found in the 'filters' section when tableonly=false  
 8. ```/analyst```
     ```{1}/{earnings-date|earnings-forcast|estimate-momentum|peg-ratio|ratings|targetprice}``` where 1 is a stock symbol
 
