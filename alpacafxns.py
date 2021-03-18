@@ -395,3 +395,23 @@ def getProfileHistory(startDate=str(o.dt.date.today()), period='1A'):
       o.time.sleep(3)
       continue
   return o.json.loads(html)
+
+
+#get all transactions for a given stock from a given start date to today 
+def getXtns(startDate=str(o.dt.date.today()),actType="TRANS"):
+  r = []
+  while True:
+    try:
+      d = o.json.loads(o.requests.get(f"{ACCTURL}/activities/{actType}", headers=HEADERS,params={"after":startDate},timeout=5).text)
+      while(len(d)==100 or len(r)==100):
+        r = o.json.loads(o.requests.get(f"{ACCTURL}/activities/{actType}", headers=HEADERS,params={"after":startDate,"page_token":d[-1]['id']},timeout=5).text)
+        d += r
+      break
+    except Exception:
+      print("No connection, or other error encountered in getXtns. Trying again...")
+      o.time.sleep(3)
+      continue
+  out=d #pare down to some specified ones if desired
+  return out
+
+
