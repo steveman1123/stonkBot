@@ -69,13 +69,17 @@ endpoint urls:
 8. ```/analyst```  
     ```/{1}/{earnings-date|earnings-forcast|estimate-momentum|peg-ratio|ratings|targetprice}``` where 1 is a stock symbol
 
-
 ## ww<span>w.</span>nasdaq.com/api/v1
 
 1. ```/historical/{1}/{2}/{3}/{4}``` where {1} is the symbol, {2} is the assetclass, and {3} and {4} are the start and end dates in yyyy-mm-dd format. **Returns a csv document.** (this may have the same issue as the other historical data request). This also periodically goes offline
 
 2. ```/{quote-news|recent-articles}/{1}/{2}``` where I don't know what {1} is, and {2} is number of headlines per request
 
+3. ```/search``` used to get search results
+    **Additional Parameters:**
+    ```?q={1}``` where {1} is the search string
+    ```&offset={2}``` where 2 is likely the offset of results
+    ```&langcode={3}``` where 3 is the language being used (e.g. en, de, fr, etc)
 ---
 
 ## Examples:
