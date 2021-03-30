@@ -75,10 +75,10 @@ endpoint urls:
 
 2. ```/{quote-news|recent-articles}/{1}/{2}``` where I don't know what {1} is, and {2} is number of headlines per request
 
-3. ```/search``` used to get search results
-    **Additional Parameters:**
-    ```?q={1}``` where {1} is the search string
-    ```&offset={2}``` where 2 is likely the offset of results
+3. ```/search``` used to get search results  
+    **Additional Parameters:**  
+    ```?q={1}``` where {1} is the search string  
+    ```&offset={2}``` where 2 is likely the offset of results  
     ```&langcode={3}``` where 3 is the language being used (e.g. en, de, fr, etc)
 ---
 
@@ -130,6 +130,7 @@ endpoint urls:
 ---
 1. [historical](https://www.nasdaq.com/api/v1/historical/MSFT/stocks/2020-10-15/2020-11-23)  
 2. [quote news](https://www.nasdaq.com/api/v1/quote-news/31867/5)  
+3. [search](https://www.nasdaq.com/api/v1/search?q=microsoft&offset=0&langcode=en)  
 
 
 Python example:
