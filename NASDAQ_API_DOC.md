@@ -25,14 +25,14 @@ endpoint urls:
         ```&limit={#}``` (optional)  
         ```&markettype={pre|post}``` required for extended-trading  
         Historical defaults limit=15. There seems to be an issue that if todate is specified and is more than one month ago from today, and the difference between todate and fromdate is less than one month, then nothing will be returned. This can be worked around using offset and/or limit.  
-    2. ```/watchlist/```  
+    2. ```/watchlist```  
         **Additional Parameters:**  
-        ```?symbol={1}``` where symbol is an array, and {1} is formatted as "symb|assetclass". DYOR on how to pass arrays through get requests (see also the link example below for a simple url format)  
+        ```?symbol={1}``` where symbol is an array, and {1} is formatted as ```symb|assetclass```. DYOR on how to pass arrays through get requests (see also the link example below for a simple url format)  
         ```&type={1}``` (optional) where {1} can be Rv (which may mean row/value?)  
     3. ```/indices```  
         **Additional Parameters:**  
-        ```?chartfor={1}``` (optional) where chartfor is an array (similar to symbol in /quote/watchlist), {1} is an index symbol  
-        ```&symbol={2}``` (optional) where this is an array (similar to symbol in /quote/watchlist), {2} is an index symbol  
+        ```?chartfor={1}``` (optional) where chartfor is an array (similar to symbol in ```/quote/watchlist```), {1} is an index symbol  
+        ```&symbol={2}``` (optional) where this is an array (similar to symbol in ```/quote/watchlist```), {2} is an index symbol  
         Note: leave off all params for a list of all indices  
 
 2. ```/company/{1}/{company-profile|earnings-surprise|financials|historical-nocp|insider-trades|institutional-holdings|revenue|sec-filings}``` where {1} is the symbol  
@@ -44,7 +44,7 @@ endpoint urls:
     ```&sortColumn={marketValue|sharesChangePCT|sharesChange|sharesHeld|date|ownerName}``` (optional for institutional-holdings)  
     ```&type={ALL|buys|sells}``` (optional for insider-trades)  
     ```&sortColumn={lastDate|insider|relation|transactionType|ownType|sharesTraded}``` (optional for insider-trades)  
-    ```&sortColumn={filed|}``` (optional for sec-filing)  
+    ```&sortColumn={filed}``` (optional for sec-filing)  
     ```&sortOrder={DESC|ASC}``` (optional)  
     ```&tableOnly={true|false}``` (optional)  
 
@@ -64,17 +64,17 @@ endpoint urls:
 7. ```/screener/{etf|index|mutualfunds|stocks}```  
     **Additional Parameters:**  
     ```?tableonly={true|false}``` return only the table or additional filter info (defaults to true)  
-    ```&offset={1}``` where 1 is the amount to offset the table by (returns only 50 entries by default)   
-    **Further parameters depend on which screener is being used** and can be found in the 'filters' section when tableonly=false  
+    ```&offset={1}``` where {1} is the amount to offset the table by (returns only 50 entries by default)   
+    **Further parameters depend on which screener is being used** and can be found in the 'filters' section when ```tableonly=false```  
 8. ```/analyst```  
-    ```/{1}/{earnings-date|earnings-forcast|estimate-momentum|peg-ratio|ratings|targetprice}``` where 1 is a stock symbol  
+    ```/{1}/{earnings-date|earnings-forcast|estimate-momentum|peg-ratio|ratings|targetprice}``` where {1} is a stock symbol  
 
-9. ```/news```  
-    ```/topic/articlesbysymbol```  
-    ```?q={1}``` where 1 is the format of ```symb|assetclass``` like in /watchlist  
-    ```offset={2}``` where 2 is the article offset  
-    ```limit={3}``` where 3 is the limit of articles to display  
-
+9. ```/news/topic/articlesbysymbol```  
+    ```?q={1}``` where {1} is the format of ```symb|assetclass``` like ```symbol``` in ```/quote/watchlist```  
+    ```&offset={2}``` where {2} is the article offset  
+    ```&limit={3}``` where {3} is the limit of articles to display  
+    I believe there may be other sections on this url, but further investigation will be needed
+    
 ## ww<span>w.</span>nasdaq.com/api/v1  
 
 1. ```/historical/{1}/{2}/{3}/{4}``` where {1} is the symbol, {2} is the assetclass, and {3} and {4} are the start and end dates in yyyy-mm-dd format. **Returns a csv document.** (this may have the same issue as the other historical data request). This also periodically goes offline  
@@ -84,10 +84,10 @@ endpoint urls:
 3. ```/search``` used to get search results  
     **Additional Parameters:**  
     ```?q={1}``` where {1} is the search string  
-    ```&offset={2}``` where 2 is likely the offset of results  
-    ```&langcode={3}``` where 3 is the language being used (e.g. en, de, fr, etc)  
+    ```&offset={2}``` where {2} is the offset of results  
+    ```&langcode={3}``` where {3} is the language being used (e.g. en, de, fr, etc)  
 
-4. ```/news-headlines-fetcher/{1}/{2}/{3}``` where 1 is the symbol, 2 is the article offset and 3 is the limit (same results as /api/news/topic/articlebysymbol) - returns in html rather than json  
+4. ```/news-headlines-fetcher/{1}/{2}/{3}``` where {1} is the symbol, 2 is the article offset and 3 is the limit (same results as /api/news/topic/articlebysymbol) - returns in html rather than json  
 
 ---
 
