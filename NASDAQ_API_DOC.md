@@ -5,16 +5,16 @@ I haven't found any other documentation online, and have found this api by backt
 If you know of any other documentation, or have anything to add, please let me know! (this is far from complete)
 
 
-endpoint urls:
+endpoint urls:  
 
-```api.nasdaq.com/api```
+```api.nasdaq.com/api```  
 
-```www.nasdaq.com/api/v1```
+```www.nasdaq.com/api/v1```  
 
 
-## api.nasdaq.com/api
+## api.nasdaq.com/api  
 
-1. ```/quote```
+1. ```/quote```  
     1. ```/{1}/{chart|dividends|eps|extended-trading|historical|info|option-chain|realtime-trades|short-interest|summary}``` where {1} is the symbol followed by the data to return.  
         **Additional Parameters:**  
         ```?assetclass={commodities|crypto|currencies|fixedincome|futures|index|mutualfunds|stocks}``` (**required for all**)  
@@ -24,33 +24,33 @@ endpoint urls:
         ```&charttype={real}``` (optional for chart)  
         ```&limit={#}``` (optional)  
         ```&markettype={pre|post}``` required for extended-trading  
-        Historical defaults limit=15. There seems to be an issue that if todate is specified and is more than one month ago from today, and the difference between todate and fromdate is less than one month, then nothing will be returned. This can be worked around using offset and/or limit.
-    2. ```/watchlist/```  
+        Historical defaults limit=15. There seems to be an issue that if todate is specified and is more than one month ago from today, and the difference between todate and fromdate is less than one month, then nothing will be returned. This can be worked around using offset and/or limit.  
+    2. ```/watchlist```  
         **Additional Parameters:**  
-        ```?symbol={1}``` where symbol is an array, and {1} is formatted as "symb|assetclass". DYOR on how to pass arrays through get requests (see also the link example below for a simple url format)
+        ```?symbol={1}``` where symbol is an array, and {1} is formatted as ```symb|assetclass```. DYOR on how to pass arrays through get requests (see also the link example below for a simple url format)  
         ```&type={1}``` (optional) where {1} can be Rv (which may mean row/value?)  
     3. ```/indices```  
         **Additional Parameters:**  
-        ```?chartfor={1}``` (optional) where chartfor is an array (similar to symbol in /quote/watchlist), {1} is an index symbol
-        ```&symbol={2}``` (optional) where this is an array (similar to symbol in /quote/watchlist), {2} is an index symbol  
-        Note: leave off all params for a list of all indices
+        ```?chartfor={1}``` (optional) where chartfor is an array (similar to symbol in ```/quote/watchlist```), {1} is an index symbol  
+        ```&symbol={2}``` (optional) where this is an array (similar to symbol in ```/quote/watchlist```), {2} is an index symbol  
+        Note: leave off all params for a list of all indices  
 
 2. ```/company/{1}/{company-profile|earnings-surprise|financials|historical-nocp|insider-trades|institutional-holdings|revenue|sec-filings}``` where {1} is the symbol  
     **Additional Parameters:**  
     ```?frequency={2}``` where {2} is 1 for period endings, and 2 for quarterly endings (optional)  
-    ```&timeframe={d5|M1||M3|M6|Y1}``` (optional for historical-nocp)
+    ```&timeframe={d5|M1||M3|M6|Y1}``` (optional for historical-nocp)  
     ```&limit={#}``` (optional)  
     ```&type={TOTAL|NEW|INCREASED|DECREASED|ACTIVITY|SOLDOUT}``` (optional for institutional-holdings)  
     ```&sortColumn={marketValue|sharesChangePCT|sharesChange|sharesHeld|date|ownerName}``` (optional for institutional-holdings)  
     ```&type={ALL|buys|sells}``` (optional for insider-trades)  
     ```&sortColumn={lastDate|insider|relation|transactionType|ownType|sharesTraded}``` (optional for insider-trades)  
-    ```&sortColumn={filed|}``` (optional for sec-filing)  
+    ```&sortColumn={filed}``` (optional for sec-filing)  
     ```&sortOrder={DESC|ASC}``` (optional)  
     ```&tableOnly={true|false}``` (optional)  
 
-3. ```/market-info```
+3. ```/market-info```  
 
-4. ```/marketmovers```
+4. ```/marketmovers```  
 
 5. ```/calendar/{dividends|earnings|economicevents|splits|upcoming}```  
     **Additional Parameters:**  
@@ -64,17 +64,30 @@ endpoint urls:
 7. ```/screener/{etf|index|mutualfunds|stocks}```  
     **Additional Parameters:**  
     ```?tableonly={true|false}``` return only the table or additional filter info (defaults to true)  
-    ```&offset={1}``` where 1 is the amount to offset the table by (returns only 50 entries by default)   
-    **Further parameters depend on which screener is being used** and can be found in the 'filters' section when tableonly=false  
-8. ```/analyst```
-    ```{1}/{earnings-date|earnings-forcast|estimate-momentum|peg-ratio|ratings|targetprice}``` where 1 is a stock symbol
+    ```&offset={1}``` where {1} is the amount to offset the table by (returns only 50 entries by default)   
+    **Further parameters depend on which screener is being used** and can be found in the 'filters' section when ```tableonly=false```  
+8. ```/analyst```  
+    ```/{1}/{earnings-date|earnings-forcast|estimate-momentum|peg-ratio|ratings|targetprice}``` where {1} is a stock symbol  
 
+9. ```/news/topic/articlesbysymbol```  
+    ```?q={1}``` where {1} is the format of ```symb|assetclass``` like ```symbol``` in ```/quote/watchlist```  
+    ```&offset={2}``` where {2} is the article offset  
+    ```&limit={3}``` where {3} is the limit of articles to display  
+    I believe there may be other sections on this url, but further investigation will be needed
+    
+## ww<span>w.</span>nasdaq.com/api/v1  
 
-## ww<span>w.</span>nasdaq.com/api/v1
+1. ```/historical/{1}/{2}/{3}/{4}``` where {1} is the symbol, {2} is the assetclass, and {3} and {4} are the start and end dates in yyyy-mm-dd format. **Returns a csv document.** (this may have the same issue as the other historical data request). This also periodically goes offline  
 
-1. ```/historical/{1}/{2}/{3}/{4}``` where {1} is the symbol, {2} is the assetclass, and {3} and {4} are the start and end dates in yyyy-mm-dd format. **Returns a csv document.** (this may have the same issue as the other historical data request). This also periodically goes offline
+2. ```/{quote-news|recent-articles}/{1}/{2}``` where I don't know what {1} is, and {2} is number of headlines per request  
 
-2. ```/{quote-news|recent-articles}/{1}/{2}``` where I don't know what {1} is, and {2} is number of headlines per request
+3. ```/search``` used to get search results  
+    **Additional Parameters:**  
+    ```?q={1}``` where {1} is the search string  
+    ```&offset={2}``` where {2} is the offset of results  
+    ```&langcode={3}``` where {3} is the language being used (e.g. en, de, fr, etc)  
+
+4. ```/news-headlines-fetcher/{1}/{2}/{3}``` where {1} is the symbol, 2 is the article offset and 3 is the limit (same results as /api/news/topic/articlebysymbol) - returns in html rather than json  
 
 ---
 
@@ -123,10 +136,12 @@ endpoint urls:
     4. [p/e growth ratio](https://api.nasdaq.com/api/analyst/MSFT/peg-ratio)  
     5. [ratings](https://api.nasdaq.com/api/analyst/MSFT/ratings)  
     6. [target price](https://api.nasdaq.com/api/analyst/MSFT/targetprice)  
+9. [news](https://api.nasdaq.com/api/news/topic/articlebysymbol?q=msft|stocks&offset=0&limit=7)  
 ---
 1. [historical](https://www.nasdaq.com/api/v1/historical/MSFT/stocks/2020-10-15/2020-11-23)  
 2. [quote news](https://www.nasdaq.com/api/v1/quote-news/31867/5)  
-
+3. [search](https://www.nasdaq.com/api/v1/search?q=microsoft&offset=0&langcode=en)  
+4. [headlines](https://www.nasdaq.com/api/v1/news-headlines-fetcher/msft/0/7)  
 
 Python example:
 ```
@@ -138,7 +153,7 @@ url2 = "https://www.nasdaq.com/api/v1"
 symb = "MSFT"
 
 infourl = "{}/quote/{}/info?assetclass=stocks".format(url1,symb)
-newsurl = "{}/quote-news/31867/2".format(url2)
+newsurl = "{}/news-headlines-fetcher/{}/0/7".format(url2,symb)
 
 info = json.loads(requests.get(infourl,headers={'user-agent':"-"},timeout=5).text)
 news = json.loads(requests.get(newsurl,headers={'user-agent':"-"},timeout=5).text)
@@ -146,7 +161,7 @@ news = json.loads(requests.get(newsurl,headers={'user-agent':"-"},timeout=5).tex
 print("{} INFO:".format(symb))
 print(json.dumps(info, indent=2))
 
-print("\nSTOCK NEWS:")
+print("\n\nSTOCK HEADLINES:")
 print(json.dumps(news, indent=2))
 ```
 
