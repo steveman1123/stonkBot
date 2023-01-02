@@ -1,6 +1,8 @@
 # Reverse Engineered Documentation for NASDAQ REST APIs
 
-I haven't found any other documentation online, and have found this api by backtracking through other site's resources.
+I haven't found any other documentation online, and have found this api by backtracking through other site's resources.  
+
+The V1 api has been susetted, so requests to it may no longer work as expected.  
 
 If you know of any other documentation, or have anything to add, please let me know! (this is far from complete)
 
@@ -17,7 +19,7 @@ endpoint urls:
 1. ```/quote```  
     1. ```/{1}/{chart|dividends|eps|extended-trading|historical|info|option-chain|realtime-trades|short-interest|summary}``` where {1} is the symbol followed by the data to return.  
         **Additional Parameters:**  
-        ```?assetclass={commodities|crypto|currencies|fixedincome|futures|index|mutualfunds|stocks}``` (**required for all**)  
+        ```?assetclass={commodities|crypto|currencies|etf|fixedincome|futures|index|mutualfunds|stocks}``` (**required for all**)  
         ```&fromdate={yyyy-mm-dd}``` (**required for historical**)  
         ```&todate={yyyy-mm-dd}``` (optional for historical)  
         ```&offset={#}``` (optional for historical)  
@@ -137,7 +139,8 @@ endpoint urls:
     5. [ratings](https://api.nasdaq.com/api/analyst/MSFT/ratings)  
     6. [target price](https://api.nasdaq.com/api/analyst/MSFT/targetprice)  
 9. [news](https://api.nasdaq.com/api/news/topic/articlebysymbol?q=msft|stocks&offset=0&limit=7)  
----
+---  
+V1 api is no longer supported
 1. [historical](https://www.nasdaq.com/api/v1/historical/MSFT/stocks/2020-10-15/2020-11-23)  
 2. [quote news](https://www.nasdaq.com/api/v1/quote-news/31867/5)  
 3. [search](https://www.nasdaq.com/api/v1/search?q=microsoft&offset=0&langcode=en)  
